@@ -3,62 +3,42 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.auth import get_current_user
-from app.core.security import get_user_by_token
 from app.db.session import get_db
 from app.models.catalog import Listing, Product
 from app.models.core import MarketplaceAccount, SellerAccount, User
-from app.schemas.catalog import (
-    ListingCreate, ListingRead, ListingUpdate, ProductCreate, ProductRead, ProductUpdate,
-)
+from app.schemas.catalog import ListingCreate, ListingRead, ListingUpdate, ProductCreate, ProductRead, ProductUpdate
+from app.services.auth import get_user_by_token
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
+bearer = HTTPBearer(auto_error=False)
 
 
-def _product_read(product: Product) -> ProductRead:
-    return ProductRead(
-        id=product.id, seller_account_id=product.seller_account_id, sku=product.sku, title=product.title,
-        description=product.description, brand=product.brand, category=product.category, hsn_code=product.hsn_code,
-        gst_rate=product.gst_rate, cost_price=product.cost_price, mrp=product.mrp,
-        attributes=json.loads(product.attributes_json or "{}"), image_urls=json.loads(product.image_urls_json or "[]"),
-        parent_sku=product.parent_sku, is_active=product.is_active,
-    )
-
-
-def _listing_read(listing: Listing) -> ListingRead:
-    return ListingRead(
-        id=listing.id, product_id=listing.product_id, marketplace_account_id=listing.marketplace_account_id,
-        sku=listing.sku, external_listing_id=listing.external_listing_id, status=listing.status,
-        title=listing.title, price=listing.price, inventory_quantity=listing.inventory_quantity,
-        attributes=json.loads(listing.attributes_json or "{}"), marketplace_data=json.loads(listing.marketplace_data_json or "{}"),
-        validation_errors=json.loads(listing.validation_errors_json or "[]"),
-    )
-
-
-def _require_user(authorization: str | None, db: Session) -> User:
-    if not authorization or not authorization.startswith("Bearer "):
+def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer), db: Session = Depends(get_db)) -> User:
+    if not credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
-    user = get_user_by_token(db, authorization.removeprefix("Bearer ").strip())
+    user = get_user_by_token(db, credentials.credentials)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session")
     return user
 
 
+def _product_read(product: Product) -> ProductRead:
+    return ProductRead(id=product.id, seller_account_id=product.seller_account_id, sku=product.sku, title=product.title, description=product.description, brand=product.brand, category=product.category, hsn_code=product.hsn_code, gst_rate=product.gst_rate, cost_price=product.cost_price, mrp=product.mrp, attributes=json.loads(product.attributes_json or "{}"), image_urls=json.loads(product.image_urls_json or "[]"), parent_sku=product.parent_sku, is_active=product.is_active)
+
+
+def _listing_read(listing: Listing) -> ListingRead:
+    return ListingRead(id=listing.id, product_id=listing.product_id, marketplace_account_id=listing.marketplace_account_id, sku=listing.sku, external_listing_id=listing.external_listing_id, status=listing.status, title=listing.title, price=listing.price, inventory_quantity=listing.inventory_quantity, attributes=json.loads(listing.attributes_json or "{}"), marketplace_data=json.loads(listing.marketplace_data_json or "{}"), validation_errors=json.loads(listing.validation_errors_json or "[]"))
+
+
 @router.post("/products", response_model=ProductRead, status_code=201)
 def create_product(payload: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProductRead:
-    if not db.get(SellerAccount, payload.seller_account_id):
-        raise HTTPException(404, "Seller account not found")
-    if db.scalar(select(Product).where(Product.seller_account_id == payload.seller_account_id, Product.sku == payload.sku)):
-        raise HTTPException(409, "SKU already exists for this seller account")
-    product = Product(
-        seller_account_id=payload.seller_account_id, sku=payload.sku, title=payload.title, description=payload.description,
-        brand=payload.brand, category=payload.category, hsn_code=payload.hsn_code, gst_rate=payload.gst_rate,
-        cost_price=payload.cost_price, mrp=payload.mrp, attributes_json=json.dumps(payload.attributes),
-        image_urls_json=json.dumps(payload.image_urls), parent_sku=payload.parent_sku, is_active=payload.is_active,
-    )
+    if not db.get(SellerAccount, payload.seller_account_id): raise HTTPException(404, "Seller account not found")
+    if db.scalar(select(Product).where(Product.seller_account_id == payload.seller_account_id, Product.sku == payload.sku)): raise HTTPException(409, "SKU already exists for this seller account")
+    product = Product(seller_account_id=payload.seller_account_id, sku=payload.sku, title=payload.title, description=payload.description, brand=payload.brand, category=payload.category, hsn_code=payload.hsn_code, gst_rate=payload.gst_rate, cost_price=payload.cost_price, mrp=payload.mrp, attributes_json=json.dumps(payload.attributes), image_urls_json=json.dumps(payload.image_urls), parent_sku=payload.parent_sku, is_active=payload.is_active)
     db.add(product); db.commit(); db.refresh(product)
     return _product_read(product)
 
@@ -95,14 +75,8 @@ def update_product(product_id: int, payload: ProductUpdate, db: Session = Depend
 def create_listing(payload: ListingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ListingRead:
     if not db.get(Product, payload.product_id): raise HTTPException(404, "Product not found")
     if not db.get(MarketplaceAccount, payload.marketplace_account_id): raise HTTPException(404, "Marketplace account not found")
-    if db.scalar(select(Listing).where(Listing.marketplace_account_id == payload.marketplace_account_id, Listing.sku == payload.sku)):
-        raise HTTPException(409, "Listing SKU already exists for this marketplace account")
-    listing = Listing(
-        product_id=payload.product_id, marketplace_account_id=payload.marketplace_account_id, sku=payload.sku,
-        external_listing_id=payload.external_listing_id, status=payload.status.value, title=payload.title,
-        price=payload.price, inventory_quantity=payload.inventory_quantity, attributes_json=json.dumps(payload.attributes),
-        marketplace_data_json=json.dumps(payload.marketplace_data), validation_errors_json="[]",
-    )
+    if db.scalar(select(Listing).where(Listing.marketplace_account_id == payload.marketplace_account_id, Listing.sku == payload.sku)): raise HTTPException(409, "Listing SKU already exists for this marketplace account")
+    listing = Listing(product_id=payload.product_id, marketplace_account_id=payload.marketplace_account_id, sku=payload.sku, external_listing_id=payload.external_listing_id, status=payload.status.value, title=payload.title, price=payload.price, inventory_quantity=payload.inventory_quantity, attributes_json=json.dumps(payload.attributes), marketplace_data_json=json.dumps(payload.marketplace_data), validation_errors_json="[]")
     db.add(listing); db.commit(); db.refresh(listing)
     return _listing_read(listing)
 
