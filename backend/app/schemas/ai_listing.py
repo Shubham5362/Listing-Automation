@@ -22,7 +22,7 @@ class ListingDraftRead(BaseModel):
     description: str
     keywords: list[str]
     attributes: dict[str, object]
-    quality_score: Decimal
+    quality_score: float
     validation_errors: list[str]
     status: ListingDraftStatus
 
