@@ -2,6 +2,7 @@ from app.agents.base import AgentContext, AgentResult, AgentTask
 from app.services.order_ops import OrderOpsService
 from app.services.returns_ai import ReturnsSupportAIService
 from app.services.finance_intelligence import FinanceIntelligenceService
+from app.services.advertising_ai import AdvertisingAIService
 
 class RuleAgent:
     name = "rule"
@@ -9,7 +10,6 @@ class RuleAgent:
         return AgentResult(self.name, task.name, "completed", {"seller_account_id": context.seller_account_id, **task.input}, task.requires_approval)
 
 def _result(name, context, task, output): return AgentResult(name, task.name, "completed", {"seller_account_id": context.seller_account_id, **output}, task.requires_approval)
-
 class InventoryAgent(RuleAgent):
     name="inventory"
     def run(self, context, task):
@@ -50,6 +50,9 @@ class FinanceAgent(RuleAgent):
 class AdsAgent(RuleAgent):
     name="ads"
     def run(self, context, task):
+        if "spend" in task.input or "sales" in task.input:
+            r=AdvertisingAIService.optimize(spend=float(task.input.get("spend",0)), sales=float(task.input.get("sales",0)), clicks=int(task.input.get("clicks",0)), conversions=int(task.input.get("conversions",0)), daily_budget=float(task.input.get("daily_budget",0)), target_acos=float(task.input.get("target_acos",30)), max_budget_step_percent=float(task.input.get("max_budget_step_percent",15)))
+            return _result(self.name,context,task,{"action":r.action,"confidence":r.confidence,"reasons":r.reasons,"recommended_budget":r.recommended_budget,"bid_multiplier":r.bid_multiplier,"waste_score":r.waste_score})
         acos=float(task.input.get("acos",0)); roas=float(task.input.get("roas",0)); action="scale" if roas>=4 and acos<=25 else "reduce" if acos>40 or roas<1 else "monitor"; return _result(self.name,context,task,{"action":action,"acos":acos,"roas":roas})
 class CustomerSupportAgent(RuleAgent):
     name="customer_support"
