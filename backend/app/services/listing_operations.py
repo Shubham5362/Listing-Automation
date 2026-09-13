@@ -46,7 +46,7 @@ def enqueue_listing_publish(db: Session, *, seller_account_id: int, draft_id: in
             Job.seller_account_id == seller_account_id,
             Job.name == "listing_publish",
             Job.status.in_(["queued", "running"]),
-            Job.payload.like(f'%"listing_draft_id": {draft_id}%'),
+            Job.payload.like(f'%"listing_draft_id":{draft_id}%'),
         )
     )
     if duplicate:

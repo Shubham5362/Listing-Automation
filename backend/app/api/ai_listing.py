@@ -8,7 +8,7 @@ from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.ai_listing import ListingDraft, ListingDraftStatus
 from app.models.catalog import Product
-from app.models.core import MarketplaceAccount, User
+from app.models.core import MarketplaceAccount, SellerAccount, User
 from app.schemas.ai_listing import ListingDraftRead, ListingDraftStatusUpdate, ListingGenerateRequest
 from app.services.ai_listing import ListingGenerationService
 
@@ -34,14 +34,22 @@ def _serialize(draft: ListingDraft) -> ListingDraftRead:
     )
 
 
+def _owned_draft(db: Session, user: User, draft_id: int) -> ListingDraft:
+    draft = db.scalar(
+        select(ListingDraft)
+        .join(Product, Product.id == ListingDraft.product_id)
+        .join(SellerAccount, SellerAccount.id == Product.seller_account_id)
+        .where(ListingDraft.id == draft_id, SellerAccount.user_id == user.id)
+    )
+    if draft is None:
+        raise HTTPException(status_code=404, detail="Listing draft not found")
+    return draft
+
+
 @router.post("/generate", response_model=ListingDraftRead, status_code=201)
-def generate_listing(
-    payload: ListingGenerateRequest,
-    _: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> ListingDraftRead:
-    product = db.get(Product, payload.product_id)
-    account = db.get(MarketplaceAccount, payload.marketplace_account_id)
+def generate_listing(payload: ListingGenerateRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ListingDraftRead:
+    product = db.scalar(select(Product).join(SellerAccount, SellerAccount.id == Product.seller_account_id).where(Product.id == payload.product_id, SellerAccount.user_id == user.id))
+    account = db.scalar(select(MarketplaceAccount).join(SellerAccount, SellerAccount.id == MarketplaceAccount.seller_account_id).where(MarketplaceAccount.id == payload.marketplace_account_id, SellerAccount.user_id == user.id))
     if not product or not account:
         raise HTTPException(status_code=404, detail="Product or marketplace account not found")
     if product.seller_account_id != account.seller_account_id:
@@ -52,26 +60,8 @@ def generate_listing(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    latest = db.scalar(
-        select(func.max(ListingDraft.version)).where(
-            ListingDraft.product_id == product.id,
-            ListingDraft.marketplace_account_id == account.id,
-        )
-    )
-    draft = ListingDraft(
-        product_id=product.id,
-        marketplace_account_id=account.id,
-        version=(latest or 0) + 1,
-        language=payload.language,
-        title=generated.title,
-        bullets_json=json.dumps(generated.bullets, ensure_ascii=False),
-        description=generated.description,
-        keywords_json=json.dumps(generated.keywords, ensure_ascii=False),
-        attributes_json=json.dumps(generated.attributes, ensure_ascii=False),
-        quality_score=generated.quality_score,
-        validation_errors_json=json.dumps(generated.validation_errors, ensure_ascii=False),
-        status=ListingDraftStatus.DRAFT.value,
-    )
+    latest = db.scalar(select(func.max(ListingDraft.version)).where(ListingDraft.product_id == product.id, ListingDraft.marketplace_account_id == account.id))
+    draft = ListingDraft(product_id=product.id, marketplace_account_id=account.id, version=(latest or 0) + 1, language=payload.language, title=generated.title, bullets_json=json.dumps(generated.bullets, ensure_ascii=False), description=generated.description, keywords_json=json.dumps(generated.keywords, ensure_ascii=False), attributes_json=json.dumps(generated.attributes, ensure_ascii=False), quality_score=generated.quality_score, validation_errors_json=json.dumps(generated.validation_errors, ensure_ascii=False), status=ListingDraftStatus.DRAFT.value)
     db.add(draft)
     db.commit()
     db.refresh(draft)
@@ -79,13 +69,8 @@ def generate_listing(
 
 
 @router.get("", response_model=list[ListingDraftRead])
-def list_drafts(
-    status: ListingDraftStatus | None = None,
-    product_id: int | None = None,
-    _: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> list[ListingDraftRead]:
-    stmt = select(ListingDraft).order_by(ListingDraft.created_at.desc())
+def list_drafts(status: ListingDraftStatus | None = None, product_id: int | None = None, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[ListingDraftRead]:
+    stmt = select(ListingDraft).join(Product, Product.id == ListingDraft.product_id).join(SellerAccount, SellerAccount.id == Product.seller_account_id).where(SellerAccount.user_id == user.id).order_by(ListingDraft.created_at.desc())
     if status:
         stmt = stmt.where(ListingDraft.status == status.value)
     if product_id:
@@ -94,21 +79,14 @@ def list_drafts(
 
 
 @router.patch("/{draft_id}/status", response_model=ListingDraftRead)
-def update_draft_status(
-    draft_id: int,
-    payload: ListingDraftStatusUpdate,
-    _: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> ListingDraftRead:
-    draft = db.get(ListingDraft, draft_id)
-    if not draft:
-        raise HTTPException(status_code=404, detail="Listing draft not found")
+def update_draft_status(draft_id: int, payload: ListingDraftStatusUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ListingDraftRead:
+    draft = _owned_draft(db, user, draft_id)
     current = ListingDraftStatus(draft.status)
     target = payload.status
     allowed = {
         ListingDraftStatus.DRAFT: {ListingDraftStatus.REVIEW},
         ListingDraftStatus.REVIEW: {ListingDraftStatus.APPROVED, ListingDraftStatus.REJECTED, ListingDraftStatus.DRAFT},
-        ListingDraftStatus.APPROVED: {ListingDraftStatus.PUBLISHED, ListingDraftStatus.REVIEW},
+        ListingDraftStatus.APPROVED: {ListingDraftStatus.REVIEW},
         ListingDraftStatus.REJECTED: {ListingDraftStatus.DRAFT},
         ListingDraftStatus.PUBLISHED: set(),
     }
