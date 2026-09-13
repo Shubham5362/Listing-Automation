@@ -26,3 +26,8 @@ def test_no_signal_holds_price():
 def test_invalid_range_rejected():
     with pytest.raises(ValueError):
         AdvancedPricingService.recommend(100, 50, 120, 100)
+
+
+def test_margin_floor_cannot_exceed_ceiling():
+    with pytest.raises(ValueError):
+        AdvancedPricingService.recommend(100, 90, None, 100, target_margin_percent=20)
