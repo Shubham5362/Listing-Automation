@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.accounts import router as accounts_router
 from app.api.advertising import router as advertising_router
 from app.api.agents import router as agents_router
+from app.api.ai_command import router as ai_command_router
 from app.api.ai_listing import router as ai_listing_router
 from app.api.auth import router as auth_router
 from app.api.automation import router as automation_router
@@ -34,6 +35,7 @@ api_router.include_router(dashboard_router)
 api_router.include_router(agents_router)
 api_router.include_router(automation_router)
 api_router.include_router(notifications_router)
+api_router.include_router(ai_command_router)
 
 
 @api_router.get("/status", tags=["system"])
