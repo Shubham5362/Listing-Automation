@@ -40,7 +40,9 @@ def create_return(payload: ReturnCreate, user: User = Depends(get_current_user),
         item = db.scalar(select(OrderItem).where(OrderItem.id == payload.order_item_id, OrderItem.order_id == order.id))
         if not item:
             raise HTTPException(status_code=400, detail="Order item does not belong to order")
-    row = ReturnRequest(seller_account_id=order.seller_account_id, order_id=order.id, **payload.model_dump())
+    data = payload.model_dump()
+    data.pop("order_id", None)
+    row = ReturnRequest(seller_account_id=order.seller_account_id, order_id=order.id, **data)
     db.add(row); db.commit(); db.refresh(row)
     return _return_read(row)
 
