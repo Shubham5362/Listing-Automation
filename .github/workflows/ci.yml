@@ -39,6 +39,7 @@ jobs:
           echo "python=$([[ -f pyproject.toml || -f requirements.txt || -f setup.py || -f backend/pyproject.toml || -f backend/requirements.txt ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "go=$([[ -f go.mod ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "rust=$([[ -f Cargo.toml ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "compose=$([[ -f docker-compose.yml || -f compose.yml ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - name: Setup Node.js
         if: steps.detect.outputs.node == 'true'
         uses: actions/setup-node@v4
@@ -75,6 +76,15 @@ jobs:
           if [[ -f backend/pyproject.toml ]]; then python -m pip install ./backend; fi
           python -m compileall -q backend
           if [[ -d backend/tests ]]; then (cd backend && python -m pytest -q --cov=app --cov-report=term-missing); fi
+      - name: Docker Compose validation
+        if: steps.detect.outputs.compose == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export POSTGRES_PASSWORD=ci-only-password
+          export SECRET_KEY=ci-only-secret
+          export CREDENTIALS_ENCRYPTION_KEY=ZHVtbXkta2V5LWZvci1jaS1vbmse
+          docker compose config --quiet
       - name: Setup Go
         if: steps.detect.outputs.go == 'true'
         uses: actions/setup-go@v5
