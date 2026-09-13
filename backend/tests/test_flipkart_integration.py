@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from app.core.config import Settings
-from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
+from app.integrations.base import MarketplaceAccountContext
 from app.integrations.flipkart.adapter import FlipkartSellerApiAdapter
 from app.integrations.flipkart.auth import FlipkartAccessTokenProvider
 from app.integrations.flipkart.client import FlipkartSellerApiClient
@@ -90,10 +90,13 @@ def test_flipkart_adapter_reads_and_updates_listing_data() -> None:
 
     assert inventory[0].quantity == 7
     assert prices[0].price == Decimal("499")
-    update_inventory = calls[-2][2]["SKU-1"]
-    assert update_inventory["product_id"] == "FSN12345678901"
-    assert update_inventory["inventory"][0]["quantity"] == 12
-    assert calls[-1][2]["SKU-1"]["price"]["selling_price"] == 549
+    inventory_updates = [payload for _, path, payload in calls if path.endswith("/listings/v3/update/inventory")]
+    price_updates = [payload for _, path, payload in calls if path.endswith("/listings/v3/update/price")]
+    assert len(inventory_updates) == 1
+    assert len(price_updates) == 1
+    assert inventory_updates[0]["SKU-1"]["product_id"] == "FSN12345678901"
+    assert inventory_updates[0]["SKU-1"]["locations"][0]["inventory"] == 12
+    assert price_updates[0]["SKU-1"]["price"]["selling_price"] == 549
 
 
 def test_flipkart_adapter_validates_updates() -> None:
