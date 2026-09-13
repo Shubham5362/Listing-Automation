@@ -16,13 +16,10 @@ jobs:
   policy-and-ci:
     name: Policy & CI
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
+        with: {fetch-depth: 0}
       - name: Check for forbidden secret files
         shell: bash
         run: |
@@ -30,53 +27,42 @@ jobs:
           while IFS= read -r file; do
             case "$file" in
               .env.example) ;;
-              .env|.env.*|*.pem|*.key|id_rsa|id_ed25519|*/id_rsa|*/id_ed25519)
-                echo "$file"
-                echo "Forbidden credential/secret file detected in the repository."
-                exit 1
-                ;;
+              .env|.env.*|*.pem|*.key|id_rsa|id_ed25519|*/id_rsa|*/id_ed25519) echo "$file"; echo "Forbidden credential/secret file detected in the repository."; exit 1 ;;
             esac
           done < <(git ls-files)
-
       - name: Detect project type
         id: detect
         shell: bash
         run: |
           set -euo pipefail
-          echo "node=$([[ -f package.json ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "node=$([[ -f frontend/package.json || -f package.json ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "python=$([[ -f pyproject.toml || -f requirements.txt || -f setup.py || -f backend/pyproject.toml || -f backend/requirements.txt ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "go=$([[ -f go.mod ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "rust=$([[ -f Cargo.toml ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
       - name: Setup Node.js
         if: steps.detect.outputs.node == 'true'
         uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
+        with: {node-version: 22}
       - name: Install Node dependencies
         if: steps.detect.outputs.node == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          cd frontend 2>/dev/null || true
           if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
-
       - name: Node validation
         if: steps.detect.outputs.node == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          cd frontend 2>/dev/null || true
           if node -e "const p=require('./package.json'); process.exit(p.scripts?.lint ? 0 : 1)"; then npm run lint; fi
           if node -e "const p=require('./package.json'); process.exit(p.scripts?.test ? 0 : 1)"; then npm run test --if-present; fi
           if node -e "const p=require('./package.json'); process.exit(p.scripts?.build ? 0 : 1)"; then npm run build; fi
-
       - name: Setup Python
         if: steps.detect.outputs.python == 'true'
         uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
+        with: {python-version: '3.12'}
       - name: Python validation
         if: steps.detect.outputs.python == 'true'
         shell: bash
@@ -87,31 +73,16 @@ jobs:
           if [[ -f backend/pyproject.toml ]]; then python -m pip install ./backend; fi
           python -m compileall -q backend
           if [[ -d backend/tests ]]; then (cd backend && python -m pytest -q); fi
-
       - name: Setup Go
         if: steps.detect.outputs.go == 'true'
         uses: actions/setup-go@v5
-        with:
-          go-version: stable
-          cache: true
-
       - name: Go validation
         if: steps.detect.outputs.go == 'true'
         shell: bash
-        run: |
-          set -euo pipefail
-          go test ./...
-          go vet ./...
-
+        run: go test ./... && go vet ./...
       - name: Rust validation
         if: steps.detect.outputs.rust == 'true'
         shell: bash
-        run: |
-          set -euo pipefail
-          rustup toolchain install stable --profile minimal
-          rustup default stable
-          cargo test --all-targets --all-features
-
+        run: rustup toolchain install stable --profile minimal && rustup default stable && cargo test --all-targets --all-features
       - name: Final CI gate
-        shell: bash
         run: echo "All applicable policy and CI checks completed successfully."
