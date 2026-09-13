@@ -11,8 +11,8 @@ from app.db.session import get_db
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
 from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
-from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunStatus
-from app.services.marketplace_sync import MarketplaceSyncError, sync_marketplace_account
+from app.models.marketplace_sync import MarketplaceSyncRun
+from app.services.jobs import enqueue_job
 
 router = APIRouter(prefix="/marketplaces", tags=["marketplaces"])
 
@@ -66,17 +66,19 @@ def connection_test(payload: ConnectionTestRequest, db: Session = Depends(get_db
     return {"connected": bool(connected), "marketplace": marketplace.value, "account_id": account.id, "last_connected_at": account.last_connected_at}
 
 
-@router.post("/{marketplace_account_id}/sync")
+@router.post("/{marketplace_account_id}/sync", status_code=202)
 def sync_account(marketplace_account_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict[str, object]:
     account = _owned_account(db, marketplace_account_id, current_user.id)
     try:
-        return sync_marketplace_account(db, account)
-    except MarketplaceIntegrationError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-    except MarketplaceSyncError as exc:
-        if "already running" in str(exc).lower():
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        job = enqueue_job(
+            db,
+            "marketplace_sync",
+            {"marketplace_account_id": account.id},
+            seller_account_id=account.seller_account_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Unable to queue marketplace sync") from exc
+    return {"job_id": job.id, "status": job.status, "marketplace_account_id": account.id}
 
 
 @router.get("/{marketplace_account_id}/sync-runs")
