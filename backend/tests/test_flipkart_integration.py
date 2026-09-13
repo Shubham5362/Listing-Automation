@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from decimal import Decimal
 
 import httpx
@@ -59,7 +60,8 @@ def test_flipkart_adapter_reads_and_updates_listing_data() -> None:
             return "token"
 
     def handler(request: httpx.Request) -> httpx.Response:
-        calls.append((request.method, request.url.path, request.json() if request.content else {}))
+        payload = json.loads(request.content.decode("utf-8")) if request.content else {}
+        calls.append((request.method, request.url.path, payload))
         if request.url.path.endswith("/listings/v3/details"):
             return httpx.Response(
                 200,
@@ -89,7 +91,8 @@ def test_flipkart_adapter_reads_and_updates_listing_data() -> None:
     assert inventory[0].quantity == 7
     assert prices[0].price == Decimal("499")
     update_inventory = calls[-2][2]["SKU-1"]
-    assert update_inventory["locations"][0]["inventory"] == 12
+    assert update_inventory["product_id"] == "FSN12345678901"
+    assert update_inventory["inventory"][0]["quantity"] == 12
     assert calls[-1][2]["SKU-1"]["price"]["selling_price"] == 549
 
 
