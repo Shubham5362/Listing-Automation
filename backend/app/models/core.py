@@ -30,9 +30,12 @@ class SellerAccount(Base):
     __tablename__ = "seller_accounts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
     name: Mapped[str] = mapped_column(String(200), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user: Mapped[User | None] = relationship()
 
 
 class MarketplaceAccount(Base):
