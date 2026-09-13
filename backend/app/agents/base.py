@@ -14,6 +14,7 @@ class AgentContext:
 @dataclass(frozen=True)
 class AgentTask:
     name: str
+    task: str
     input: dict[str, Any]
     requires_approval: bool = False
 
