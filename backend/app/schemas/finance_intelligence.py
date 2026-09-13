@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -11,6 +13,28 @@ class GSTReconciliationRequest(BaseModel):
     output_tax: float = Field(ge=0)
     input_tax_credit: float = Field(ge=0)
     remitted_tax: float = Field(ge=0)
+
+
+class SettlementImportItem(BaseModel):
+    marketplace_account_id: int = Field(gt=0)
+    external_settlement_id: str = Field(min_length=1, max_length=200)
+    period_start: datetime
+    period_end: datetime
+    gross_amount: float = Field(default=0, ge=0)
+    fees_amount: float = Field(default=0, ge=0)
+    refunds_amount: float = Field(default=0, ge=0)
+    net_amount: float = 0
+
+
+class SettlementImportRequest(BaseModel):
+    settlements: list[SettlementImportItem] = Field(min_length=1, max_length=500)
+
+
+class SettlementImportRead(BaseModel):
+    imported: int
+    duplicates: int
+    rejected: int
+    total_net: float
 
 
 class FinanceInsightRead(BaseModel):
