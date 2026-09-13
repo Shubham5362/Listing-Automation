@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import smtplib
 from abc import ABC, abstractmethod
@@ -13,14 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.core import User
-from app.models.notifications import (
-    Notification,
-    NotificationCategory,
-    NotificationChannel,
-    NotificationDelivery,
-    NotificationDeliveryStatus,
-    NotificationPreference,
-)
+from app.models.notifications import Notification, NotificationCategory, NotificationChannel, NotificationDelivery, NotificationDeliveryStatus, NotificationPreference
 
 
 class NotificationProvider(ABC):
@@ -72,10 +66,15 @@ class WhatsAppProvider(NotificationProvider):
 
     def send(self, user: User, notification: Notification) -> None:
         endpoint = os.getenv("SELLER_HUB_WHATSAPP_WEBHOOK_URL")
-        if not endpoint:
+        phone = notification.data.get("recipient_phone")
+        if not endpoint or not phone:
             raise RuntimeError("whatsapp_provider_not_configured")
-        payload = str({"to": getattr(user, "phone", None), "title": notification.title, "message": notification.message}).encode()
-        req = Request(endpoint, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+        payload = json.dumps({"to": phone, "title": notification.title, "message": notification.message}).encode()
+        headers = {"Content-Type": "application/json"}
+        token = os.getenv("SELLER_HUB_WHATSAPP_WEBHOOK_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = Request(endpoint, data=payload, headers=headers, method="POST")
         try:
             with urlopen(req, timeout=10) as response:
                 if response.status < 200 or response.status >= 300:
@@ -92,13 +91,7 @@ class NotificationService:
         self.providers = {provider.channel: provider for provider in (providers or [InAppProvider(), EmailProvider(), WhatsAppProvider()])}
 
     def _preference(self, db: Session, seller_account_id: int, user_id: int, category: str) -> NotificationPreference:
-        preference = db.execute(
-            select(NotificationPreference).where(
-                NotificationPreference.seller_account_id == seller_account_id,
-                NotificationPreference.user_id == user_id,
-                NotificationPreference.category == category,
-            )
-        ).scalar_one_or_none()
+        preference = db.execute(select(NotificationPreference).where(NotificationPreference.seller_account_id == seller_account_id, NotificationPreference.user_id == user_id, NotificationPreference.category == category)).scalar_one_or_none()
         if preference is None:
             preference = NotificationPreference(seller_account_id=seller_account_id, user_id=user_id, category=category)
             db.add(preference)
