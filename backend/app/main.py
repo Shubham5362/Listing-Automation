@@ -1,13 +1,20 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from sqlalchemy import text
 
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.middleware import SecurityMiddleware
+from app.core.observability import configure_logging, metrics_snapshot
 from app.db.init_db import init_db
+from app.db.session import SessionLocal
 
 settings = get_settings()
+configure_logging()
+logger = logging.getLogger("seller_hub")
 
 if settings.environment.lower() in {"production", "prod"}:
     if settings.secret_key == "change-me-in-env" or len(settings.secret_key) < 32:
@@ -27,7 +34,7 @@ origins = [item.strip() for item in settings.allowed_origins.split(",") if item.
 hosts = [item.strip() for item in settings.allowed_hosts.split(",") if item.strip()]
 
 app.add_middleware(SecurityMiddleware)
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "Accept"])
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"])
 if hosts:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
 
@@ -35,6 +42,7 @@ if hosts:
 @app.on_event("startup")
 def startup() -> None:
     init_db()
+    logger.info("application_started")
 
 
 app.include_router(api_router)
@@ -43,3 +51,15 @@ app.include_router(api_router)
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/ready", tags=["system"])
+def readiness() -> dict[str, str]:
+    with SessionLocal() as session:
+        session.execute(text("SELECT 1"))
+    return {"status": "ready"}
+
+
+@app.get("/metrics", tags=["system"])
+def metrics() -> dict[str, object]:
+    return {"status": "ok", "metrics": metrics_snapshot()}

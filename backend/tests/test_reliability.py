@@ -50,8 +50,11 @@ def test_security_middleware_enforces_bounded_rate_limit(monkeypatch) -> None:
     assert first.status_code == 200
     assert second.status_code == 200
     assert limited.status_code == 429
-    assert limited.headers["Retry-After"] == "60"
-    assert limited.json() == {"detail": "Rate limit exceeded"}
+    retry_after = int(limited.headers["Retry-After"])
+    assert 1 <= retry_after <= 60
+    payload = limited.json()
+    assert payload["detail"] == "Rate limit exceeded"
+    assert payload["request_id"] == limited.headers["X-Request-ID"]
 
 
 def test_auth_login_rejects_wrong_password() -> None:

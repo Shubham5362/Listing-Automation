@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     allowed_origins: str = "http://localhost:5173"
     allowed_hosts: str = "localhost,127.0.0.1,testserver"
     rate_limit_per_minute: int = 120
+    redis_url: str | None = None
     session_ttl_hours: int = 24
 
     worker_poll_interval_seconds: float = 2.0
@@ -20,6 +21,11 @@ class Settings(BaseSettings):
     worker_max_attempts: int = 3
     worker_retry_backoff_seconds: int = 10
     worker_stale_after_seconds: int = 1800
+    worker_concurrency: int = 1
+
+    backup_enabled: bool = False
+    backup_dir: str = "./backups"
+    backup_retention_days: int = 14
 
     amazon_sp_api_base_url: str = "https://sellingpartnerapi-eu.amazon.com"
     amazon_sp_api_region: str = "eu-west-1"
