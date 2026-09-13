@@ -1,13 +1,13 @@
 """add inventory management
 
 Revision ID: 0004_inventory
-Revises: 0003_ai_listing
+Revises: 0003_ai_listing_drafts
 """
 from alembic import op
 import sqlalchemy as sa
 
 revision = "0004_inventory"
-down_revision = "0003_ai_listing"
+down_revision = "0003_ai_listing_drafts"
 branch_labels = None
 depends_on = None
 
