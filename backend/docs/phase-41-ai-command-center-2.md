@@ -1,22 +1,22 @@
 # Phase 41 — AI Command Center 2.0
 
-The command center now supports business-oriented natural-language workflows on top of the existing seller-scoped dashboard and agent orchestrator.
+Natural-language seller workflows, multi-step agent chains, and explicit human checkpoints.
 
-## Supported command patterns
+## Examples
 
-- `What are today's sales?` — uses the current calendar day and comparison day.
-- `Why are sales declining?` — combines analytics, inventory, pricing, and advertising review steps.
-- `Fix low stock` — proposes the inventory review checkpoint.
-- `Optimize prices` — proposes an approval-gated pricing review.
-- `Create and publish listings` — routes to the listing review checkpoint; marketplace mutations remain governed by existing approval/publish workflows.
-- `Why am I losing money?` — combines finance and profitability analysis.
+- `What are today's sales?` uses the current calendar day and comparison day.
+- `Why are sales declining?` chains analytics, inventory, pricing, and advertising review.
+- `Fix low stock` proposes an inventory checkpoint.
+- `Optimize prices` proposes an approval-gated pricing review.
+- `Create and publish listings` routes through the listing review checkpoint; existing publish approval remains authoritative.
+- `Why am I losing money?` combines finance and profitability analysis.
 
-## Multi-step and human checkpoints
+## Execution model
 
-Each proposed action has a step number, dependencies, and checkpoint flag. A dependent step is not executed until its preceding step has completed. Approval-gated actions remain proposed until the request is explicitly executed with approval.
+Actions carry `step`, `depends_on`, and `checkpoint` metadata. A dependent step cannot execute until its prerequisite completed. Approval-gated actions remain proposed until the caller explicitly executes with approval.
 
-The command record stores the workflow metadata and trace ID in the existing JSON response, preserving auditability without introducing a second command-history store.
+The workflow is stored with the existing command trace and history record, preserving auditability and seller isolation.
 
 ## Safety
 
-The command center is seller-isolated and does not invent marketplace, competitor, financial, or inventory facts. Consequential actions remain behind the existing agent approval model. Natural language can plan a workflow, but it cannot silently publish listings, change prices, issue refunds, or send customer messages.
+No marketplace, competitor, financial, or inventory facts are fabricated. Natural language can plan and orchestrate existing agent capabilities, but it cannot silently publish listings, change prices, issue refunds, or send customer messages.
