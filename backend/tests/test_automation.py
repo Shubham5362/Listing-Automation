@@ -71,7 +71,7 @@ def test_schedule_runner_respects_interval() -> None:
         assert created.status_code == 201
         first = client.post("/api/v1/automations/scheduled/due", headers=headers, params={"seller_account_id": seller_id})
         assert first.status_code == 200
-        assert first.json()[0]["status"] == "succeeded"
+        assert first.json()[0]["status"] == "queued"
         second = client.post("/api/v1/automations/scheduled/due", headers=headers, params={"seller_account_id": seller_id})
         assert second.status_code == 200
         assert second.json() == []

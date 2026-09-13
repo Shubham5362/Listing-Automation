@@ -77,10 +77,11 @@ def dispatch_event(event_type: str, seller_account_id: int, payload: dict[str, A
     return [service.execute(db, rule, context) for rule in rules]
 
 
-@router.post("/scheduled/due", response_model=list[AutomationRunRead])
+@router.post("/scheduled/due", response_model=list[dict[str, object]])
 def run_due_scheduled(seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     _seller(db, user, seller_account_id)
-    return run_due_scheduled_automations(db, seller_account_id, user.id, service)
+    jobs = run_due_scheduled_automations(db, seller_account_id, user.id, service)
+    return [{"id": job.id, "status": job.status, "name": job.name, "seller_account_id": job.seller_account_id} for job in jobs]
 
 
 @router.get("/{automation_id}/runs", response_model=list[AutomationRunRead])

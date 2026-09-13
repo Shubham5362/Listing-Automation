@@ -73,10 +73,17 @@ class AuditLog(Base):
 class Job(Base):
     __tablename__ = "jobs"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    seller_account_id: Mapped[int | None] = mapped_column(ForeignKey("seller_accounts.id"), index=True)
     name: Mapped[str] = mapped_column(String(200), index=True)
     status: Mapped[str] = mapped_column(String(30), default="queued", index=True, nullable=False)
     payload: Mapped[str | None] = mapped_column(Text)
+    result: Mapped[str | None] = mapped_column(Text)
     error: Mapped[str | None] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    run_after: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime, index=True)
+    worker_id: Mapped[str | None] = mapped_column(String(100), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime)

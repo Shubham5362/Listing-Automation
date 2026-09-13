@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 120
     session_ttl_hours: int = 24
 
+    worker_poll_interval_seconds: float = 2.0
+    worker_batch_size: int = 5
+    worker_max_attempts: int = 3
+    worker_retry_backoff_seconds: int = 10
+    worker_stale_after_seconds: int = 1800
+
     amazon_sp_api_base_url: str = "https://sellingpartnerapi-eu.amazon.com"
     amazon_sp_api_region: str = "eu-west-1"
     amazon_sp_api_marketplace_id: str = "A21TJRUUN4KGV"
