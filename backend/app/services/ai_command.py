@@ -12,14 +12,14 @@ from app.models.core import User
 
 
 INTENT_RULES: list[tuple[str, tuple[str, ...]]] = [
-    ("sales_decline", ("sales", "sale", "revenue", "बिक्री", "सेल्स", "कम हुई", "कम हो")),
-    ("inventory", ("inventory", "stock", "स्टॉक", "इन्वेंटरी", "reorder")),
-    ("pricing", ("price", "pricing", "buy box", "buybox", "कीमत", "प्राइस")),
-    ("advertising", ("ads", "advertising", "campaign", "acos", "roas", "विज्ञापन")),
-    ("listing", ("listing", "title", "bullet", "seo", "लिस्टिंग")),
+    ("sales_decline", ("sales", "sale", "revenue", "बिक्री", "सेल्स", "कम हुई", "कम हो", "declining")),
+    ("inventory", ("inventory", "stock", "स्टॉक", "इन्वेंटरी", "reorder", "low stock", "कम स्टॉक")),
+    ("pricing", ("price", "pricing", "buy box", "buybox", "कीमत", "प्राइस", "optimize prices", "reprice")),
+    ("advertising", ("ads", "advertising", "campaign", "acos", "roas", "विज्ञापन", "wasted spend")),
+    ("listing", ("listing", "title", "bullet", "seo", "लिस्टिंग", "create listing", "publish listing")),
     ("orders", ("order", "orders", "ऑर्डर")),
     ("returns", ("return", "refund", "रिटर्न", "रिफंड")),
-    ("finance", ("profit", "finance", "fee", "settlement", "expense", "मुनाफा", "लाभ")),
+    ("finance", ("profit", "finance", "fee", "settlement", "expense", "मुनाफा", "लाभ", "losing money")),
     ("customer_support", ("customer", "support", "message", "ग्राहक", "कस्टमर")),
 ]
 
@@ -36,17 +36,34 @@ AGENT_TASKS = {
     "general": [("analytics", "analyze_dashboard", False)],
 }
 
+WORKFLOW_RULES = (
+    (("fix", "low stock"), "inventory", (("inventory", "review_inventory", True),)),
+    (("optimize", "price"), "pricing", (("pricing", "review_pricing", True),)),
+    (("create", "publish"), "listing", (("listing", "review_listing", True),)),
+    (("losing", "money"), "finance", (("finance", "review_finance", False), ("analytics", "analyze_profitability", False))),
+    (("declining", "sales"), "sales_decline", (("analytics", "analyze_sales", False), ("inventory", "review_inventory", True), ("pricing", "review_pricing", True), ("ads", "review_ads", True))),
+)
+
 
 def _intent(query: str) -> str:
     normalized = query.casefold()
+    for terms, intent, _ in WORKFLOW_RULES:
+        if all(term.casefold() in normalized for term in terms):
+            return intent
     for intent, keywords in INTENT_RULES:
         if any(keyword.casefold() in normalized for keyword in keywords):
             return intent
     return "general"
 
 
-def _periods() -> tuple[datetime, datetime, datetime, datetime]:
+def _periods(query: str) -> tuple[datetime, datetime, datetime, datetime]:
     end = datetime.now(timezone.utc)
+    normalized = query.casefold()
+    if any(term in normalized for term in ("today", "आज")):
+        start = end.replace(hour=0, minute=0, second=0, microsecond=0)
+        previous_end = start - timedelta(microseconds=1)
+        previous_start = previous_end.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+        return start, end, previous_start, previous_end
     start = end - timedelta(days=29)
     previous_end = start - timedelta(microseconds=1)
     previous_start = previous_end - timedelta(days=29)
@@ -59,13 +76,14 @@ def _trend_delta(current: float, previous: float) -> float:
     return round((current - previous) / abs(previous) * 100, 2)
 
 
-def _build_insights(intent: str, current, previous) -> tuple[str, list[str], list[str]]:
+def _build_insights(intent: str, current, previous, query: str) -> tuple[str, list[str], list[str]]:
     k, p = current.kpis, previous.kpis
     revenue_delta = _trend_delta(k.revenue, p.revenue)
     order_delta = _trend_delta(k.orders, p.orders)
     profit_delta = _trend_delta(k.net_profit, p.net_profit)
+    period_label = "today" if any(term in query.casefold() for term in ("today", "आज")) else "the last 30 days"
     evidence = [
-        f"Revenue: ₹{k.revenue:,.2f} vs ₹{p.revenue:,.2f} in the previous period ({revenue_delta:+.2f}%).",
+        f"Revenue for {period_label}: ₹{k.revenue:,.2f} vs ₹{p.revenue:,.2f} in the comparison period ({revenue_delta:+.2f}%).",
         f"Orders: {k.orders} vs {p.orders} ({order_delta:+.2f}%).",
         f"Net profit: ₹{k.net_profit:,.2f} vs ₹{p.net_profit:,.2f} ({profit_delta:+.2f}%).",
     ]
@@ -78,7 +96,7 @@ def _build_insights(intent: str, current, previous) -> tuple[str, list[str], lis
         if k.buy_box_rate < 80:
             recommendations.append(f"Buy Box rate is {k.buy_box_rate:.2f}%; review competitive pricing and listing quality.")
         if not recommendations:
-            recommendations.append("Sales are not below the previous period; review product mix and marketplace-level trends for the next action.")
+            recommendations.append("Sales are not below the comparison period; review product mix and marketplace-level trends.")
     elif intent == "inventory":
         recommendations.append(f"Prioritize {k.low_stock_items} item(s) at or below reorder level.") if k.low_stock_items else recommendations.append("No low-stock items are currently flagged in the selected period.")
     elif intent == "pricing":
@@ -91,17 +109,25 @@ def _build_insights(intent: str, current, previous) -> tuple[str, list[str], lis
         recommendations.append("Reconcile settlements and validate fees, refunds, product costs, GST, and advertising expenses before treating profit as final.")
     else:
         recommendations.append("Use the dashboard evidence above to choose the highest-impact operational action; proposed agent actions are shown separately.")
-    answer = f"I analyzed the last 30 days against the previous 30 days. Revenue changed {revenue_delta:+.2f}% and orders changed {order_delta:+.2f}%."
+    answer = f"I analyzed {period_label} against the comparison period. Revenue changed {revenue_delta:+.2f}% and orders changed {order_delta:+.2f}%."
     return answer, evidence, recommendations
 
 
+def _workflow_actions(query: str, intent: str) -> list[tuple[str, str, bool]]:
+    normalized = query.casefold()
+    for terms, workflow_intent, actions in WORKFLOW_RULES:
+        if workflow_intent == intent and all(term.casefold() in normalized for term in terms):
+            return list(actions)
+    return list(AGENT_TASKS[intent])
+
+
 def run_command(db: Session, user: User, seller_account_id: int, payload) -> AICommand:
-    start, end, previous_start, previous_end = _periods()
+    start, end, previous_start, previous_end = _periods(payload.query)
     intent = _intent(payload.query)
     trace_id = str(uuid4())
     current = dashboard(start=start, end=end, marketplace_account_id=payload.marketplace_account_id, user=user, db=db)
     previous = dashboard(start=previous_start, end=previous_end, marketplace_account_id=payload.marketplace_account_id, user=user, db=db)
-    answer, evidence, recommendations = _build_insights(intent, current, previous)
+    answer, evidence, recommendations = _build_insights(intent, current, previous, payload.query)
 
     k = current.kpis
     agent_input = {
@@ -113,9 +139,11 @@ def run_command(db: Session, user: User, seller_account_id: int, payload) -> AIC
         "returns": k.returns,
         "available": k.inventory_units,
         "reorder_level": k.low_stock_items,
+        "trace_id": trace_id,
     }
     actions = []
-    for agent, task, requires_approval in AGENT_TASKS[intent]:
+    for index, (agent, task, requires_approval) in enumerate(_workflow_actions(payload.query, intent), start=1):
+        dependency = [index - 1] if index > 1 else []
         action = {
             "agent": agent,
             "task": task,
@@ -123,16 +151,28 @@ def run_command(db: Session, user: User, seller_account_id: int, payload) -> AIC
             "requires_approval": requires_approval,
             "status": "proposed",
             "output": {},
+            "step": index,
+            "depends_on": dependency,
+            "checkpoint": requires_approval,
         }
-        if payload.execute_actions and payload.approved:
+        dependencies_completed = not dependency or all(actions[d - 1]["status"] in {"completed", "success"} for d in dependency)
+        can_execute = payload.execute_actions and payload.approved and dependencies_completed
+        if can_execute:
             result = orchestrator.execute(seller_account_id, user.id, AgentTask(name=agent, task=task, input=agent_input, requires_approval=requires_approval))
             action["status"] = result.status
             action["output"] = result.output
         actions.append(action)
 
     needs_approval = any(action["requires_approval"] and action["status"] == "proposed" for action in actions)
-    status = AICommandStatus.needs_approval if payload.execute_actions and needs_approval else AICommandStatus.completed
-    response = {"answer": answer, "evidence": evidence, "recommendations": recommendations, "actions": actions}
+    blocked_by_dependency = any(action["depends_on"] and action["status"] == "proposed" for action in actions)
+    status = AICommandStatus.needs_approval if payload.execute_actions and (needs_approval or blocked_by_dependency) else AICommandStatus.completed
+    response = {
+        "answer": answer,
+        "evidence": evidence,
+        "recommendations": recommendations,
+        "actions": actions,
+        "workflow": {"multi_step": len(actions) > 1, "human_checkpoints": [a["step"] for a in actions if a["checkpoint"]]},
+    }
     record = AICommand(seller_account_id=seller_account_id, user_id=user.id, query=payload.query, intent=intent, status=status, response=response, trace_id=trace_id)
     db.add(record)
     db.commit()
