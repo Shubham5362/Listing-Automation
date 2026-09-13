@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     finance,
     inventory,
     marketplace_sync,
+    media,
     notifications,
     orders,
     pricing,
