@@ -9,6 +9,7 @@ from app.api.jobs import router as jobs_router
 from app.api.marketplaces import router as marketplaces_router
 from app.api.orders import router as orders_router
 from app.api.pricing import router as pricing_router
+from app.api.returns import router as returns_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth_router)
@@ -20,6 +21,7 @@ api_router.include_router(ai_listing_router)
 api_router.include_router(inventory_router)
 api_router.include_router(orders_router)
 api_router.include_router(pricing_router)
+api_router.include_router(returns_router)
 
 
 @api_router.get("/status", tags=["system"])
