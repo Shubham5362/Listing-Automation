@@ -3,6 +3,8 @@ from app.services.operations_autopilot import OperationsAutopilotService
 
 def test_autopilot_build_queue_is_approval_gated(monkeypatch):
     service = object.__new__(OperationsAutopilotService)
+    service.db = None
+    service.user = None
 
     class Planner:
         def __init__(self, *args): pass
