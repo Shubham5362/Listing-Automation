@@ -1,14 +1,14 @@
 """persist marketplace synchronization runs
 
-Revision ID: 0017_marketplace_sync_runs
-Revises: 0016_security_notifications
+Revision ID: 0012_marketplace_sync_runs
+Revises: 0011_ai_commands, 0011_marketplace_sync, 0011_notifications
 """
 
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0017_marketplace_sync_runs"
-down_revision = "0016_security_notifications"
+revision = "0012_marketplace_sync_runs"
+down_revision = ("0011_ai_commands", "0011_marketplace_sync", "0011_notifications")
 branch_labels = None
 depends_on = None
 
