@@ -106,9 +106,13 @@ def retry_automation_run(automation_id: int, run_id: int, seller_account_id: int
         raise HTTPException(status_code=404, detail="Automation run not found")
     if run.status != "failed":
         raise HTTPException(status_code=409, detail="Only failed automation runs can be retried")
+    if not rule.enabled:
+        raise HTTPException(status_code=409, detail="Automation is disabled")
+    rule.status = "active"
     context = dict(run.trigger_context or {})
     context["user_id"] = user.id
     context["idempotency_key"] = f"retry:{run.id}:{uuid4()}"
+    db.commit()
     return service.execute(db, rule, context, approved=True)
 
 
