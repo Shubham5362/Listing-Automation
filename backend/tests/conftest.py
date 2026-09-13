@@ -7,11 +7,14 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.db.base import Base
 from app.models import (  # noqa: F401
     advertising,
+    ai_command,
+    ai_listing,
     automation,
     catalog,
     core,
     finance,
     inventory,
+    marketplace_sync,
     notifications,
     orders,
     pricing,
