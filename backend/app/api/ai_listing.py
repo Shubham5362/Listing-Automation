@@ -1,0 +1,122 @@
+import json
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.api.dependencies import get_current_user
+from app.db.session import get_db
+from app.models.ai_listing import ListingDraft, ListingDraftStatus
+from app.models.catalog import Product
+from app.models.core import MarketplaceAccount, User
+from app.schemas.ai_listing import ListingDraftRead, ListingDraftStatusUpdate, ListingGenerateRequest
+from app.services.ai_listing import ListingGenerationService
+
+router = APIRouter(prefix="/ai/listings", tags=["ai-listings"])
+service = ListingGenerationService()
+
+
+def _serialize(draft: ListingDraft) -> ListingDraftRead:
+    return ListingDraftRead(
+        id=draft.id,
+        product_id=draft.product_id,
+        marketplace_account_id=draft.marketplace_account_id,
+        version=draft.version,
+        language=draft.language,
+        title=draft.title,
+        bullets=json.loads(draft.bullets_json),
+        description=draft.description,
+        keywords=json.loads(draft.keywords_json),
+        attributes=json.loads(draft.attributes_json),
+        quality_score=draft.quality_score,
+        validation_errors=json.loads(draft.validation_errors_json),
+        status=ListingDraftStatus(draft.status),
+    )
+
+
+@router.post("/generate", response_model=ListingDraftRead, status_code=201)
+def generate_listing(
+    payload: ListingGenerateRequest,
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ListingDraftRead:
+    product = db.get(Product, payload.product_id)
+    account = db.get(MarketplaceAccount, payload.marketplace_account_id)
+    if not product or not account:
+        raise HTTPException(status_code=404, detail="Product or marketplace account not found")
+    if product.seller_account_id != account.seller_account_id:
+        raise HTTPException(status_code=400, detail="Product and marketplace account belong to different sellers")
+
+    try:
+        generated = service.generate(product, account.marketplace, payload.language)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    latest = db.scalar(
+        select(func.max(ListingDraft.version)).where(
+            ListingDraft.product_id == product.id,
+            ListingDraft.marketplace_account_id == account.id,
+        )
+    )
+    draft = ListingDraft(
+        product_id=product.id,
+        marketplace_account_id=account.id,
+        version=(latest or 0) + 1,
+        language=payload.language,
+        title=generated.title,
+        bullets_json=json.dumps(generated.bullets, ensure_ascii=False),
+        description=generated.description,
+        keywords_json=json.dumps(generated.keywords, ensure_ascii=False),
+        attributes_json=json.dumps(generated.attributes, ensure_ascii=False),
+        quality_score=generated.quality_score,
+        validation_errors_json=json.dumps(generated.validation_errors, ensure_ascii=False),
+        status=ListingDraftStatus.DRAFT.value,
+    )
+    db.add(draft)
+    db.commit()
+    db.refresh(draft)
+    return _serialize(draft)
+
+
+@router.get("", response_model=list[ListingDraftRead])
+def list_drafts(
+    status: ListingDraftStatus | None = None,
+    product_id: int | None = None,
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ListingDraftRead]:
+    stmt = select(ListingDraft).order_by(ListingDraft.created_at.desc())
+    if status:
+        stmt = stmt.where(ListingDraft.status == status.value)
+    if product_id:
+        stmt = stmt.where(ListingDraft.product_id == product_id)
+    return [_serialize(d) for d in db.scalars(stmt).all()]
+
+
+@router.patch("/{draft_id}/status", response_model=ListingDraftRead)
+def update_draft_status(
+    draft_id: int,
+    payload: ListingDraftStatusUpdate,
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ListingDraftRead:
+    draft = db.get(ListingDraft, draft_id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Listing draft not found")
+    current = ListingDraftStatus(draft.status)
+    target = payload.status
+    allowed = {
+        ListingDraftStatus.DRAFT: {ListingDraftStatus.REVIEW},
+        ListingDraftStatus.REVIEW: {ListingDraftStatus.APPROVED, ListingDraftStatus.REJECTED, ListingDraftStatus.DRAFT},
+        ListingDraftStatus.APPROVED: {ListingDraftStatus.PUBLISHED, ListingDraftStatus.REVIEW},
+        ListingDraftStatus.REJECTED: {ListingDraftStatus.DRAFT},
+        ListingDraftStatus.PUBLISHED: set(),
+    }
+    if target != current and target not in allowed[current]:
+        raise HTTPException(status_code=409, detail=f"Invalid status transition: {current.value} -> {target.value}")
+    if target == current:
+        return _serialize(draft)
+    draft.status = target.value
+    db.commit()
+    db.refresh(draft)
+    return _serialize(draft)
