@@ -41,3 +41,4 @@ class AutomationRunRead(BaseModel):
 
 class AutomationExecute(BaseModel):
     trigger_context: dict[str, Any] = Field(default_factory=dict)
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
