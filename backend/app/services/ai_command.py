@@ -36,9 +36,6 @@ AGENT_TASKS = {
     "general": [("analytics", "analyze_dashboard", False)],
 }
 
-
-# Explicit business workflows. Steps are intentionally advisory/approval-gated so
-# the command center never performs a consequential marketplace mutation silently.
 WORKFLOW_RULES = (
     (("fix", "low stock"), "inventory", (("inventory", "review_inventory", True),)),
     (("optimize", "price"), "pricing", (("pricing", "review_pricing", True),)),
@@ -158,9 +155,8 @@ def run_command(db: Session, user: User, seller_account_id: int, payload) -> AIC
             "depends_on": dependency,
             "checkpoint": requires_approval,
         }
-        # A checkpoint blocks the rest of a chain unless the caller explicitly
-        # supplies approval. Read-only analysis steps can still run immediately.
-        can_execute = payload.execute_actions and payload.approved and not (dependency and any(actions[d - 1]["status"] not in {"completed", "success"} for d in dependency))
+        dependencies_completed = not dependency or all(actions[d - 1]["status"] in {"completed", "success"} for d in dependency)
+        can_execute = payload.execute_actions and payload.approved and dependencies_completed
         if can_execute:
             result = orchestrator.execute(seller_account_id, user.id, AgentTask(name=agent, task=task, input=agent_input, requires_approval=requires_approval))
             action["status"] = result.status
@@ -168,8 +164,15 @@ def run_command(db: Session, user: User, seller_account_id: int, payload) -> AIC
         actions.append(action)
 
     needs_approval = any(action["requires_approval"] and action["status"] == "proposed" for action in actions)
-    status = AICommandStatus.needs_approval if payload.execute_actions and needs_approval else AICommandStatus.completed
-    response = {"answer": answer, "evidence": evidence, "recommendations": recommendations, "actions": actions, "workflow": {"multi_step": len(actions) > 1, "human_checkpoints": [a["step"] for a in actions if a["checkpoint"]]}}
+    blocked_by_dependency = any(action["depends_on"] and action["status"] == "proposed" for action in actions)
+    status = AICommandStatus.needs_approval if payload.execute_actions and (needs_approval or blocked_by_dependency) else AICommandStatus.completed
+    response = {
+        "answer": answer,
+        "evidence": evidence,
+        "recommendations": recommendations,
+        "actions": actions,
+        "workflow": {"multi_step": len(actions) > 1, "human_checkpoints": [a["step"] for a in actions if a["checkpoint"]]},
+    }
     record = AICommand(seller_account_id=seller_account_id, user_id=user.id, query=payload.query, intent=intent, status=status, response=response, trace_id=trace_id)
     db.add(record)
     db.commit()
