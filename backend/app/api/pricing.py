@@ -8,10 +8,11 @@ from app.models.catalog import Listing, Product
 from app.models.core import MarketplaceAccount, SellerAccount, User
 from app.models.pricing import BuyBoxSnapshot, CompetitorPrice, PriceHistory, PricingRule
 from app.schemas.pricing import (
-    BuyBoxRead, BuyBoxRequest, CompetitorPriceRead, CompetitorPriceRequest,
-    PriceHistoryRead, PriceRecommendation, PriceUpdateRequest, PricingRuleRead,
-    PricingRuleRequest,
+    AdvancedPriceRecommendation, BuyBoxRead, BuyBoxRequest, CompetitorPriceRead,
+    CompetitorPriceRequest, PriceHistoryRead, PriceRecommendation, PriceUpdateRequest,
+    PricingRuleRead, PricingRuleRequest,
 )
+from app.services.advanced_pricing import AdvancedPricingService
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 
@@ -63,11 +64,7 @@ def create_rule(payload: PricingRuleRequest, user: User = Depends(get_current_us
     listing = _owned_listing(db, user, payload.listing_id) if payload.listing_id else None
     data = payload.model_dump()
     data.pop("listing_id", None)
-    rule = PricingRule(
-        seller_account_id=(db.get(MarketplaceAccount, listing.marketplace_account_id).seller_account_id if listing else sellers[0].id),
-        listing_id=listing.id if listing else None,
-        **data,
-    )
+    rule = PricingRule(seller_account_id=(db.get(MarketplaceAccount, listing.marketplace_account_id).seller_account_id if listing else sellers[0].id), listing_id=listing.id if listing else None, **data)
     db.add(rule)
     db.commit()
     db.refresh(rule)
@@ -83,13 +80,8 @@ def list_rules(user: User = Depends(get_current_user), db: Session = Depends(get
 @router.post("/competitors", response_model=CompetitorPriceRead, status_code=201)
 def add_competitor(payload: CompetitorPriceRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> CompetitorPrice:
     listing = _owned_listing(db, user, payload.listing_id)
-    data = payload.model_dump()
-    data.pop("listing_id", None)
-    row = CompetitorPrice(listing_id=listing.id, **data)
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
+    data = payload.model_dump(); data.pop("listing_id", None)
+    row = CompetitorPrice(listing_id=listing.id, **data); db.add(row); db.commit(); db.refresh(row); return row
 
 
 @router.get("/competitors/{listing_id}", response_model=list[CompetitorPriceRead])
@@ -101,13 +93,8 @@ def competitors(listing_id: int, user: User = Depends(get_current_user), db: Ses
 @router.post("/buy-box", response_model=BuyBoxRead, status_code=201)
 def record_buy_box(payload: BuyBoxRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> BuyBoxSnapshot:
     listing = _owned_listing(db, user, payload.listing_id)
-    data = payload.model_dump()
-    data.pop("listing_id", None)
-    row = BuyBoxSnapshot(listing_id=listing.id, **data)
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
+    data = payload.model_dump(); data.pop("listing_id", None)
+    row = BuyBoxSnapshot(listing_id=listing.id, **data); db.add(row); db.commit(); db.refresh(row); return row
 
 
 @router.get("/buy-box/{listing_id}", response_model=list[BuyBoxRead])
@@ -126,3 +113,16 @@ def recommendation(listing_id: int, user: User = Depends(get_current_user), db: 
         return PriceRecommendation(listing_id=listing.id, current_price=current, competitor_price=None, recommended_price=current, reason="No competitor price data available")
     recommended = max(0.01, competitor - 1) if current is None or current > competitor else current
     return PriceRecommendation(listing_id=listing.id, current_price=current, competitor_price=competitor, recommended_price=recommended, reason="Target competitor price while preserving current price when already competitive")
+
+
+@router.get("/advanced-recommendation/{listing_id}", response_model=AdvancedPriceRecommendation)
+def advanced_recommendation(listing_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> AdvancedPriceRecommendation:
+    listing = _owned_listing(db, user, listing_id)
+    product = db.get(Product, listing.product_id)
+    if listing.price is None:
+        raise HTTPException(status_code=400, detail="Current listing price required")
+    rule = db.scalar(select(PricingRule).where(PricingRule.listing_id == listing.id, PricingRule.enabled.is_(True)))
+    competitor = db.scalar(select(CompetitorPrice).where(CompetitorPrice.listing_id == listing.id).order_by(CompetitorPrice.captured_at.desc()))
+    buy_box = db.scalar(select(BuyBoxSnapshot).where(BuyBoxSnapshot.listing_id == listing.id).order_by(BuyBoxSnapshot.captured_at.desc()))
+    result = AdvancedPricingService.recommend(float(listing.price), float(product.cost_price) if product and product.cost_price is not None else None, float(rule.min_price) if rule and rule.min_price is not None else None, float(rule.max_price) if rule and rule.max_price is not None else None, float(competitor.price) if competitor else None, float(buy_box.winning_price) if buy_box and buy_box.winning_price is not None else None, float(rule.target_margin_percent) if rule and rule.target_margin_percent is not None else None)
+    return AdvancedPriceRecommendation(listing_id=listing.id, current_price=float(listing.price), **result.__dict__)
