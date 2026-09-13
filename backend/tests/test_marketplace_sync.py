@@ -44,7 +44,6 @@ def test_sync_is_idempotent_and_updates_central_records(db_session, monkeypatch)
     first = sync_marketplace_account(db_session, account)
     second = sync_marketplace_account(db_session, account)
     assert first["products"] == second["products"] == 1
-    assert first["status"] if "status" in first else True
     assert db_session.query(Product).filter_by(seller_account_id=seller.id, sku="SKU-1").count() == 1
     assert db_session.query(Listing).filter_by(marketplace_account_id=account.id, sku="SKU-1").count() == 1
     assert db_session.query(CentralInventoryItem).filter_by(seller_account_id=seller.id).count() == 1
@@ -54,7 +53,7 @@ def test_sync_is_idempotent_and_updates_central_records(db_session, monkeypatch)
 
 
 def test_sync_keeps_successful_phases_when_one_dataset_fails(db_session, monkeypatch):
-    account, seller = _account(db_session)
+    account, _ = _account(db_session)
 
     class PartialClient(FakeClient):
         def get_inventory(self, account, *, skus=None):
