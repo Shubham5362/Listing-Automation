@@ -5,6 +5,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.orders import Order, OrderItem
 
 
 class ReturnStatus(StrEnum):
@@ -58,8 +59,9 @@ class ReturnRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    order: Mapped["Order"] = relationship(foreign_keys=[order_id])
-    order_item: Mapped["OrderItem | None"] = relationship(foreign_keys=[order_item_id])
+    order: Mapped[Order] = relationship(foreign_keys=[order_id])
+    order_item: Mapped[OrderItem | None] = relationship(foreign_keys=[order_item_id])
+    replacement_order: Mapped[Order | None] = relationship(foreign_keys=[replacement_order_id])
 
 
 class CustomerIssue(Base):
