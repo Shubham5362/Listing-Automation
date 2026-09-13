@@ -14,12 +14,14 @@ class NotificationCategory(str, Enum):
     listing = "listing"
     finance = "finance"
     ai = "ai"
+    report = "report"
 
 
 class NotificationChannel(str, Enum):
     in_app = "in_app"
     email = "email"
     whatsapp = "whatsapp"
+    telegram = "telegram"
 
 
 class NotificationDeliveryStatus(str, Enum):
@@ -69,6 +71,10 @@ class NotificationPreference(Base):
     in_app_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     email_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    telegram_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    daily_summary_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    weekly_report_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    summary_channels: Mapped[list] = mapped_column(JSON, nullable=False, default=lambda: ["in_app"])
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
