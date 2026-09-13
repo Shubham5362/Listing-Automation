@@ -11,6 +11,7 @@ from app.models import (  # noqa: F401
     ai_listing,
     automation,
     catalog,
+    catalog_intelligence,
     core,
     finance,
     inventory,
