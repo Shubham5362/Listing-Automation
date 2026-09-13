@@ -30,6 +30,6 @@ def execute_agent(payload: AgentTaskCreate, seller_account_id: int, db: Session 
     result = orchestrator.execute(
         seller_account_id,
         user.id,
-        AgentTask(name=payload.task, input={"agent": payload.agent, **payload.input}, requires_approval=payload.requires_approval),
+        AgentTask(name=payload.agent, task=payload.task, input=payload.input, requires_approval=payload.requires_approval),
     )
     return AgentResultRead(**result.__dict__)
