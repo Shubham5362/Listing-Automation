@@ -26,12 +26,7 @@ def _seller_ids(db: Session, user: User) -> list[int]:
 
 
 def _campaign(db: Session, user: User, campaign_id: int) -> AdvertisingCampaign:
-    campaign = db.scalar(
-        select(AdvertisingCampaign).where(
-            AdvertisingCampaign.id == campaign_id,
-            AdvertisingCampaign.seller_account_id.in_(_seller_ids(db, user)),
-        )
-    )
+    campaign = db.scalar(select(AdvertisingCampaign).where(AdvertisingCampaign.id == campaign_id, AdvertisingCampaign.seller_account_id.in_(_seller_ids(db, user))))
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
     return campaign
@@ -44,30 +39,12 @@ def _metrics(campaign_id: int, rows: list[AdvertisingPerformance]) -> Advertisin
     sales = float(sum(float(r.sales) for r in rows))
     conversions = sum(r.conversions for r in rows)
     orders = sum(r.orders for r in rows)
-    return AdvertisingMetricsRead(
-        campaign_id=campaign_id,
-        impressions=impressions,
-        clicks=clicks,
-        spend=spend,
-        sales=sales,
-        conversions=conversions,
-        orders=orders,
-        ctr=round(clicks / impressions * 100, 4) if impressions else 0,
-        cpc=round(spend / clicks, 4) if clicks else 0,
-        acos=round(spend / sales * 100, 4) if sales else 0,
-        roas=round(sales / spend, 4) if spend else 0,
-        conversion_rate=round(conversions / clicks * 100, 4) if clicks else 0,
-    )
+    return AdvertisingMetricsRead(campaign_id=campaign_id, impressions=impressions, clicks=clicks, spend=spend, sales=sales, conversions=conversions, orders=orders, ctr=round(clicks / impressions * 100, 4) if impressions else 0, cpc=round(spend / clicks, 4) if clicks else 0, acos=round(spend / sales * 100, 4) if sales else 0, roas=round(sales / spend, 4) if spend else 0, conversion_rate=round(conversions / clicks * 100, 4) if clicks else 0)
 
 
 @router.post("/campaigns", response_model=AdvertisingCampaignRead, status_code=status.HTTP_201_CREATED)
 def create_campaign(payload: AdvertisingCampaignCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> AdvertisingCampaign:
-    account = db.scalar(
-        select(MarketplaceAccount).where(
-            MarketplaceAccount.id == payload.marketplace_account_id,
-            MarketplaceAccount.seller_account_id.in_(_seller_ids(db, current_user)),
-        )
-    )
+    account = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == payload.marketplace_account_id, MarketplaceAccount.seller_account_id.in_(_seller_ids(db, current_user))))
     if not account:
         raise HTTPException(status_code=404, detail="Marketplace account not found")
     existing = db.scalar(select(AdvertisingCampaign).where(AdvertisingCampaign.marketplace_account_id == account.id, AdvertisingCampaign.external_campaign_id == payload.external_campaign_id))
@@ -127,7 +104,7 @@ def all_metrics(date_from: datetime | None = None, date_to: datetime | None = No
     return result
 
 
-@router.post("/campaigns/{campaign_id}/analyze", response_model=AdvertisingInsightRead)
+@router.post("/campaigns/{campaign_id}/analyze", response_model=AdvertisingInsightRead, status_code=status.HTTP_201_CREATED)
 def analyze_campaign(campaign_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> AdvertisingInsight:
     campaign = _campaign(db, current_user, campaign_id)
     rows = list(db.scalars(select(AdvertisingPerformance).where(AdvertisingPerformance.campaign_id == campaign_id)))
