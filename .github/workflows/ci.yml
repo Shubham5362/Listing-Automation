@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ci-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  policy-and-ci:
+    name: Policy & CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for forbidden secret files
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden='(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|id_rsa|id_ed25519)$'
+          if git ls-files | grep -E "$forbidden"; then
+            echo "Forbidden credential/secret file detected in the repository."
+            exit 1
+          fi
+
+      - name: Detect project type
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "node=$([[ -f package.json ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "python=$([[ -f pyproject.toml || -f requirements.txt || -f setup.py || -f backend/pyproject.toml || -f backend/requirements.txt ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "go=$([[ -f go.mod ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "rust=$([[ -f Cargo.toml ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.detect.outputs.node == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Node dependencies
+        if: steps.detect.outputs.node == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+
+      - name: Node validation
+        if: steps.detect.outputs.node == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node -e "const p=require('./package.json'); process.exit(p.scripts?.lint ? 0 : 1)"; then npm run lint; fi
+          if node -e "const p=require('./package.json'); process.exit(p.scripts?.test ? 0 : 1)"; then npm run test --if-present; fi
+          if node -e "const p=require('./package.json'); process.exit(p.scripts?.build ? 0 : 1)"; then npm run build; fi
+
+      - name: Setup Python
+        if: steps.detect.outputs.python == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Python validation
+        if: steps.detect.outputs.python == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f backend/requirements.txt ]]; then python -m pip install -r backend/requirements.txt; fi
+          if [[ -f backend/pyproject.toml ]]; then python -m pip install ./backend; fi
+          python -m compileall -q backend
+          if [[ -d backend/tests ]]; then python -m pip install pytest && (cd backend && python -m pytest -q); fi
+
+      - name: Setup Go
+        if: steps.detect.outputs.go == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Go validation
+        if: steps.detect.outputs.go == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test ./...
+          go vet ./...
+
+      - name: Setup Rust
+        if: steps.detect.outputs.rust == 'true'
+        uses: actions/setup-rust@v1
+        with:
+          toolchain: stable
+
+      - name: Rust validation
+        if: steps.detect.outputs.rust == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --all-targets --all-features
+
+      - name: Final CI gate
+        shell: bash
+        run: echo "All applicable policy and CI checks completed successfully."
