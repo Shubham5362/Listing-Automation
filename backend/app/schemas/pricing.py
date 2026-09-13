@@ -73,3 +73,17 @@ class PriceRecommendation(BaseModel):
     competitor_price: float | None
     recommended_price: float | None
     reason: str
+
+
+class AdvancedPriceRecommendation(BaseModel):
+    listing_id: int
+    current_price: float
+    recommended_price: float
+    floor_price: float | None
+    ceiling_price: float | None
+    margin_percent: float | None
+    competitor_price: float | None
+    buy_box_price: float | None
+    confidence: float
+    action: str
+    reason: str
