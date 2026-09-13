@@ -21,13 +21,13 @@ services:
     restart: unless-stopped
     environment:
       ENVIRONMENT: production
-      DATABASE_URL: postgresql+psycopg://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@db:5432/$${POSTGRES_DB}
-      SECRET_KEY: $${SECRET_KEY:?SECRET_KEY is required}
-      CREDENTIALS_ENCRYPTION_KEY: $${CREDENTIALS_ENCRYPTION_KEY:?CREDENTIALS_ENCRYPTION_KEY is required}
-      ALLOWED_ORIGINS: $${ALLOWED_ORIGINS:-http://localhost}
-      ALLOWED_HOSTS: $${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      RATE_LIMIT_PER_MINUTE: $${RATE_LIMIT_PER_MINUTE:-120}
-      SESSION_TTL_HOURS: $${SESSION_TTL_HOURS:-24}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-seller_hub}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:-seller_hub}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      CREDENTIALS_ENCRYPTION_KEY: ${CREDENTIALS_ENCRYPTION_KEY:?CREDENTIALS_ENCRYPTION_KEY is required}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-120}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-24}
     depends_on:
       db:
         condition: service_healthy
