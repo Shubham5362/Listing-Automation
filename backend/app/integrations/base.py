@@ -21,6 +21,10 @@ class MarketplaceRateLimitError(MarketplaceIntegrationError):
     """Raised when a marketplace asks the client to slow down."""
 
 
+class MarketplaceOperationUnsupported(MarketplaceIntegrationError):
+    """Raised when a marketplace does not expose the requested operation."""
+
+
 @dataclass(frozen=True)
 class MarketplaceAccountContext:
     account_id: int
@@ -93,6 +97,10 @@ class MarketplaceClient(ABC):
 
     @abstractmethod
     def update_price(self, account: MarketplaceAccountContext, *, sku: str, price: Decimal) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def publish_listing(self, account: MarketplaceAccountContext, *, sku: str, product_type: str, attributes: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
