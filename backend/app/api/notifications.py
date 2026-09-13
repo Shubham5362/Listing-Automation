@@ -5,12 +5,14 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.core import SellerAccount, User
-from app.models.notifications import Notification, NotificationCategory, NotificationDelivery, NotificationPreference
-from app.schemas.notifications import NotificationCreate, NotificationDeliveryRead, NotificationPreferenceRead, NotificationPreferenceUpsert, NotificationRead
+from app.models.notifications import Notification, NotificationCategory, NotificationChannel, NotificationDelivery, NotificationPreference
+from app.schemas.notifications import NotificationCreate, NotificationDeliveryRead, NotificationPreferenceRead, NotificationPreferenceUpsert, NotificationRead, NotificationSummaryRead, ReportDispatchRequest
+from app.services.notification_reports import NotificationReportService
 from app.services.notifications import NotificationService
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 service = NotificationService()
+report_service = NotificationReportService()
 
 
 def _seller(db: Session, user: User, seller_account_id: int) -> SellerAccount:
@@ -83,14 +85,39 @@ def upsert_preference(payload: NotificationPreferenceUpsert, seller_account_id: 
     _seller(db, user, seller_account_id)
     if payload.category not in service.VALID_CATEGORIES:
         raise HTTPException(status_code=422, detail="Unsupported notification category")
+    invalid = set(payload.summary_channels) - service.VALID_CHANNELS
+    if invalid:
+        raise HTTPException(status_code=422, detail=f"Unsupported summary channel: {sorted(invalid)[0]}")
     preference = db.execute(select(NotificationPreference).where(NotificationPreference.seller_account_id == seller_account_id, NotificationPreference.user_id == user.id, NotificationPreference.category == payload.category)).scalar_one_or_none()
+    values = payload.model_dump()
     if preference is None:
-        preference = NotificationPreference(seller_account_id=seller_account_id, user_id=user.id, **payload.model_dump())
+        preference = NotificationPreference(seller_account_id=seller_account_id, user_id=user.id, **values)
         db.add(preference)
     else:
-        preference.in_app_enabled = payload.in_app_enabled
-        preference.email_enabled = payload.email_enabled
-        preference.whatsapp_enabled = payload.whatsapp_enabled
+        for key, value in values.items():
+            setattr(preference, key, value)
     db.commit()
     db.refresh(preference)
     return preference
+
+
+@router.get("/reports/{period}", response_model=NotificationSummaryRead)
+def notification_report(period: str, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _seller(db, user, seller_account_id)
+    try:
+        return report_service.build(db, user.id, period)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/reports/{period}/dispatch", response_model=NotificationRead, status_code=201)
+def dispatch_report(period: str, payload: ReportDispatchRequest, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _seller(db, user, seller_account_id)
+    try:
+        report = report_service.build(db, user.id, period)
+        invalid = set(payload.channels) - service.VALID_CHANNELS
+        if invalid:
+            raise ValueError(f"Unsupported report channel: {sorted(invalid)[0]}")
+        return service.create_and_dispatch(db, seller_account_id, user.id, category=NotificationCategory.report.value, severity="info", title=f"{period.title()} Seller Report", message=report["summary"], data=report, channels=payload.channels)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
