@@ -30,6 +30,20 @@ class AuthResponse(BaseModel):
     email: EmailStr
 
 
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> User:
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    user = get_user_by_token(db, credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User account is inactive")
+    return user
+
+
 @router.post("/register", response_model=AuthResponse, status_code=201)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> AuthResponse:
     if len(payload.password) < 8:
