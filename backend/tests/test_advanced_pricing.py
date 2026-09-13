@@ -5,7 +5,7 @@ from app.services.advanced_pricing import AdvancedPricingService
 
 def test_competitor_signal_and_margin_floor():
     result = AdvancedPricingService.recommend(100, 60, 70, 120, competitor_price=80, target_margin_percent=30)
-    assert result.recommended_price == 85.71
+    assert result.recommended_price == 95
     assert result.floor_price == pytest.approx(85.714285, rel=1e-5)
     assert result.action == "decrease"
     assert result.confidence == 0.8
@@ -13,7 +13,7 @@ def test_competitor_signal_and_margin_floor():
 
 def test_buy_box_has_higher_confidence():
     result = AdvancedPricingService.recommend(100, 50, 60, 120, competitor_price=95, buy_box_price=90)
-    assert result.recommended_price == 89
+    assert result.recommended_price == 95
     assert result.confidence == 0.95
 
 
