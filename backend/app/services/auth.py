@@ -8,12 +8,24 @@ from sqlalchemy.orm import Session
 from app.models.core import User, UserSession
 
 
+_PASSWORD_ITERATIONS = 600_000
+
+
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, _PASSWORD_ITERATIONS)
+    return f"pbkdf2_sha256${_PASSWORD_ITERATIONS}${salt.hex()}${digest.hex()}"
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return secrets.compare_digest(hash_password(password), password_hash)
+    try:
+        algorithm, iterations, salt_hex, digest_hex = password_hash.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt_hex), int(iterations))
+        return secrets.compare_digest(digest.hex(), digest_hex)
+    except (ValueError, TypeError):
+        return False
 
 
 def create_session(db: Session, user: User, ttl_hours: int = 24) -> str:
