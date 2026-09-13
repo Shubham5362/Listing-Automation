@@ -8,9 +8,23 @@ from __future__ import annotations
 import os
 import sys
 
+
+def _configured(*names: str) -> bool:
+    return any(os.getenv(name) for name in names)
+
+
+def _first_value(*names: str) -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return ""
+
+
 REQUIRED = {
-    "DATABASE_URL": "PostgreSQL connection string",
-    "SELLER_HUB_SECRET_KEY": "application encryption/session secret",
+    "DATABASE_URL": ("DATABASE_URL",),
+    "SECRET_KEY": ("SELLER_HUB_SECRET_KEY", "SECRET_KEY"),
+    "CREDENTIALS_ENCRYPTION_KEY": ("CREDENTIALS_ENCRYPTION_KEY",),
 }
 
 PROVIDER_PAIRS = {
@@ -21,15 +35,19 @@ PROVIDER_PAIRS = {
 
 def main() -> int:
     failures: list[str] = []
-    for name, description in REQUIRED.items():
-        if not os.getenv(name):
-            failures.append(f"missing {name} ({description})")
+    for label, names in REQUIRED.items():
+        if not _configured(*names):
+            failures.append(f"missing {label}")
 
     if os.getenv("ENVIRONMENT", "production").lower() == "production":
         if os.getenv("DEBUG", "false").lower() in {"1", "true", "yes", "on"}:
             failures.append("DEBUG must be disabled in production")
-        if os.getenv("SELLER_HUB_SECRET_KEY", "").lower() in {"change-me", "changeme", "secret"}:
-            failures.append("SELLER_HUB_SECRET_KEY uses a known placeholder")
+        if _first_value("SELLER_HUB_SECRET_KEY", "SECRET_KEY").lower() in {
+            "change-me",
+            "changeme",
+            "secret",
+        }:
+            failures.append("application secret uses a known placeholder")
 
     for provider, (client_id, client_secret) in PROVIDER_PAIRS.items():
         configured = bool(os.getenv(client_id) or os.getenv(client_secret))
