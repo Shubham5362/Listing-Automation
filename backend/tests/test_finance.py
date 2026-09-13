@@ -12,7 +12,7 @@ def test_finance_entry_and_settlement_reconciliation() -> None:
         password = "StrongPassword123!"
         register = client.post("/api/v1/auth/register", json={"email": email, "password": password, "full_name": "Finance User"})
         assert register.status_code == 201
-        token = client.post("/api/v1/auth/login", json={"email": email, "password": password}).json()["access_token"]
+        token = client.post("/api/v1/auth/login", json={"email": email, "password": password}).json()["token"]
         headers = {"Authorization": f"Bearer {token}"}
         seller = client.post("/api/v1/accounts/sellers", headers=headers, json={"name": "Finance Seller"})
         assert seller.status_code == 201
@@ -40,7 +40,7 @@ def test_finance_isolation() -> None:
         def create(email: str, seller_name: str) -> tuple[dict[str, str], int]:
             password = "StrongPassword123!"
             assert client.post("/api/v1/auth/register", json={"email": email, "password": password}).status_code == 201
-            token = client.post("/api/v1/auth/login", json={"email": email, "password": password}).json()["access_token"]
+            token = client.post("/api/v1/auth/login", json={"email": email, "password": password}).json()["token"]
             headers = {"Authorization": f"Bearer {token}"}
             seller = client.post("/api/v1/accounts/sellers", headers=headers, json={"name": seller_name}).json()
             account = client.post("/api/v1/accounts/marketplaces", headers=headers, json={"seller_account_id": seller["id"], "marketplace": "flipkart", "display_name": "Flipkart"}).json()
