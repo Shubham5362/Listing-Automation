@@ -65,6 +65,8 @@ jobs:
         with: {python-version: '3.12'}
       - name: Python validation
         if: steps.detect.outputs.python == 'true'
+        env:
+          RATE_LIMIT_PER_MINUTE: 1000
         shell: bash
         run: |
           set -euo pipefail

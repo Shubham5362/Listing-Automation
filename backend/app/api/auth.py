@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.core import User
 from app.services.audit import record_audit
-from app.services.auth import create_session, get_user_by_token, hash_password, verify_password
+from app.services.auth import create_session, get_user_by_token, hash_password, revoke_session, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 bearer = HTTPBearer(auto_error=False)
@@ -68,6 +68,22 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthResponse:
         raise HTTPException(status_code=403, detail="User account is inactive")
     record_audit(db, action="user.login", resource_type="user", resource_id=str(user.id), user_id=user.id)
     return AuthResponse(token=create_session(db, user), user_id=user.id, email=user.email)
+
+
+@router.post("/logout")
+def logout(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    user = get_user_by_token(db, credentials.credentials)
+    if user:
+        revoke_session(db, credentials.credentials)
+        record_audit(db, action="user.logout", resource_type="user", resource_id=str(user.id), user_id=user.id)
+    else:
+        revoke_session(db, credentials.credentials)
+    return {"status": "logged_out"}
 
 
 @router.get("/me")
