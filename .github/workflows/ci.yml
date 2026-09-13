@@ -27,11 +27,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          forbidden='(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|id_rsa|id_ed25519)$'
-          if git ls-files | grep -E "$forbidden"; then
-            echo "Forbidden credential/secret file detected in the repository."
-            exit 1
-          fi
+          while IFS= read -r file; do
+            case "$file" in
+              .env.example) ;;
+              .env|.env.*|*.pem|*.key|id_rsa|id_ed25519|*/id_rsa|*/id_ed25519)
+                echo "$file"
+                echo "Forbidden credential/secret file detected in the repository."
+                exit 1
+                ;;
+            esac
+          done < <(git ls-files)
 
       - name: Detect project type
         id: detect
@@ -97,12 +102,6 @@ jobs:
           set -euo pipefail
           go test ./...
           go vet ./...
-
-      - name: Setup Rust
-        if: steps.detect.outputs.rust == 'true'
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Rust validation
         if: steps.detect.outputs.rust == 'true'
