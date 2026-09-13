@@ -51,9 +51,11 @@ class InMemoryMarketplaceClient(MarketplaceClient):
             raise ValueError("price must be greater than zero")
         self.prices[sku] = price
 
+    def publish_listing(self, account: MarketplaceAccountContext, *, sku: str, product_type: str, attributes: dict[str, Any]) -> dict[str, Any]:
+        if not sku.strip() or not product_type.strip():
+            raise ValueError("sku and product_type are required")
+        self.products[sku] = MarketplaceProduct(sku=sku, title=str(attributes.get("title", sku)), attributes=attributes)
+        return {"status": "ACCEPTED", "sku": sku, "product_type": product_type}
+
     def fetch_report(self, account: MarketplaceAccountContext, report_type: str) -> dict[str, Any]:
-        return {
-            "marketplace": self.marketplace.value,
-            "report_type": report_type,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-        }
+        return {"marketplace": self.marketplace.value, "report_type": report_type, "generated_at": datetime.now(timezone.utc).isoformat()}
