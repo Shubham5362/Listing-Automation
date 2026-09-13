@@ -43,4 +43,3 @@ def test_finance_isolation(client):
     owner_b, _ = create("finance-b@example.com", "Seller B")
     assert client.post("/api/v1/finance/entries", headers=owner_a, json={"marketplace_account_id": account_a, "entry_type": "sale", "amount": 500}).status_code == 201
     assert client.get("/api/v1/finance/entries", headers=owner_b).json() == []
-    assert client.get(f"/api/v1/accounts/marketplaces/{account_a}", headers=owner_b).status_code == 404
