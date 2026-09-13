@@ -3,6 +3,8 @@ from app.services.ai_seller_agent import AISellerAgentService
 
 def test_ai_seller_agent_requires_human_checkpoint(monkeypatch):
     service = object.__new__(AISellerAgentService)
+    service.db = None
+    service.user = None
 
     class Plan:
         def __init__(self, *args): pass
@@ -27,6 +29,8 @@ def test_ai_seller_agent_requires_human_checkpoint(monkeypatch):
 
 def test_ai_seller_agent_passes_filters(monkeypatch):
     service = object.__new__(AISellerAgentService)
+    service.db = None
+    service.user = None
     seen = {}
 
     class Plan:
