@@ -3,9 +3,10 @@ from app.models.catalog import Listing, ListingStatus, Product
 from app.models.core import AuditLog, Job, Marketplace, MarketplaceAccount, SellerAccount, User, UserSession
 from app.models.inventory import InventoryItem, InventoryMovement, InventoryMovementType
 from app.models.orders import Order, OrderItem, OrderStatus, PaymentStatus
+from app.models.pricing import BuyBoxSnapshot, CompetitorPrice, PriceHistory, PricingRule, PricingSource
 
 __all__ = [
-    "AuditLog", "InventoryItem", "InventoryMovement", "InventoryMovementType", "Job", "Listing", "ListingDraft",
-    "ListingDraftStatus", "ListingStatus", "Marketplace", "MarketplaceAccount", "Order", "OrderItem", "OrderStatus",
-    "PaymentStatus", "Product", "SellerAccount", "User", "UserSession",
+    "AuditLog", "BuyBoxSnapshot", "CompetitorPrice", "InventoryItem", "InventoryMovement", "InventoryMovementType", "Job",
+    "Listing", "ListingDraft", "ListingDraftStatus", "ListingStatus", "Marketplace", "MarketplaceAccount", "Order", "OrderItem",
+    "OrderStatus", "PaymentStatus", "PriceHistory", "PricingRule", "PricingSource", "Product", "SellerAccount", "User", "UserSession",
 ]
