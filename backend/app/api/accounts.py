@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
+from app.core.security import CredentialEncryptionError, encrypt_credentials
 from app.db.session import get_db
 from app.models.core import MarketplaceAccount, SellerAccount, User
 
@@ -19,6 +20,7 @@ class MarketplaceAccountCreate(BaseModel):
     marketplace: str = Field(min_length=1, max_length=30)
     display_name: str = Field(min_length=1, max_length=200)
     external_account_id: str | None = None
+    credentials: dict[str, object] | None = None
 
 
 @router.post("/sellers", status_code=201)
@@ -52,13 +54,20 @@ def create_marketplace_account(
     seller = db.scalar(select(SellerAccount).where(SellerAccount.id == payload.seller_account_id, SellerAccount.user_id == user.id))
     if not seller:
         raise HTTPException(status_code=404, detail="Seller account not found")
+    credentials_ref = None
+    if payload.credentials is not None:
+        try:
+            credentials_ref = encrypt_credentials(payload.credentials)
+        except CredentialEncryptionError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     account = MarketplaceAccount(
         seller_account_id=seller.id,
         marketplace=payload.marketplace.lower(),
         display_name=payload.display_name.strip(),
         external_account_id=payload.external_account_id,
+        credentials_ref=credentials_ref,
     )
     db.add(account)
     db.commit()
     db.refresh(account)
-    return {"id": account.id, "seller_account_id": account.seller_account_id, "marketplace": account.marketplace, "display_name": account.display_name}
+    return {"id": account.id, "seller_account_id": account.seller_account_id, "marketplace": account.marketplace, "display_name": account.display_name, "credentials_configured": credentials_ref is not None}
