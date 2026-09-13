@@ -29,7 +29,8 @@ class FakeHttp:
 
 def test_credentials_round_trip(monkeypatch):
     key = Fernet.generate_key().decode()
-    monkeypatch.setenv("CREDENTIALS_ENCRYPTION_KEY", key)
+    settings = Settings(credentials_encryption_key=key)
+    monkeypatch.setattr("app.core.security.get_settings", lambda: settings)
     payload = {"client_id": "account-client", "refresh_token": "account-refresh"}
     assert decrypt_credentials(encrypt_credentials(payload)) == payload
 
