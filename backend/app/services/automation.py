@@ -8,11 +8,13 @@ from sqlalchemy.orm import Session
 from app.agents.base import AgentTask
 from app.agents.orchestrator import AgentOrchestrator
 from app.models.automation import AutomationRule, AutomationRun, AutomationRunStatus, AutomationStatus, AutomationTriggerType
+from app.services.notifications import NotificationService
 
 
 class AutomationService:
-    def __init__(self, orchestrator: AgentOrchestrator | None = None) -> None:
+    def __init__(self, orchestrator: AgentOrchestrator | None = None, notification_service: NotificationService | None = None) -> None:
         self.orchestrator = orchestrator or AgentOrchestrator()
+        self.notification_service = notification_service or NotificationService()
 
     @staticmethod
     def _value(context: dict[str, Any], path: str) -> Any:
@@ -72,14 +74,7 @@ class AutomationService:
 
     def execute(self, db: Session, rule: AutomationRule, context: dict[str, Any]) -> AutomationRun:
         now = datetime.now(timezone.utc)
-        run = AutomationRun(
-            automation_rule_id=rule.id,
-            seller_account_id=rule.seller_account_id,
-            status=AutomationRunStatus.running,
-            trigger_context=context,
-            result={},
-            started_at=now,
-        )
+        run = AutomationRun(automation_rule_id=rule.id, seller_account_id=rule.seller_account_id, status=AutomationRunStatus.running, trigger_context=context, result={}, started_at=now)
         db.add(run)
         db.flush()
         try:
@@ -100,19 +95,21 @@ class AutomationService:
             for action in rule.actions or []:
                 action_type = action.get("type")
                 if action_type == "agent":
-                    result = self.orchestrator.execute(
-                        rule.seller_account_id,
-                        int(context["user_id"]),
-                        AgentTask(
-                            name=str(action["agent"]),
-                            task=str(action.get("task", "automation_action")),
-                            input={**context, **action.get("input", {})},
-                            requires_approval=bool(action.get("requires_approval", False)),
-                        ),
-                    )
+                    result = self.orchestrator.execute(rule.seller_account_id, int(context["user_id"]), AgentTask(name=str(action["agent"]), task=str(action.get("task", "automation_action")), input={**context, **action.get("input", {})}, requires_approval=bool(action.get("requires_approval", False))))
                     outputs.append({"type": "agent", "agent": result.agent, "status": result.status, "output": result.output, "requires_approval": result.requires_approval})
                 elif action_type == "notification":
-                    outputs.append({"type": "notification", "channel": action.get("channel", "in_app"), "message": action.get("message", "")})
+                    notification = self.notification_service.create_and_dispatch(
+                        db,
+                        rule.seller_account_id,
+                        int(context["user_id"]),
+                        category=str(action.get("category", "critical")),
+                        severity=str(action.get("severity", "info")),
+                        title=str(action.get("title", "Seller Hub alert")),
+                        message=str(action.get("message", context.get("message", "Automation alert"))),
+                        data={**context, **action.get("data", {})},
+                        channels=list(action.get("channels", [action.get("channel", "in_app")])),
+                    )
+                    outputs.append({"type": "notification", "notification_id": notification.id, "channels": action.get("channels", [action.get("channel", "in_app")])})
                 elif action_type == "set_context":
                     context.update(action.get("values", {}))
                     outputs.append({"type": "set_context", "values": action.get("values", {})})
