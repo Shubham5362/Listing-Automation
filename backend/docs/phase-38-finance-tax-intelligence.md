@@ -8,6 +8,7 @@ Adds deterministic, seller-isolated finance intelligence on top of the existing 
 - Fee anomaly detection and low-margin / negative-cash-flow warnings.
 - Invoice-to-ledger matching with configurable tolerance.
 - GST reconciliation: output tax minus input tax credit versus remitted tax.
+- Idempotent settlement import keyed by marketplace account and external settlement ID.
 - Finance agent integration for advisory investigation/recommendation signals.
 - New APIs under `/api/v1/finance/intelligence`.
 
@@ -21,4 +22,4 @@ This phase is advisory. It does not automatically file GST, issue invoices, tran
 
 ## Future integration
 
-Marketplace settlement adapters can feed the existing `Settlement` model through the existing marketplace sync/job infrastructure. Provider-specific settlement parsing should be implemented only against documented Amazon/Flipkart APIs or reports and must preserve external settlement IDs for idempotency.
+Marketplace settlement adapters can feed the settlement import endpoint through the existing marketplace sync/job infrastructure. Provider-specific settlement parsing should be implemented only against documented Amazon/Flipkart APIs or reports and must preserve external settlement IDs for idempotency.
