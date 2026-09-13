@@ -46,6 +46,11 @@ def test_registry_rejects_unregistered_marketplace() -> None:
         registry.get(Marketplace.FLIPKART)
 
 
-def test_factory_requires_live_adapter_when_mock_disabled() -> None:
+def test_factory_returns_amazon_live_adapter_when_mock_disabled() -> None:
+    client = build_marketplace_client(Marketplace.AMAZON)
+    assert client.__class__.__name__ == "AmazonSpApiAdapter"
+
+
+def test_factory_rejects_unimplemented_live_marketplace() -> None:
     with pytest.raises(MarketplaceIntegrationError):
-        build_marketplace_client(Marketplace.AMAZON)
+        build_marketplace_client(Marketplace.FLIPKART)
