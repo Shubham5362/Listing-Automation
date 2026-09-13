@@ -92,12 +92,34 @@ class AmazonSpApiAdapter(MarketplaceClient):
     def publish_listing(self, account: MarketplaceAccountContext, *, sku: str, product_type: str, attributes: dict[str, Any]) -> dict[str, Any]:
         if not sku.strip() or not product_type.strip():
             raise ValueError("sku and product_type are required")
-        return self.client.request(
-            "PUT",
-            f"/listings/2021-08-01/items/{quote(self._seller_id(account), safe='')}/{quote(sku, safe='')}",
-            query={"marketplaceIds": self.client.settings.amazon_sp_api_marketplace_id, "requirements": "LISTING"},
-            payload={"productType": product_type, "requirements": "LISTING", "attributes": attributes},
-        )
+        return self.client.request("PUT", f"/listings/2021-08-01/items/{quote(self._seller_id(account), safe='')}/{quote(sku, safe='')}", query={"marketplaceIds": self.client.settings.amazon_sp_api_marketplace_id, "requirements": "LISTING"}, payload={"productType": product_type, "requirements": "LISTING", "attributes": attributes})
+
+    def update_listing(self, account: MarketplaceAccountContext, *, sku: str, changes: dict[str, Any]) -> dict[str, Any]:
+        if not sku.strip() or not changes:
+            raise ValueError("sku and at least one change are required")
+        patches = []
+        marketplace_id = self.client.settings.amazon_sp_api_marketplace_id
+        for field, value in changes.items():
+            if field == "title":
+                patches.append({"op": "replace", "path": "/attributes/item_name", "value": [{"value": str(value), "marketplace_id": marketplace_id, "language_tag": "en_IN"}]})
+            elif field == "description":
+                patches.append({"op": "replace", "path": "/attributes/product_description", "value": [{"value": str(value), "marketplace_id": marketplace_id, "language_tag": "en_IN"}]})
+            elif field == "bullets":
+                if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
+                    raise ValueError("bullets must be a non-empty list of strings")
+                patches.append({"op": "replace", "path": "/attributes/bullet_point", "value": [{"value": item, "marketplace_id": marketplace_id, "language_tag": "en_IN"} for item in value]})
+            elif field == "images":
+                if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
+                    raise ValueError("images must be a list of non-empty URLs")
+                patches.append({"op": "replace", "path": "/attributes/main_product_image_locator", "value": [{"media_location": item, "marketplace_id": marketplace_id} for item in value]})
+            elif field.startswith("attribute:"):
+                attribute_name = field.split(":", 1)[1].strip()
+                if not attribute_name:
+                    raise ValueError("attribute name is required")
+                patches.append({"op": "replace", "path": f"/attributes/{attribute_name}", "value": value if isinstance(value, list) else [value]})
+            else:
+                raise ValueError(f"Unsupported listing field: {field}")
+        return self.client.request("PATCH", f"/listings/2021-08-01/items/{quote(self._seller_id(account), safe='')}/{quote(sku, safe='')}", query={"marketplaceIds": marketplace_id}, payload={"productType": "PRODUCT", "patches": patches})
 
     def _patch_listing(self, account: MarketplaceAccountContext, sku: str, patch: dict[str, Any]) -> None:
         self.client.request("PATCH", f"/listings/2021-08-01/items/{quote(self._seller_id(account), safe='')}/{quote(sku, safe='')}", query={"marketplaceIds": self.client.settings.amazon_sp_api_marketplace_id}, payload={"productType": "PRODUCT", "patches": [patch]})

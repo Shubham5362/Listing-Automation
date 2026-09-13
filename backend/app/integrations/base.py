@@ -104,5 +104,9 @@ class MarketplaceClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def update_listing(self, account: MarketplaceAccountContext, *, sku: str, changes: dict[str, Any]) -> dict[str, Any]:
+        raise NotImplementedError
+
+    @abstractmethod
     def fetch_report(self, account: MarketplaceAccountContext, report_type: str) -> dict[str, Any]:
         raise NotImplementedError
