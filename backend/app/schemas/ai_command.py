@@ -17,6 +17,9 @@ class AICommandAction(BaseModel):
     requires_approval: bool = True
     status: str = "proposed"
     output: dict[str, Any] = Field(default_factory=dict)
+    step: int = 1
+    depends_on: list[int] = Field(default_factory=list)
+    checkpoint: bool = False
 
 
 class AICommandRead(BaseModel):
