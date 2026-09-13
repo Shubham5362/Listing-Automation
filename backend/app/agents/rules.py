@@ -1,6 +1,7 @@
 from app.agents.base import AgentContext, AgentResult, AgentTask
 from app.services.order_ops import OrderOpsService
 from app.services.returns_ai import ReturnsSupportAIService
+from app.services.finance_intelligence import FinanceIntelligenceService
 
 class RuleAgent:
     name = "rule"
@@ -41,6 +42,10 @@ class ReturnAgent(RuleAgent):
 class FinanceAgent(RuleAgent):
     name="finance"
     def run(self, context, task):
+        rows=task.input.get("entries", [])
+        if rows and all(hasattr(row, "entry_type") for row in rows):
+            result=FinanceIntelligenceService.insight(rows)
+            return _result(self.name,context,task,{"action":"investigate" if result.anomalies else "monitor","net_profit":result.net_profit,"profit_margin_percent":result.profit_margin_percent,"cash_flow":result.cash_flow,"anomalies":result.anomalies,"recommendations":result.recommendations})
         revenue=float(task.input.get("revenue",0)); expenses=float(task.input.get("expenses",0)); return _result(self.name,context,task,{"net_profit":round(revenue-expenses,2),"action":"investigate" if expenses>revenue else "monitor"})
 class AdsAgent(RuleAgent):
     name="ads"
