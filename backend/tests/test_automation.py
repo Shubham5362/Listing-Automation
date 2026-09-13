@@ -75,3 +75,39 @@ def test_schedule_runner_respects_interval() -> None:
         second = client.post("/api/v1/automations/scheduled/due", headers=headers, params={"seller_account_id": seller_id})
         assert second.status_code == 200
         assert second.json() == []
+
+
+def test_approval_gate_and_idempotency() -> None:
+    with TestClient(app) as client:
+        headers, seller_id = _seller(client, "automation-approval")
+        created = client.post("/api/v1/automations", headers=headers, params={"seller_account_id": seller_id}, json={
+            "name": "Approved price workflow", "trigger_type": "manual",
+            "actions": [{"type": "agent", "agent": "pricing", "task": "optimize", "input": {"price": 100, "competitor_price": 95, "min_price": 90, "max_price": 110}, "requires_approval": True}],
+        })
+        assert created.status_code == 201
+        rule_id = created.json()["id"]
+        payload = {"idempotency_key": "approval-key-1", "trigger_context": {"source": "command-center"}}
+        pending = client.post(f"/api/v1/automations/{rule_id}/run", headers=headers, params={"seller_account_id": seller_id}, json=payload)
+        assert pending.status_code == 201
+        assert pending.json()["status"] == "awaiting_approval"
+        run_id = pending.json()["id"]
+        duplicate = client.post(f"/api/v1/automations/{rule_id}/run", headers=headers, params={"seller_account_id": seller_id}, json=payload)
+        assert duplicate.status_code == 201
+        assert duplicate.json()["id"] == run_id
+        approved = client.post(f"/api/v1/automations/{rule_id}/approve", headers=headers, params={"seller_account_id": seller_id, "run_id": run_id})
+        assert approved.status_code == 200
+        assert approved.json()["status"] == "succeeded"
+
+
+def test_invalid_schedule_and_action_are_rejected() -> None:
+    with TestClient(app) as client:
+        headers, seller_id = _seller(client, "automation-validation")
+        bad_schedule = client.post("/api/v1/automations", headers=headers, params={"seller_account_id": seller_id}, json={
+            "name": "Bad schedule", "trigger_type": "schedule", "trigger_config": {"interval_minutes": 0},
+            "actions": [{"type": "notification", "message": "x"}],
+        })
+        assert bad_schedule.status_code == 422
+        bad_action = client.post("/api/v1/automations", headers=headers, params={"seller_account_id": seller_id}, json={
+            "name": "Bad action", "trigger_type": "manual", "actions": [{"type": "unknown"}],
+        })
+        assert bad_action.status_code == 422
