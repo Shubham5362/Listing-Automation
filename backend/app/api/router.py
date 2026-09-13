@@ -16,6 +16,7 @@ from app.api.jobs import router as jobs_router
 from app.api.listing_operations import router as listing_operations_router
 from app.api.marketplaces import router as marketplaces_router
 from app.api.marketplace_operations import router as marketplace_operations_router
+from app.api.media import router as media_router
 from app.api.notifications import router as notifications_router
 from app.api.orders import router as orders_router
 from app.api.pricing import router as pricing_router
@@ -30,6 +31,7 @@ api_router.include_router(marketplace_operations_router)
 api_router.include_router(listing_operations_router)
 api_router.include_router(catalog_router)
 api_router.include_router(catalog_intelligence_router)
+api_router.include_router(media_router)
 api_router.include_router(ai_listing_router)
 api_router.include_router(inventory_router)
 api_router.include_router(orders_router)
