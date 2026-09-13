@@ -44,3 +44,6 @@ def test_finance_reporting_invalid_period_and_isolation() -> None:
         invalid = client.get("/api/v1/finance/reports/summary", headers=owner_a, params={"start": "2026-02-02T00:00:00", "end": "2026-02-01T00:00:00"})
         assert invalid.status_code == 400
         assert client.get("/api/v1/finance/reports/summary", headers=owner_b).json()["entry_count"] == 0
+
+
+# Reporting is intentionally query-based; no persistence migration is required.
