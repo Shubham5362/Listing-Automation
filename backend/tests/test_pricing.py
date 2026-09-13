@@ -7,16 +7,35 @@ from app.main import app
 
 def _setup(client: TestClient) -> tuple[dict[str, str], int]:
     auth = client.post("/api/v1/auth/register", json={"email": f"pricing-{uuid4().hex}@example.com", "password": "strong-pass-123"})
+    assert auth.status_code == 201, auth.text
     headers = {"Authorization": f"Bearer {auth.json()['token']}"}
+
     seller = client.post("/api/v1/accounts/sellers", headers=headers, json={"name": "Pricing Seller"})
+    assert seller.status_code == 201, seller.text
+
     marketplace = client.post("/api/v1/accounts/marketplaces", headers=headers, json={
-        "seller_account_id": seller.json()["id"], "marketplace": "amazon", "display_name": "Amazon Store"
+        "seller_account_id": seller.json()["id"],
+        "marketplace": "amazon",
+        "display_name": "Amazon Store",
     })
-    product = client.post("/api/v1/products", headers=headers, json={"seller_account_id": seller.json()["id"], "sku": f"SKU-{uuid4().hex[:8]}", "title": "Pricing Product", "cost_price": 300, "mrp": 700})
-    listing = client.post("/api/v1/listings", headers=headers, json={
-        "product_id": product.json()["id"], "marketplace_account_id": marketplace.json()["id"], "sku": product.json()["sku"], "price": 599
+    assert marketplace.status_code == 201, marketplace.text
+
+    product = client.post("/api/v1/catalog/products", headers=headers, json={
+        "seller_account_id": seller.json()["id"],
+        "sku": f"SKU-{uuid4().hex[:8]}",
+        "title": "Pricing Product",
+        "cost_price": 300,
+        "mrp": 700,
     })
-    assert listing.status_code == 201
+    assert product.status_code == 201, product.text
+
+    listing = client.post("/api/v1/catalog/listings", headers=headers, json={
+        "product_id": product.json()["id"],
+        "marketplace_account_id": marketplace.json()["id"],
+        "sku": product.json()["sku"],
+        "price": 599,
+    })
+    assert listing.status_code == 201, listing.text
     return headers, listing.json()["id"]
 
 
@@ -47,6 +66,7 @@ def test_pricing_isolation_and_rule_validation() -> None:
     with TestClient(app) as client:
         owner_headers, listing_id = _setup(client)
         other = client.post("/api/v1/auth/register", json={"email": f"other-{uuid4().hex}@example.com", "password": "strong-pass-123"})
+        assert other.status_code == 201, other.text
         other_headers = {"Authorization": f"Bearer {other.json()['token']}"}
         assert client.get(f"/api/v1/pricing/history/{listing_id}", headers=other_headers).status_code == 404
         assert client.post("/api/v1/pricing/rules", headers=owner_headers, json={"listing_id": listing_id, "min_price": 700, "max_price": 600}).status_code == 422
