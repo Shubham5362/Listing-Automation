@@ -14,6 +14,7 @@ from app.models.core import Job, MarketplaceAccount
 from app.services.automation import AutomationService
 from app.services.automation_scheduler import enqueue_due_scheduled_automations
 from app.services.jobs import claim_next_job, mark_job_finished, recover_stale_jobs, retry_job
+from app.services.marketplace_operations import execute_marketplace_operation
 from app.services.marketplace_sync import sync_marketplace_account
 
 logger = logging.getLogger("seller_hub.worker")
@@ -30,25 +31,21 @@ class BackgroundWorker:
             account_id = payload.get("marketplace_account_id")
             if account_id is None:
                 raise ValueError("marketplace_account_id is required")
-            account = db.scalar(
-                select(MarketplaceAccount).where(
-                    MarketplaceAccount.id == int(account_id),
-                    MarketplaceAccount.seller_account_id == job.seller_account_id,
-                )
-            )
+            account = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == int(account_id), MarketplaceAccount.seller_account_id == job.seller_account_id))
             if not account:
                 raise ValueError("Marketplace account not found for seller")
             return sync_marketplace_account(db, account)
+        if job.name == "marketplace_operation":
+            account_id = payload.get("marketplace_account_id")
+            operation = payload.get("operation")
+            if account_id is None or not operation:
+                raise ValueError("marketplace_account_id and operation are required")
+            return execute_marketplace_operation(db, seller_account_id=job.seller_account_id, marketplace_account_id=int(account_id), operation=str(operation), payload=dict(payload.get("payload") or {}))
         if job.name == "automation_run":
             rule_id = payload.get("automation_rule_id")
             if rule_id is None or payload.get("user_id") is None:
                 raise ValueError("automation_rule_id and user_id are required")
-            rule = db.scalar(
-                select(AutomationRule).where(
-                    AutomationRule.id == int(rule_id),
-                    AutomationRule.seller_account_id == job.seller_account_id,
-                )
-            )
+            rule = db.scalar(select(AutomationRule).where(AutomationRule.id == int(rule_id), AutomationRule.seller_account_id == job.seller_account_id))
             if not rule:
                 raise ValueError("Automation rule not found for seller")
             context = dict(payload.get("context") or {})
