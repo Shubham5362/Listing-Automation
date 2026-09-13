@@ -23,10 +23,8 @@ class AmazonSpApiClient:
             "amazon_aws_access_key_id": "aws_access_key_id",
             "amazon_aws_secret_access_key": "aws_secret_access_key",
             "amazon_aws_session_token": "aws_session_token",
-            "amazon_aws_region": "aws_region",
             "amazon_sp_api_region": "region",
             "amazon_sp_api_marketplace_id": "marketplace_id",
-            "amazon_sp_api_role_arn": "role_arn",
         }
         updates = {target: str(credentials[source]) for target, source in credential_settings.items() if credentials and credentials.get(source) is not None}
         self.settings = base_settings.model_copy(update=updates) if updates else base_settings
