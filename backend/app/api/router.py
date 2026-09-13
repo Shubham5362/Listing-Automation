@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.accounts import router as accounts_router
 from app.api.auth import router as auth_router
+from app.api.catalog import router as catalog_router
 from app.api.jobs import router as jobs_router
 from app.api.marketplaces import router as marketplaces_router
 
@@ -10,6 +11,7 @@ api_router.include_router(auth_router)
 api_router.include_router(accounts_router)
 api_router.include_router(jobs_router)
 api_router.include_router(marketplaces_router)
+api_router.include_router(catalog_router)
 
 
 @api_router.get("/status", tags=["system"])
