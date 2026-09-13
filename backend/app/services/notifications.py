@@ -47,9 +47,7 @@ class EmailProvider(NotificationProvider):
         if not sender:
             raise RuntimeError("email_sender_not_configured")
         msg = EmailMessage()
-        msg["From"] = sender
-        msg["To"] = user.email
-        msg["Subject"] = notification.title
+        msg["From"], msg["To"], msg["Subject"] = sender, user.email, notification.title
         msg.set_content(notification.message)
         username = os.getenv("SELLER_HUB_SMTP_USERNAME")
         password = os.getenv("SELLER_HUB_SMTP_PASSWORD")
@@ -60,27 +58,49 @@ class EmailProvider(NotificationProvider):
             smtp.send_message(msg)
 
 
-class WhatsAppProvider(NotificationProvider):
-    channel = NotificationChannel.whatsapp.value
-    name = "webhook"
+class WebhookProvider(NotificationProvider):
+    def __init__(self, channel: str, endpoint_env: str, token_env: str | None = None) -> None:
+        self.channel = channel
+        self.name = "webhook"
+        self.endpoint_env = endpoint_env
+        self.token_env = token_env
 
     def send(self, user: User, notification: Notification) -> None:
-        endpoint = os.getenv("SELLER_HUB_WHATSAPP_WEBHOOK_URL")
-        phone = notification.data.get("recipient_phone")
-        if not endpoint or not phone:
-            raise RuntimeError("whatsapp_provider_not_configured")
-        payload = json.dumps({"to": phone, "title": notification.title, "message": notification.message}).encode()
+        endpoint = os.getenv(self.endpoint_env)
+        if not endpoint:
+            raise RuntimeError(f"{self.channel}_provider_not_configured")
+        payload = {"title": notification.title, "message": notification.message, "data": notification.data}
+        if self.channel == NotificationChannel.whatsapp.value:
+            phone = notification.data.get("recipient_phone")
+            if not phone:
+                raise RuntimeError("whatsapp_recipient_not_configured")
+            payload["to"] = phone
+        if self.channel == NotificationChannel.telegram.value:
+            chat_id = notification.data.get("telegram_chat_id") or os.getenv("SELLER_HUB_TELEGRAM_CHAT_ID")
+            if not chat_id:
+                raise RuntimeError("telegram_chat_id_not_configured")
+            payload["chat_id"] = chat_id
         headers = {"Content-Type": "application/json"}
-        token = os.getenv("SELLER_HUB_WHATSAPP_WEBHOOK_TOKEN")
+        token = os.getenv(self.token_env) if self.token_env else None
         if token:
             headers["Authorization"] = f"Bearer {token}"
-        req = Request(endpoint, data=payload, headers=headers, method="POST")
+        req = Request(endpoint, data=json.dumps(payload).encode(), headers=headers, method="POST")
         try:
             with urlopen(req, timeout=10) as response:
                 if response.status < 200 or response.status >= 300:
-                    raise RuntimeError(f"whatsapp_provider_http_{response.status}")
+                    raise RuntimeError(f"{self.channel}_provider_http_{response.status}")
         except (URLError, TimeoutError) as exc:
-            raise RuntimeError("whatsapp_provider_unavailable") from exc
+            raise RuntimeError(f"{self.channel}_provider_unavailable") from exc
+
+
+class WhatsAppProvider(WebhookProvider):
+    def __init__(self) -> None:
+        super().__init__(NotificationChannel.whatsapp.value, "SELLER_HUB_WHATSAPP_WEBHOOK_URL", "SELLER_HUB_WHATSAPP_WEBHOOK_TOKEN")
+
+
+class TelegramProvider(WebhookProvider):
+    def __init__(self) -> None:
+        super().__init__(NotificationChannel.telegram.value, "SELLER_HUB_TELEGRAM_WEBHOOK_URL", "SELLER_HUB_TELEGRAM_WEBHOOK_TOKEN")
 
 
 class NotificationService:
@@ -88,7 +108,7 @@ class NotificationService:
     VALID_CHANNELS = {item.value for item in NotificationChannel}
 
     def __init__(self, providers: list[NotificationProvider] | None = None) -> None:
-        self.providers = {provider.channel: provider for provider in (providers or [InAppProvider(), EmailProvider(), WhatsAppProvider()])}
+        self.providers = {provider.channel: provider for provider in (providers or [InAppProvider(), EmailProvider(), WhatsAppProvider(), TelegramProvider()])}
 
     def _preference(self, db: Session, seller_account_id: int, user_id: int, category: str) -> NotificationPreference:
         preference = db.execute(select(NotificationPreference).where(NotificationPreference.seller_account_id == seller_account_id, NotificationPreference.user_id == user_id, NotificationPreference.category == category)).scalar_one_or_none()
@@ -100,7 +120,7 @@ class NotificationService:
 
     @staticmethod
     def _enabled(preference: NotificationPreference, channel: str) -> bool:
-        return {"in_app": preference.in_app_enabled, "email": preference.email_enabled, "whatsapp": preference.whatsapp_enabled}.get(channel, False)
+        return {"in_app": preference.in_app_enabled, "email": preference.email_enabled, "whatsapp": preference.whatsapp_enabled, "telegram": preference.telegram_enabled}.get(channel, False)
 
     def create_and_dispatch(self, db: Session, seller_account_id: int, user_id: int, *, category: str, severity: str, title: str, message: str, data: dict[str, Any] | None = None, channels: list[str] | None = None) -> Notification:
         if category not in self.VALID_CATEGORIES:
