@@ -27,5 +27,9 @@ def list_agents() -> AgentListRead:
 @router.post("/execute", response_model=AgentResultRead)
 def execute_agent(payload: AgentTaskCreate, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> AgentResultRead:
     _seller(db, user, seller_account_id)
-    result = orchestrator.execute(seller_account_id, user.id, AgentTask(name=payload.agent, name=payload.task, input=payload.input, requires_approval=payload.requires_approval))
+    result = orchestrator.execute(
+        seller_account_id,
+        user.id,
+        AgentTask(name=payload.agent, task=payload.task, input=payload.input, requires_approval=payload.requires_approval),
+    )
     return AgentResultRead(**result.__dict__)
