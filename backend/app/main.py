@@ -2,13 +2,14 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import text
 
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.middleware import SecurityMiddleware
-from app.core.observability import configure_logging, metrics_snapshot
+from app.core.observability import configure_logging, metrics_snapshot, prometheus_snapshot
 from app.db.init_db import init_db
 from app.db.session import SessionLocal
 
@@ -63,3 +64,8 @@ def readiness() -> dict[str, str]:
 @app.get("/metrics", tags=["system"])
 def metrics() -> dict[str, object]:
     return {"status": "ok", "metrics": metrics_snapshot()}
+
+
+@app.get("/metrics/prometheus", response_class=PlainTextResponse, tags=["system"])
+def prometheus_metrics() -> str:
+    return prometheus_snapshot()
