@@ -13,6 +13,8 @@ def test_strategy_planner_rejects_invalid_horizon():
 
 def test_strategy_planner_plan_shape(monkeypatch):
     service = object.__new__(StrategyActionPlannerService)
+    service.db = None
+    service.user = None
 
     class BI:
         def __init__(self, *args): pass
