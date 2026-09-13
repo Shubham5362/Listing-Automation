@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -9,6 +11,7 @@ from app.db.session import get_db
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
 from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
+from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunStatus
 from app.services.marketplace_sync import MarketplaceSyncError, sync_marketplace_account
 
 router = APIRouter(prefix="/marketplaces", tags=["marketplaces"])
@@ -58,7 +61,6 @@ def connection_test(payload: ConnectionTestRequest, db: Session = Depends(get_db
     account.is_connected = bool(connected)
     account.connection_error = None if connected else "Marketplace connection test failed"
     if connected:
-        from datetime import datetime
         account.last_connected_at = datetime.utcnow()
     db.commit()
     return {"connected": bool(connected), "marketplace": marketplace.value, "account_id": account.id, "last_connected_at": account.last_connected_at}
@@ -70,17 +72,23 @@ def sync_account(marketplace_account_id: int, db: Session = Depends(get_db), cur
     try:
         return sync_marketplace_account(db, account)
     except MarketplaceIntegrationError as exc:
-        account.is_connected = False
-        account.connection_error = str(exc)[:2000]
-        db.commit()
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except MarketplaceSyncError as exc:
-        account.connection_error = str(exc)[:2000]
-        db.commit()
+        if "already running" in str(exc).lower():
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/{marketplace_account_id}/sync-runs")
+def sync_runs(marketplace_account_id: int, limit: int = 20, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[dict[str, object]]:
+    account = _owned_account(db, marketplace_account_id, current_user.id)
+    safe_limit = min(max(limit, 1), 100)
+    runs = db.scalars(select(MarketplaceSyncRun).where(MarketplaceSyncRun.marketplace_account_id == account.id).order_by(MarketplaceSyncRun.id.desc()).limit(safe_limit)).all()
+    return [{"id": run.id, "status": run.status, "result": run.result, "error": run.error, "started_at": run.started_at, "finished_at": run.finished_at, "created_at": run.created_at} for run in runs]
 
 
 @router.get("/{marketplace_account_id}/status")
 def account_status(marketplace_account_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict[str, object]:
     account = _owned_account(db, marketplace_account_id, current_user.id)
-    return {"id": account.id, "marketplace": account.marketplace, "display_name": account.display_name, "connected": account.is_connected, "credentials_configured": account.credentials_ref is not None, "connection_error": account.connection_error, "last_connected_at": account.last_connected_at, "last_sync_at": account.last_sync_at}
+    latest = db.scalar(select(MarketplaceSyncRun).where(MarketplaceSyncRun.marketplace_account_id == account.id).order_by(MarketplaceSyncRun.id.desc()))
+    return {"id": account.id, "marketplace": account.marketplace, "display_name": account.display_name, "connected": account.is_connected, "credentials_configured": account.credentials_ref is not None, "connection_error": account.connection_error, "last_connected_at": account.last_connected_at, "last_sync_at": account.last_sync_at, "sync": {"id": latest.id, "status": latest.status, "error": latest.error, "started_at": latest.started_at, "finished_at": latest.finished_at} if latest else None}
