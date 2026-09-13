@@ -15,6 +15,7 @@ from app.services.automation import AutomationService
 from app.services.automation_scheduler import enqueue_due_scheduled_automations
 from app.services.jobs import claim_next_job, mark_job_finished, recover_stale_jobs, retry_job
 from app.services.listing_operations import execute_listing_publish
+from app.services.listing_updates import execute_listing_update
 from app.services.marketplace_operations import execute_marketplace_operation
 from app.services.marketplace_sync import sync_marketplace_account
 
@@ -48,6 +49,11 @@ class BackgroundWorker:
             if draft_id is None or not product_type:
                 raise ValueError("listing_draft_id and product_type are required")
             return execute_listing_publish(db, seller_account_id=job.seller_account_id, draft_id=int(draft_id), product_type=str(product_type))
+        if job.name == "listing_update":
+            update_id = payload.get("listing_update_id")
+            if update_id is None:
+                raise ValueError("listing_update_id is required")
+            return execute_listing_update(db, seller_account_id=job.seller_account_id, update_id=int(update_id))
         if job.name == "automation_run":
             rule_id = payload.get("automation_rule_id")
             if rule_id is None or payload.get("user_id") is None:
