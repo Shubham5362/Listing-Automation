@@ -52,3 +52,36 @@ class ReconciliationRead(BaseModel):
     settlement_net: float
     variance: float
     status: SettlementStatus
+
+
+class FinanceReportRead(BaseModel):
+    period_start: datetime | None
+    period_end: datetime | None
+    sales: float
+    marketplace_fees: float
+    shipping: float
+    product_cost: float
+    gst: float
+    refunds: float
+    returns: float
+    advertising: float
+    other_expenses: float
+    total_expenses: float
+    net_profit: float
+    entry_count: int
+
+
+class FinanceBreakdownRow(BaseModel):
+    key: str
+    sales: float
+    marketplace_fees: float
+    shipping: float
+    product_cost: float
+    gst: float
+    refunds: float
+    returns: float
+    advertising: float
+    other_expenses: float
+    total_expenses: float
+    net_profit: float
+    entry_count: int
