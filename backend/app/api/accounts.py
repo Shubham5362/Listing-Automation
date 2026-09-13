@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.security import CredentialEncryptionError, encrypt_credentials
 from app.db.session import get_db
-from app.models.core import MarketplaceAccount, SellerAccount, User
+from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -47,13 +47,16 @@ def create_marketplace_account(payload: MarketplaceAccountCreate, user: User = D
     seller = db.scalar(select(SellerAccount).where(SellerAccount.id == payload.seller_account_id, SellerAccount.user_id == user.id))
     if not seller:
         raise HTTPException(status_code=404, detail="Seller account not found")
+    marketplace_value = payload.marketplace.strip().lower()
+    if marketplace_value not in {marketplace.value for marketplace in Marketplace}:
+        raise HTTPException(status_code=422, detail="Unsupported marketplace")
     credentials_ref = None
     if payload.credentials is not None:
         try:
             credentials_ref = encrypt_credentials(payload.credentials)
         except CredentialEncryptionError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
-    account = MarketplaceAccount(seller_account_id=seller.id, marketplace=payload.marketplace.lower(), display_name=payload.display_name.strip(), external_account_id=payload.external_account_id, credentials_ref=credentials_ref)
+    account = MarketplaceAccount(seller_account_id=seller.id, marketplace=marketplace_value, display_name=payload.display_name.strip(), external_account_id=payload.external_account_id, credentials_ref=credentials_ref)
     db.add(account)
     db.commit()
     db.refresh(account)

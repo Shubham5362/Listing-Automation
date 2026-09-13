@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.security import CredentialEncryptionError, decrypt_credentials
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
 from app.models.catalog import Listing, ListingStatus, Product
 from app.models.core import Marketplace, MarketplaceAccount
 from app.models.inventory import InventoryItem as CentralInventoryItem
 from app.models.inventory import InventoryMovement, InventoryMovementType
+from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunStatus
 from app.models.orders import Order, OrderItem, OrderStatus
-from app.core.security import CredentialEncryptionError, decrypt_credentials
 
 
 class MarketplaceSyncError(RuntimeError):
@@ -37,8 +38,7 @@ def _client_context(account: MarketplaceAccount) -> tuple[Any, MarketplaceAccoun
     except ValueError as exc:
         raise MarketplaceSyncError("Unsupported marketplace") from exc
     client = build_marketplace_client(marketplace, credentials=_credentials(account))
-    context = MarketplaceAccountContext(account_id=account.id, marketplace=marketplace, external_account_id=account.external_account_id)
-    return client, context
+    return client, MarketplaceAccountContext(account_id=account.id, marketplace=marketplace, external_account_id=account.external_account_id)
 
 
 def _sync_products(db: Session, account: MarketplaceAccount, seller_id: int, client: Any, context: MarketplaceAccountContext) -> int:
@@ -55,8 +55,7 @@ def _sync_products(db: Session, account: MarketplaceAccount, seller_id: int, cli
         product.attributes_json = json.dumps(item.attributes or {}, default=str, separators=(",", ":"))
         listing = db.scalar(select(Listing).where(Listing.marketplace_account_id == account.id, Listing.sku == item.sku))
         if not listing:
-            listing = Listing(product_id=product.id, marketplace_account_id=account.id, sku=item.sku, external_listing_id=item.external_id, title=item.title, status=ListingStatus.ACTIVE.value)
-            db.add(listing)
+            db.add(Listing(product_id=product.id, marketplace_account_id=account.id, sku=item.sku, external_listing_id=item.external_id, title=item.title, status=ListingStatus.ACTIVE.value))
         else:
             listing.product_id = product.id
             listing.external_listing_id = item.external_id or listing.external_listing_id
@@ -123,17 +122,66 @@ def _sync_orders(db: Session, account: MarketplaceAccount, seller_id: int, clien
     return count
 
 
-def sync_marketplace_account(db: Session, account: MarketplaceAccount) -> dict[str, int | str]:
-    """Run an idempotent initial/full sync for one marketplace account."""
-    client, context = _client_context(account)
-    if not client.test_connection(context):
-        raise MarketplaceIntegrationError("Marketplace connection test failed")
-    products = _sync_products(db, account, account.seller_account_id, client, context)
-    inventory = _sync_inventory(db, account, account.seller_account_id, client, context)
-    orders = _sync_orders(db, account, account.seller_account_id, client, context)
+def _new_run(db: Session, account: MarketplaceAccount) -> MarketplaceSyncRun:
+    active = db.scalar(select(MarketplaceSyncRun).where(MarketplaceSyncRun.marketplace_account_id == account.id, MarketplaceSyncRun.status.in_([MarketplaceSyncRunStatus.QUEUED.value, MarketplaceSyncRunStatus.RUNNING.value])).order_by(MarketplaceSyncRun.id.desc()))
+    if active:
+        if active.started_at and active.started_at < datetime.utcnow() - timedelta(minutes=30):
+            active.status = MarketplaceSyncRunStatus.FAILED.value
+            active.error = "Sync run expired after exceeding the 30 minute execution window"
+            active.finished_at = datetime.utcnow()
+            db.commit()
+        else:
+            raise MarketplaceSyncError("A marketplace sync is already running")
+    run = MarketplaceSyncRun(marketplace_account_id=account.id, seller_account_id=account.seller_account_id, status=MarketplaceSyncRunStatus.RUNNING.value, result={}, started_at=datetime.utcnow())
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    return run
+
+
+def _finish(db: Session, run: MarketplaceSyncRun, status: MarketplaceSyncRunStatus, result: dict[str, Any], error: str | None = None) -> None:
+    run.status = status.value
+    run.result = result
+    run.error = error[:2000] if error else None
+    run.finished_at = datetime.utcnow()
+    db.commit()
+
+
+def sync_marketplace_account(db: Session, account: MarketplaceAccount) -> dict[str, Any]:
+    """Run a resilient, idempotent full sync and persist its execution history."""
+    run = _new_run(db, account)
+    result: dict[str, Any] = {"run_id": run.id, "account_id": account.id, "marketplace": account.marketplace, "products": 0, "inventory": 0, "orders": 0, "errors": {}}
+    try:
+        client, context = _client_context(account)
+        if not client.test_connection(context):
+            raise MarketplaceIntegrationError("Marketplace connection test failed")
+    except (MarketplaceIntegrationError, MarketplaceSyncError) as exc:
+        account.is_connected = False
+        account.connection_error = str(exc)[:2000]
+        db.commit()
+        _finish(db, run, MarketplaceSyncRunStatus.FAILED, result, str(exc))
+        raise
+
+    phases = (("products", _sync_products), ("inventory", _sync_inventory), ("orders", _sync_orders))
+    for name, handler in phases:
+        try:
+            with db.begin_nested():
+                result[name] = handler(db, account, account.seller_account_id, client, context)
+        except Exception as exc:  # each dataset is isolated so one API failure does not erase successful phases
+            db.rollback()
+            result["errors"][name] = str(exc)[:1000]
+
+    successful = [name for name, _ in phases if not result["errors"].get(name)]
+    if not successful:
+        account.is_connected = False
+        account.connection_error = "All marketplace sync datasets failed"
+        _finish(db, run, MarketplaceSyncRunStatus.FAILED, result, "All marketplace sync datasets failed")
+        return result
+
     account.is_connected = True
-    account.connection_error = None
+    account.connection_error = None if not result["errors"] else "; ".join(f"{key}: {value}" for key, value in result["errors"].items())[:2000]
     account.last_connected_at = datetime.utcnow()
     account.last_sync_at = datetime.utcnow()
-    db.commit()
-    return {"account_id": account.id, "marketplace": account.marketplace, "products": products, "inventory": inventory, "orders": orders}
+    status = MarketplaceSyncRunStatus.PARTIAL if result["errors"] else MarketplaceSyncRunStatus.COMPLETED
+    _finish(db, run, status, result, account.connection_error)
+    return result
