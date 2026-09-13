@@ -61,7 +61,13 @@ def create_rule(payload: PricingRuleRequest, user: User = Depends(get_current_us
     if payload.min_price is not None and payload.max_price is not None and payload.min_price > payload.max_price:
         raise HTTPException(status_code=422, detail="min_price cannot exceed max_price")
     listing = _owned_listing(db, user, payload.listing_id) if payload.listing_id else None
-    rule = PricingRule(seller_account_id=(db.get(MarketplaceAccount, listing.marketplace_account_id).seller_account_id if listing else sellers[0].id), **payload.model_dump())
+    data = payload.model_dump()
+    data.pop("listing_id", None)
+    rule = PricingRule(
+        seller_account_id=(db.get(MarketplaceAccount, listing.marketplace_account_id).seller_account_id if listing else sellers[0].id),
+        listing_id=listing.id if listing else None,
+        **data,
+    )
     db.add(rule)
     db.commit()
     db.refresh(rule)
@@ -77,7 +83,9 @@ def list_rules(user: User = Depends(get_current_user), db: Session = Depends(get
 @router.post("/competitors", response_model=CompetitorPriceRead, status_code=201)
 def add_competitor(payload: CompetitorPriceRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> CompetitorPrice:
     listing = _owned_listing(db, user, payload.listing_id)
-    row = CompetitorPrice(listing_id=listing.id, **payload.model_dump())
+    data = payload.model_dump()
+    data.pop("listing_id", None)
+    row = CompetitorPrice(listing_id=listing.id, **data)
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -93,7 +101,9 @@ def competitors(listing_id: int, user: User = Depends(get_current_user), db: Ses
 @router.post("/buy-box", response_model=BuyBoxRead, status_code=201)
 def record_buy_box(payload: BuyBoxRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> BuyBoxSnapshot:
     listing = _owned_listing(db, user, payload.listing_id)
-    row = BuyBoxSnapshot(listing_id=listing.id, **payload.model_dump())
+    data = payload.model_dump()
+    data.pop("listing_id", None)
+    row = BuyBoxSnapshot(listing_id=listing.id, **data)
     db.add(row)
     db.commit()
     db.refresh(row)
