@@ -12,6 +12,7 @@ from app.api.finance import router as finance_router
 from app.api.inventory import router as inventory_router
 from app.api.jobs import router as jobs_router
 from app.api.marketplaces import router as marketplaces_router
+from app.api.notifications import router as notifications_router
 from app.api.orders import router as orders_router
 from app.api.pricing import router as pricing_router
 from app.api.returns import router as returns_router
@@ -32,6 +33,7 @@ api_router.include_router(advertising_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(agents_router)
 api_router.include_router(automation_router)
+api_router.include_router(notifications_router)
 
 
 @api_router.get("/status", tags=["system"])
