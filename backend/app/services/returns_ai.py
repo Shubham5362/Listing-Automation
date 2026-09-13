@@ -42,12 +42,14 @@ class ReturnsSupportAIService:
     @staticmethod
     def analyze_support(subject: str, message: str, priority: str = "normal", customer_name: str | None = None, tone: str = "professional", language: str = "auto") -> SupportIntelligence:
         text = f"{subject} {message}".lower()
+        # Specific financial intent must win over generic delivery phrases such as
+        # "नहीं मिला" when a customer says a refund/payment was not received.
         rules = {
-            "delivery": ("delivery", "late", "not delivered", "shipping", "डिलीवरी", "देर", "नहीं मिला"),
             "refund": ("refund", "money back", "refund not received", "रिफंड", "पैसे वापस"),
+            "billing": ("charged", "payment", "invoice", "billing", "भुगतान", "बिल"),
             "return": ("return", "replace", "replacement", "रिटर्न", "बदलना"),
             "damaged_product": ("damaged", "broken", "defective", "टूटा", "खराब", "दोषपूर्ण"),
-            "billing": ("charged", "payment", "invoice", "billing", "भुगतान", "बिल"),
+            "delivery": ("delivery", "late", "not delivered", "shipping", "डिलीवरी", "देर", "नहीं मिला"),
             "complaint": ("complaint", "unhappy", "terrible", "worst", "शिकायत", "नाराज़", "बहुत खराब"),
         }
         category = next((name for name, needles in rules.items() if any(n in text for n in needles)), "general")
