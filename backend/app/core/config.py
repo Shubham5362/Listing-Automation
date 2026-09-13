@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-env"
     credentials_encryption_key: str | None = None
     allowed_origins: str = "http://localhost:5173"
-    allowed_hosts: str = "localhost,127.0.0.1"
+    allowed_hosts: str = "localhost,127.0.0.1,testserver"
     rate_limit_per_minute: int = 120
     session_ttl_hours: int = 24
 
