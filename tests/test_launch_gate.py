@@ -14,6 +14,7 @@ SPEC.loader.exec_module(launch_gate)
 def _set_required(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://example")
     monkeypatch.setenv("SELLER_HUB_SECRET_KEY", "a-real-random-value")
+    monkeypatch.setenv("CREDENTIALS_ENCRYPTION_KEY", "a-valid-key-placeholder-for-gate-test")
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("DEBUG", "false")
 
@@ -24,11 +25,26 @@ def test_launch_gate_passes_minimum_configuration(monkeypatch, capsys):
     assert "LAUNCH GATE: PASS" in capsys.readouterr().out
 
 
+def test_launch_gate_accepts_compose_secret_name(monkeypatch, capsys):
+    _set_required(monkeypatch)
+    monkeypatch.delenv("SELLER_HUB_SECRET_KEY")
+    monkeypatch.setenv("SECRET_KEY", "a-real-random-value")
+    assert launch_gate.main() == 0
+    assert "LAUNCH GATE: PASS" in capsys.readouterr().out
+
+
 def test_launch_gate_blocks_missing_database(monkeypatch, capsys):
     _set_required(monkeypatch)
     monkeypatch.delenv("DATABASE_URL")
     assert launch_gate.main() == 1
     assert "missing DATABASE_URL" in capsys.readouterr().out
+
+
+def test_launch_gate_blocks_missing_encryption_key(monkeypatch, capsys):
+    _set_required(monkeypatch)
+    monkeypatch.delenv("CREDENTIALS_ENCRYPTION_KEY")
+    assert launch_gate.main() == 1
+    assert "missing CREDENTIALS_ENCRYPTION_KEY" in capsys.readouterr().out
 
 
 def test_launch_gate_blocks_production_debug(monkeypatch, capsys):
