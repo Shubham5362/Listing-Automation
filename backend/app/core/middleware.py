@@ -18,7 +18,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
         settings = get_settings()
-        self._limiter = SharedRateLimiter(settings.redis_url, settings.rate_limit_per_minute)
+        # Keep middleware construction compatible with lightweight test settings
+        # while using the configured Redis backend in production.
+        redis_url = getattr(settings, "redis_url", None)
+        self._limiter = SharedRateLimiter(redis_url, settings.rate_limit_per_minute)
 
     async def dispatch(self, request: Request, call_next):
         started = time.perf_counter()
