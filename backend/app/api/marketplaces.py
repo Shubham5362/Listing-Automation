@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,23 +11,10 @@ from app.integrations.factory import build_marketplace_client
 from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
 
 router = APIRouter(prefix="/marketplaces", tags=["marketplaces"])
-bearer = HTTPBearer(auto_error=False)
 
 
-class ConnectionTestRequest(__import__("pydantic").BaseModel):
+class ConnectionTestRequest(BaseModel):
     marketplace_account_id: int
-
-
-def get_current_user_legacy(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
-    db: Session = Depends(get_db),
-) -> User:
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    user = __import__("app.services.auth", fromlist=["get_user_by_token"]).get_user_by_token(db, credentials.credentials)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
-    return user
 
 
 @router.get("", response_model=list[str])
