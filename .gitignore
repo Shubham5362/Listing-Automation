@@ -1,0 +1,19 @@
+# Local/private deployment configuration
+.env
+.env.*
+!.env.production.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Runtime data
+*.log
+backups/
