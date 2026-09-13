@@ -74,7 +74,7 @@ jobs:
           if [[ -f backend/requirements.txt ]]; then python -m pip install -r backend/requirements.txt; fi
           if [[ -f backend/pyproject.toml ]]; then python -m pip install ./backend; fi
           python -m compileall -q backend
-          if [[ -d backend/tests ]]; then (cd backend && python -m pytest -q); fi
+          if [[ -d backend/tests ]]; then (cd backend && python -m pytest -q --cov=app --cov-report=term-missing); fi
       - name: Setup Go
         if: steps.detect.outputs.go == 'true'
         uses: actions/setup-go@v5
