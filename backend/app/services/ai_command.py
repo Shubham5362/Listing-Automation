@@ -24,16 +24,16 @@ INTENT_RULES: list[tuple[str, tuple[str, ...]]] = [
 ]
 
 AGENT_TASKS = {
-    "sales_decline": [("AnalyticsAgent", "analyze_sales", False), ("PricingAgent", "review_pricing", True), ("AdsAgent", "review_ads", True)],
-    "inventory": [("InventoryAgent", "review_inventory", True)],
-    "pricing": [("PricingAgent", "review_pricing", True)],
-    "advertising": [("AdsAgent", "review_ads", True)],
-    "listing": [("ListingAgent", "review_listing", True)],
-    "orders": [("OrderAgent", "review_orders", False)],
-    "returns": [("ReturnAgent", "review_returns", False)],
-    "finance": [("FinanceAgent", "review_finance", False)],
-    "customer_support": [("CustomerSupportAgent", "review_customer_support", False)],
-    "general": [("AnalyticsAgent", "analyze_dashboard", False)],
+    "sales_decline": [("analytics", "analyze_sales", False), ("pricing", "review_pricing", True), ("ads", "review_ads", True)],
+    "inventory": [("inventory", "review_inventory", True)],
+    "pricing": [("pricing", "review_pricing", True)],
+    "advertising": [("ads", "review_ads", True)],
+    "listing": [("listing", "review_listing", True)],
+    "orders": [("order", "review_orders", False)],
+    "returns": [("return", "review_returns", False)],
+    "finance": [("finance", "review_finance", False)],
+    "customer_support": [("customer_support", "review_customer_support", False)],
+    "general": [("analytics", "analyze_dashboard", False)],
 }
 
 
@@ -103,6 +103,17 @@ def run_command(db: Session, user: User, seller_account_id: int, payload) -> AIC
     previous = dashboard(start=previous_start, end=previous_end, marketplace_account_id=payload.marketplace_account_id, user=user, db=db)
     answer, evidence, recommendations = _build_insights(intent, current, previous)
 
+    k = current.kpis
+    agent_input = {
+        "query": payload.query,
+        "revenue": k.revenue,
+        "expenses": k.expenses,
+        "orders": k.orders,
+        "cancellations": k.cancellations,
+        "returns": k.returns,
+        "available": k.inventory_units,
+        "reorder_level": k.low_stock_items,
+    }
     actions = []
     for agent, task, requires_approval in AGENT_TASKS[intent]:
         action = {
@@ -114,11 +125,7 @@ def run_command(db: Session, user: User, seller_account_id: int, payload) -> AIC
             "output": {},
         }
         if payload.execute_actions and payload.approved:
-            result = orchestrator.execute(
-                seller_account_id,
-                user.id,
-                AgentTask(name=agent, task=task, input={"query": payload.query, "dashboard": current.model_dump()}, requires_approval=requires_approval),
-            )
+            result = orchestrator.execute(seller_account_id, user.id, AgentTask(name=agent, task=task, input=agent_input, requires_approval=requires_approval))
             action["status"] = result.status
             action["output"] = result.output
         actions.append(action)
