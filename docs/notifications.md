@@ -32,3 +32,7 @@ All endpoints are under `/api/v1/notifications` and require authentication plus 
 - `PUT /preferences` upsert a category preference.
 
 Automation `notification` actions now use the same service, so scheduled/event/AI automations can create real notification records and delivery history.
+
+## Provider configuration
+
+Email uses `SELLER_HUB_SMTP_*` environment variables. WhatsApp uses `SELLER_HUB_WHATSAPP_WEBHOOK_URL` plus an optional bearer token. Provider credentials belong only in deployment secrets/environment configuration.
