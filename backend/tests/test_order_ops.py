@@ -26,7 +26,8 @@ def test_order_ops_detects_age_outlier():
 
 def test_order_agent_uses_ops_intelligence():
     result = AgentOrchestrator().execute(7, 11, AgentTask(
-        name="order", input={"status": "confirmed", "ordered_at": datetime.utcnow() - timedelta(hours=25)}, requires_approval=True
+        name="order", task="analyze order risk",
+        input={"status": "confirmed", "ordered_at": datetime.utcnow() - timedelta(hours=25)}, requires_approval=True
     ))
     assert result.agent == "order"
     assert result.output["sla_status"] == "breached"
