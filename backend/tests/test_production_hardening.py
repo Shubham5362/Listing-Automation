@@ -15,9 +15,12 @@ def test_metrics_record_request():
 def test_local_rate_limiter_enforces_window():
     async def run():
         limiter = SharedRateLimiter(None, 2)
-        assert (await limiter.allow("test")[0]) is True
-        assert (await limiter.allow("test")[0]) is True
-        assert (await limiter.allow("test")[0]) is False
+        allowed, _ = await limiter.allow("test")
+        assert allowed is True
+        allowed, _ = await limiter.allow("test")
+        assert allowed is True
+        allowed, _ = await limiter.allow("test")
+        assert allowed is False
         await limiter.close()
 
     asyncio.run(run())
