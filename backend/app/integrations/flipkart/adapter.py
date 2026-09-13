@@ -36,7 +36,6 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
         return True
 
     def list_products(self, account: MarketplaceAccountContext, *, limit: int = 50) -> list[MarketplaceProduct]:
-        # Flipkart product/search returns up to 20 listings per batch.
         target = max(1, min(limit, 100))
         products: list[MarketplaceProduct] = []
         batch = 0
@@ -113,18 +112,21 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
                     result.append(PriceQuote(sku=str(sku), price=Decimal(str(raw)), currency="INR"))
         return result
 
-    def update_inventory(self, account: MarketplaceAccountContext, *, sku: str, quantity: int) -> None:
-        if quantity < 0:
-            raise ValueError("quantity must be non-negative")
+    def _product_id(self, sku: str) -> str:
         details = self._listing_details([sku])
         listing = details.get(sku, {})
         product_id = listing.get("productId") or listing.get("product_id")
         if not product_id:
             raise MarketplaceIntegrationError(f"Flipkart product ID not found for SKU '{sku}'")
+        return str(product_id)
+
+    def update_inventory(self, account: MarketplaceAccountContext, *, sku: str, quantity: int) -> None:
+        if quantity < 0:
+            raise ValueError("quantity must be non-negative")
         self.client.request(
             "POST",
             "/listings/v3/update/inventory",
-            payload={sku: {"product_id": str(product_id), "inventory": [{"location_id": "DEFAULT", "quantity": quantity}]}},
+            payload={sku: {"product_id": self._product_id(sku), "locations": [{"id": "DEFAULT", "inventory": quantity}]}},
         )
 
     def update_price(self, account: MarketplaceAccountContext, *, sku: str, price: Decimal) -> None:
@@ -132,20 +134,15 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
             raise ValueError("price must be greater than zero")
         details = self._listing_details([sku])
         listing = details.get(sku, {})
-        product_id = listing.get("productId") or listing.get("product_id")
         attrs = listing.get("attributeValues", listing) if isinstance(listing, dict) else {}
-        if not product_id:
-            raise MarketplaceIntegrationError(f"Flipkart product ID not found for SKU '{sku}'")
         mrp = Decimal(str(attrs.get("mrp", price)))
         self.client.request(
             "POST",
             "/listings/v3/update/price",
-            payload={sku: {"product_id": str(product_id), "price": {"mrp": int(mrp), "selling_price": int(price), "currency": "INR"}}},
+            payload={sku: {"product_id": self._product_id(sku), "price": {"mrp": int(mrp), "selling_price": int(price), "currency": "INR"}}},
         )
 
     def fetch_report(self, account: MarketplaceAccountContext, report_type: str) -> dict[str, Any]:
         if not report_type.strip():
             raise ValueError("report_type must not be empty")
-        # Flipkart exposes operational reports through report/download APIs that vary by enabled seller services.
-        # Keep the provider-neutral contract explicit while exposing a stable raw API hook for supported report paths.
         return self.client.request("POST", f"/reports/{quote(report_type, safe='')}", payload={})
