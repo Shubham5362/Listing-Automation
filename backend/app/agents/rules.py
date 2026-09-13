@@ -1,4 +1,5 @@
 from app.agents.base import AgentContext, AgentResult, AgentTask
+from app.services.order_ops import OrderOpsService
 
 
 class RuleAgent:
@@ -52,6 +53,24 @@ class OrderAgent(RuleAgent):
 
     def run(self, context, task):
         status = str(task.input.get("status", ""))
+        ordered_at = task.input.get("ordered_at")
+        if hasattr(ordered_at, "isoformat"):
+            result = OrderOpsService.analyze(status=status, ordered_at=ordered_at,
+                                              ship_by_hours=int(task.input.get("ship_by_hours", 24)),
+                                              cancel_risk_hours=int(task.input.get("cancel_risk_hours", 12)),
+                                              historical_hours=list(task.input.get("historical_hours", [])),
+                                              has_tracking=bool(task.input.get("has_tracking", False)))
+            return _result(self.name, context, task, {
+                "action": result.recommended_action,
+                "fulfillment_status": result.fulfillment_status,
+                "sla_status": result.sla_status,
+                "late_shipment_risk": result.late_shipment_risk,
+                "cancellation_risk": result.cancellation_risk,
+                "anomaly": result.anomaly,
+                "risk_score": result.risk_score,
+                "priority": result.priority,
+                "reasons": result.reasons,
+            })
         return _result(self.name, context, task, {"action": "escalate" if status in {"cancelled", "delayed", "exception"} else "continue", "status": status})
 
 
