@@ -10,6 +10,7 @@ from app.models.automation import AutomationRule, AutomationRun
 from app.models.core import SellerAccount, User
 from app.schemas.automation import AutomationCreate, AutomationExecute, AutomationRead, AutomationRunRead
 from app.services.automation import AutomationService
+from app.services.automation_scheduler import run_due_scheduled_automations
 
 router = APIRouter(prefix="/automations", tags=["automation"])
 service = AutomationService()
@@ -74,6 +75,12 @@ def dispatch_event(event_type: str, seller_account_id: int, payload: dict[str, A
     context = {**(payload or {}), "event_type": event_type, "user_id": user.id}
     rules = db.execute(select(AutomationRule).where(AutomationRule.seller_account_id == seller_account_id, AutomationRule.enabled.is_(True), AutomationRule.trigger_type == "event")).scalars().all()
     return [service.execute(db, rule, context) for rule in rules]
+
+
+@router.post("/scheduled/due", response_model=list[AutomationRunRead])
+def run_due_scheduled(seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _seller(db, user, seller_account_id)
+    return run_due_scheduled_automations(db, seller_account_id, user.id, service)
 
 
 @router.get("/{automation_id}/runs", response_model=list[AutomationRunRead])
