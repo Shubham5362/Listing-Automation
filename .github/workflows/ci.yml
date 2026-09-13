@@ -77,10 +77,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python -m pip install --upgrade pip
           if [[ -f backend/requirements.txt ]]; then python -m pip install -r backend/requirements.txt; fi
           if [[ -f backend/pyproject.toml ]]; then python -m pip install ./backend; fi
           python -m compileall -q backend
-          if [[ -d backend/tests ]]; then python -m pip install pytest && (cd backend && python -m pytest -q); fi
+          if [[ -d backend/tests ]]; then (cd backend && python -m pytest -q); fi
 
       - name: Setup Go
         if: steps.detect.outputs.go == 'true'
@@ -99,15 +100,17 @@ jobs:
 
       - name: Setup Rust
         if: steps.detect.outputs.rust == 'true'
-        uses: actions/setup-rust@v1
+        uses: actions/checkout@v4
         with:
-          toolchain: stable
+          fetch-depth: 0
 
       - name: Rust validation
         if: steps.detect.outputs.rust == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          rustup toolchain install stable --profile minimal
+          rustup default stable
           cargo test --all-targets --all-features
 
       - name: Final CI gate
