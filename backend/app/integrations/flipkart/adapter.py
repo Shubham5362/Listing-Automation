@@ -10,6 +10,7 @@ from app.integrations.base import (
     MarketplaceAccountContext,
     MarketplaceClient,
     MarketplaceIntegrationError,
+    MarketplaceOperationUnsupported,
     MarketplaceOrder,
     MarketplaceProduct,
     PriceQuote,
@@ -45,25 +46,14 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
             for item in rows:
                 sku = str(item.get("sku", ""))
                 if sku:
-                    products.append(
-                        MarketplaceProduct(
-                            sku=sku,
-                            title=str(item.get("product_name", sku)),
-                            external_id=item.get("productId"),
-                            attributes=item,
-                        )
-                    )
+                    products.append(MarketplaceProduct(sku=sku, title=str(item.get("product_name", sku)), external_id=item.get("productId"), attributes=item))
             if not data.get("hasMore", False) or not rows:
                 break
             batch += 1
         return products[:target]
 
     def list_orders(self, account: MarketplaceAccountContext, *, limit: int = 50) -> list[MarketplaceOrder]:
-        data = self.client.request(
-            "POST",
-            "/sellers/v3/shipments/filter",
-            payload={"filter": {}, "pageSize": max(1, min(limit, 100))},
-        )
+        data = self.client.request("POST", "/sellers/v3/shipments/filter", payload={"filter": {}, "pageSize": max(1, min(limit, 100))})
         rows = data.get("shipments", data.get("orderItems", []))
         result: list[MarketplaceOrder] = []
         for shipment in rows if isinstance(rows, list) else []:
@@ -73,16 +63,7 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
             raw_date = shipment.get("orderDate") or shipment.get("order_date")
             ordered_at = datetime.fromisoformat(raw_date.replace("Z", "+00:00")) if raw_date else datetime.now(timezone.utc)
             total = shipment.get("totalPrice") or shipment.get("sellingPrice") or 0
-            result.append(
-                MarketplaceOrder(
-                    external_order_id=str(order_id),
-                    status=str(shipment.get("status", "UNKNOWN")),
-                    ordered_at=ordered_at,
-                    total=Decimal(str(total)),
-                    currency="INR",
-                    items=shipment.get("orderItems"),
-                )
-            )
+            result.append(MarketplaceOrder(external_order_id=str(order_id), status=str(shipment.get("status", "UNKNOWN")), ordered_at=ordered_at, total=Decimal(str(total)), currency="INR", items=shipment.get("orderItems")))
         return result[:limit]
 
     def _listing_details(self, skus: list[str]) -> dict[str, Any]:
@@ -123,11 +104,7 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
     def update_inventory(self, account: MarketplaceAccountContext, *, sku: str, quantity: int) -> None:
         if quantity < 0:
             raise ValueError("quantity must be non-negative")
-        self.client.request(
-            "POST",
-            "/listings/v3/update/inventory",
-            payload={sku: {"product_id": self._product_id(sku), "locations": [{"id": "DEFAULT", "inventory": quantity}]}},
-        )
+        self.client.request("POST", "/listings/v3/update/inventory", payload={sku: {"product_id": self._product_id(sku), "locations": [{"id": "DEFAULT", "inventory": quantity}]}})
 
     def update_price(self, account: MarketplaceAccountContext, *, sku: str, price: Decimal) -> None:
         if price <= 0:
@@ -136,11 +113,10 @@ class FlipkartSellerApiAdapter(MarketplaceClient):
         listing = details.get(sku, {})
         attrs = listing.get("attributeValues", listing) if isinstance(listing, dict) else {}
         mrp = Decimal(str(attrs.get("mrp", price)))
-        self.client.request(
-            "POST",
-            "/listings/v3/update/price",
-            payload={sku: {"product_id": self._product_id(sku), "price": {"mrp": int(mrp), "selling_price": int(price), "currency": "INR"}}},
-        )
+        self.client.request("POST", "/listings/v3/update/price", payload={sku: {"product_id": self._product_id(sku), "price": {"mrp": int(mrp), "selling_price": int(price), "currency": "INR"}}})
+
+    def publish_listing(self, account: MarketplaceAccountContext, *, sku: str, product_type: str, attributes: dict[str, Any]) -> dict[str, Any]:
+        raise MarketplaceOperationUnsupported("Flipkart listing publish/update is not implemented by the current verified adapter; no marketplace write is attempted")
 
     def fetch_report(self, account: MarketplaceAccountContext, report_type: str) -> dict[str, Any]:
         if not report_type.strip():

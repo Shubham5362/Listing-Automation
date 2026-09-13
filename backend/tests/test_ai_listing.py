@@ -43,10 +43,12 @@ def test_generation_and_status_workflow() -> None:
         assert body["status"] == "draft"
         assert body["quality_score"] > 0
         draft_id = body["id"]
-        for status in ("review", "approved", "published"):
+        for status in ("review", "approved"):
             response = client.patch(f"/api/v1/ai/listings/{draft_id}/status", headers=headers, json={"status": status})
             assert response.status_code == 200
             assert response.json()["status"] == status
+        response = client.patch(f"/api/v1/ai/listings/{draft_id}/status", headers=headers, json={"status": "published"})
+        assert response.status_code == 409
 
 
 def test_invalid_status_transition_and_authentication() -> None:
