@@ -57,16 +57,12 @@ def create_marketplace_account(payload: MarketplaceAccountCreate, user: User = D
     db.add(account)
     db.commit()
     db.refresh(account)
-    return {"id": account.id, "seller_account_id": account.seller_account_id, "marketplace": account.marketplace, "display_name": account.display_name, "credentials_configured": credentials_ref is not None}
+    return {"id": account.id, "seller_account_id": account.seller_account_id, "marketplace": account.marketplace, "display_name": account.display_name, "credentials_configured": credentials_ref is not None, "connected": account.is_connected, "last_sync_at": account.last_sync_at}
 
 
 @router.put("/marketplaces/{marketplace_account_id}/credentials")
 def update_marketplace_credentials(marketplace_account_id: int, payload: MarketplaceCredentialsUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    account = db.scalar(
-        select(MarketplaceAccount)
-        .join(SellerAccount, SellerAccount.id == MarketplaceAccount.seller_account_id)
-        .where(MarketplaceAccount.id == marketplace_account_id, SellerAccount.user_id == user.id)
-    )
+    account = db.scalar(select(MarketplaceAccount).join(SellerAccount, SellerAccount.id == MarketplaceAccount.seller_account_id).where(MarketplaceAccount.id == marketplace_account_id, SellerAccount.user_id == user.id))
     if not account:
         raise HTTPException(status_code=404, detail="Marketplace account not found")
     try:
@@ -74,6 +70,8 @@ def update_marketplace_credentials(marketplace_account_id: int, payload: Marketp
     except CredentialEncryptionError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     account.is_connected = False
+    account.connection_error = None
+    account.last_connected_at = None
     db.add(account)
     db.commit()
-    return {"id": account.id, "credentials_configured": True, "connected": False}
+    return {"id": account.id, "credentials_configured": True, "connected": False, "last_sync_at": account.last_sync_at}
