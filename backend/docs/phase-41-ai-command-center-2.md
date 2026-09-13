@@ -20,3 +20,7 @@ The workflow is stored with the existing command trace and history record, prese
 ## Safety
 
 No marketplace, competitor, financial, or inventory facts are fabricated. Natural language can plan and orchestrate existing agent capabilities, but it cannot silently publish listings, change prices, issue refunds, or send customer messages.
+
+## Verification
+
+Phase 41 changes are validated through the repository CI workflow before merge.
