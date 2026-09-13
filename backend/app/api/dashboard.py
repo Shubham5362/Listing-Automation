@@ -41,11 +41,7 @@ def _bucket(value: datetime, start: datetime, end: datetime) -> str:
 
 
 def _empty_dashboard(start: datetime, end: datetime) -> DashboardRead:
-    return DashboardRead(
-        period_start=start.isoformat(), period_end=end.isoformat(),
-        kpis=DashboardKpis(revenue=0, expenses=0, net_profit=0, orders=0, units=0, average_order_value=0, inventory_units=0, low_stock_items=0, returns=0, cancellations=0, active_listings=0, buy_box_rate=0),
-        marketplaces=[], trends=[], top_products=[], alerts=[],
-    )
+    return DashboardRead(period_start=start.isoformat(), period_end=end.isoformat(), kpis=DashboardKpis(revenue=0, expenses=0, net_profit=0, orders=0, units=0, average_order_value=0, inventory_units=0, low_stock_items=0, returns=0, cancellations=0, active_listings=0, buy_box_rate=0), marketplaces=[], trends=[], top_products=[], alerts=[])
 
 
 @router.get("", response_model=DashboardRead)
@@ -143,12 +139,8 @@ def dashboard(start: datetime | None = None, end: datetime | None = None, market
             d["orders"].add(row.order_id)
             d["revenue"] += float(row.total_amount)
     for row in finance_rows:
-        if row.product_id in product_map:
-            if row.entry_type == FinanceEntryType.SALE.value:
-                d = product_map[row.product_id]
-                d["revenue"] += float(row.amount) - sum(float(item.total_amount) for item in items if item.product_id == row.product_id)
-            elif row.entry_type in expense_types:
-                product_map[row.product_id]["expenses"] += float(row.amount)
+        if row.product_id in product_map and row.entry_type in expense_types:
+            product_map[row.product_id]["expenses"] += float(row.amount)
     top_products = [DashboardProductRow(product_id=pid, sku=d["sku"], title=d["title"], revenue=round(d["revenue"], 2), units=d["units"], orders=len(d["orders"]), net_profit=round(d["revenue"] - d["expenses"], 2)) for pid, d in sorted(product_map.items(), key=lambda x: x[1]["revenue"], reverse=True)[:10]]
 
     alerts: list[DashboardAlert] = []
@@ -165,8 +157,4 @@ def dashboard(start: datetime | None = None, end: datetime | None = None, market
     if open_issues:
         alerts.append(DashboardAlert(type="customer", severity="info", message="Customer issues need attention", count=int(open_issues)))
 
-    return DashboardRead(
-        period_start=start.isoformat(), period_end=end.isoformat(),
-        kpis=DashboardKpis(revenue=round(revenue, 2), expenses=round(expenses, 2), net_profit=round(revenue - expenses, 2), orders=len(orders), units=units, average_order_value=round(revenue / len(orders), 2) if orders else 0, inventory_units=inventory_units, low_stock_items=low_stock_items, returns=len(returns), cancellations=cancellations, active_listings=active_listings, buy_box_rate=round(buy_box_rate, 2)),
-        marketplaces=marketplaces, trends=trends, top_products=top_products, alerts=alerts,
-    )
+    return DashboardRead(period_start=start.isoformat(), period_end=end.isoformat(), kpis=DashboardKpis(revenue=round(revenue, 2), expenses=round(expenses, 2), net_profit=round(revenue - expenses, 2), orders=len(orders), units=units, average_order_value=round(revenue / len(orders), 2) if orders else 0, inventory_units=inventory_units, low_stock_items=low_stock_items, returns=len(returns), cancellations=cancellations, active_listings=active_listings, buy_box_rate=round(buy_box_rate, 2)), marketplaces=marketplaces, trends=trends, top_products=top_products, alerts=alerts)
