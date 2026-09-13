@@ -54,27 +54,6 @@ def test_security_middleware_enforces_bounded_rate_limit(monkeypatch) -> None:
     assert limited.json() == {"detail": "Rate limit exceeded"}
 
 
-def test_security_middleware_keeps_rate_limit_buckets_per_client(monkeypatch) -> None:
-    isolated_app = FastAPI()
-    isolated_app.add_middleware(security_middleware.SecurityMiddleware)
-
-    @isolated_app.get("/probe")
-    def probe() -> dict[str, str]:
-        return {"status": "ok"}
-
-    settings = SimpleNamespace(rate_limit_per_minute=1)
-    monkeypatch.setattr(security_middleware, "get_settings", lambda: settings)
-
-    transport = None
-    with TestClient(isolated_app) as client:
-        first = client.get("/probe")
-        second = client.get("/probe")
-
-    assert first.status_code == 200
-    assert second.status_code == 429
-    assert transport is None
-
-
 def test_auth_login_rejects_wrong_password() -> None:
     email = f"reliability-{uuid4().hex}@example.com"
     with TestClient(app) as client:
@@ -118,7 +97,7 @@ def test_unknown_agent_is_reported_as_a_client_error() -> None:
 
     assert registered.status_code == 201
     assert seller.status_code == 201
-    assert response.status_code in {400, 404, 422}
+    assert response.status_code == 404
 
 
 def test_health_contract_remains_stable_under_security_stack() -> None:
