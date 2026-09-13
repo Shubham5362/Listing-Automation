@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,10 +24,10 @@ class MarketplaceAccountCreate(BaseModel):
 @router.post("/sellers", status_code=201)
 def create_seller_account(
     payload: SellerAccountCreate,
-    _: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    account = SellerAccount(name=payload.name.strip())
+    account = SellerAccount(user_id=user.id, name=payload.name.strip())
     db.add(account)
     db.commit()
     db.refresh(account)
@@ -36,22 +36,21 @@ def create_seller_account(
 
 @router.get("/sellers")
 def list_seller_accounts(
-    _: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[dict[str, object]]:
-    accounts = db.scalars(select(SellerAccount).order_by(SellerAccount.id)).all()
+    accounts = db.scalars(select(SellerAccount).where(SellerAccount.user_id == user.id).order_by(SellerAccount.id)).all()
     return [{"id": a.id, "name": a.name, "is_active": a.is_active} for a in accounts]
 
 
 @router.post("/marketplaces", status_code=201)
 def create_marketplace_account(
     payload: MarketplaceAccountCreate,
-    _: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    seller = db.get(SellerAccount, payload.seller_account_id)
+    seller = db.scalar(select(SellerAccount).where(SellerAccount.id == payload.seller_account_id, SellerAccount.user_id == user.id))
     if not seller:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Seller account not found")
     account = MarketplaceAccount(
         seller_account_id=seller.id,
