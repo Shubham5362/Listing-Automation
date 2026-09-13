@@ -44,3 +44,7 @@ A workflow passes only when a transient operation is observable as failed/retrya
 - a disposable test SKU/product and test order data where supported
 
 These values must be injected through the deployment secret manager or CI environment, never committed to Git.
+
+## CI contract
+
+CI validates the application and the E2E harness without contacting external marketplaces. A live marketplace pass requires an explicit private E2E environment with valid sandbox/test credentials.
