@@ -50,7 +50,13 @@ class AutomationService:
         return True
 
     @staticmethod
-    def trigger_matches(rule: AutomationRule, context: dict[str, Any], now: datetime) -> bool:
+    def _utc(value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    @classmethod
+    def trigger_matches(cls, rule: AutomationRule, context: dict[str, Any], now: datetime) -> bool:
         config = rule.trigger_config or {}
         if rule.trigger_type == AutomationTriggerType.event.value:
             return context.get("event_type") == config.get("event_type")
@@ -58,7 +64,8 @@ class AutomationService:
             interval = int(config.get("interval_minutes", 0))
             if interval <= 0:
                 return False
-            return rule.last_run_at is None or now >= rule.last_run_at + timedelta(minutes=interval)
+            last_run = rule.last_run_at
+            return last_run is None or cls._utc(now) >= cls._utc(last_run) + timedelta(minutes=interval)
         if rule.trigger_type in {AutomationTriggerType.manual.value, AutomationTriggerType.ai.value}:
             return True
         return False
