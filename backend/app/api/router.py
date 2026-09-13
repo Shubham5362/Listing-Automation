@@ -8,6 +8,7 @@ from app.api.ai_listing import router as ai_listing_router
 from app.api.auth import router as auth_router
 from app.api.automation import router as automation_router
 from app.api.catalog import router as catalog_router
+from app.api.catalog_intelligence import router as catalog_intelligence_router
 from app.api.dashboard import router as dashboard_router
 from app.api.finance import router as finance_router
 from app.api.inventory import router as inventory_router
@@ -28,6 +29,7 @@ api_router.include_router(marketplaces_router)
 api_router.include_router(marketplace_operations_router)
 api_router.include_router(listing_operations_router)
 api_router.include_router(catalog_router)
+api_router.include_router(catalog_intelligence_router)
 api_router.include_router(ai_listing_router)
 api_router.include_router(inventory_router)
 api_router.include_router(orders_router)
