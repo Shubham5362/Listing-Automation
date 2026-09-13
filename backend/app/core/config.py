@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     amazon_request_timeout_seconds: float = 30.0
     amazon_max_retries: int = 3
 
+    flipkart_api_base_url: str = "https://api.flipkart.net"
+    flipkart_app_id: str | None = None
+    flipkart_app_secret: str | None = None
+    flipkart_request_timeout_seconds: float = 30.0
+    flipkart_max_retries: int = 3
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
