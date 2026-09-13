@@ -28,7 +28,8 @@ def test_event_automation_conditions_actions_and_history() -> None:
         dispatched = client.post("/api/v1/automations/events/inventory.low", headers=headers, params={"seller_account_id": seller_id}, json={"available": 3})
         assert dispatched.status_code == 200
         assert dispatched.json()[0]["status"] == "succeeded"
-        assert dispatched.json()[0]["result"]["actions"][0]["channel"] == "in_app"
+        assert dispatched.json()[0]["result"]["actions"][0]["type"] == "notification"
+        assert dispatched.json()[0]["result"]["actions"][0]["notification_id"] > 0
         runs = client.get(f"/api/v1/automations/{rule_id}/runs", headers=headers, params={"seller_account_id": seller_id})
         assert runs.status_code == 200
         assert runs.json()[0]["status"] == "succeeded"
