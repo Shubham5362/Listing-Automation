@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from sqlalchemy import or_, select, update
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -46,8 +46,7 @@ def claim_next_job(db: Session, worker_id: str | None = None) -> Job | None:
         Job.status == "queued",
         or_(Job.run_after.is_(None), Job.run_after <= now),
     ).order_by(Job.created_at.asc(), Job.id.asc())
-    bind = db.get_bind()
-    if bind.dialect.name == "postgresql":
+    if db.get_bind().dialect.name == "postgresql":
         query = query.with_for_update(skip_locked=True)
     job = db.scalar(query.limit(1))
     if not job:
