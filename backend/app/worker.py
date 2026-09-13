@@ -9,10 +9,11 @@ from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
-from app.models.automation import AutomationRule, AutomationTriggerType
-from app.models.core import MarketplaceAccount, SellerAccount
+from app.models.automation import AutomationRule
+from app.models.core import Job, MarketplaceAccount
 from app.services.automation import AutomationService
-from app.services.jobs import claim_next_job, recover_stale_jobs, retry_job, mark_job_finished, enqueue_job
+from app.services.automation_scheduler import enqueue_due_scheduled_automations
+from app.services.jobs import claim_next_job, mark_job_finished, recover_stale_jobs, retry_job
 from app.services.marketplace_sync import sync_marketplace_account
 
 logger = logging.getLogger("seller_hub.worker")
@@ -23,42 +24,7 @@ class BackgroundWorker:
         self.settings = get_settings()
         self.worker_id = worker_id or f"{socket.gethostname()}-{id(self)}"
 
-    def enqueue_due_automations(self, db) -> int:
-        now_rules = db.scalars(
-            select(AutomationRule).where(
-                AutomationRule.enabled.is_(True),
-                AutomationRule.trigger_type == AutomationTriggerType.schedule.value,
-                AutomationRule.status == "active",
-            )
-        ).all()
-        queued = 0
-        service = AutomationService()
-        for rule in now_rules:
-            now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
-            if not service.trigger_matches(rule, {}, now):
-                continue
-            seller = db.get(SellerAccount, rule.seller_account_id)
-            if not seller or not seller.user_id:
-                continue
-            active = db.scalar(
-                select(__import__("app.models.core", fromlist=["Job"]).Job).where(
-                    __import__("app.models.core", fromlist=["Job"]).Job.name == "automation_run",
-                    __import__("app.models.core", fromlist=["Job"]).Job.seller_account_id == rule.seller_account_id,
-                    __import__("app.models.core", fromlist=["Job"]).Job.status.in_(["queued", "running"]),
-                )
-            )
-            if active:
-                continue
-            enqueue_job(
-                db,
-                "automation_run",
-                {"automation_rule_id": rule.id, "user_id": seller.user_id, "context": {"trigger_type": "schedule", "user_id": seller.user_id}},
-                seller_account_id=rule.seller_account_id,
-            )
-            queued += 1
-        return queued
-
-    def execute_job(self, db, job) -> dict:
+    def execute_job(self, db, job: Job) -> dict:
         payload = json.loads(job.payload or "{}")
         if job.name == "marketplace_sync":
             account_id = payload.get("marketplace_account_id")
@@ -75,6 +41,8 @@ class BackgroundWorker:
             return sync_marketplace_account(db, account)
         if job.name == "automation_run":
             rule_id = payload.get("automation_rule_id")
+            if rule_id is None or payload.get("user_id") is None:
+                raise ValueError("automation_rule_id and user_id are required")
             rule = db.scalar(
                 select(AutomationRule).where(
                     AutomationRule.id == int(rule_id),
@@ -93,7 +61,7 @@ class BackgroundWorker:
         db = SessionLocal()
         try:
             recover_stale_jobs(db)
-            self.enqueue_due_automations(db)
+            enqueue_due_scheduled_automations(db)
             processed = 0
             for _ in range(max(1, self.settings.worker_batch_size)):
                 job = claim_next_job(db, self.worker_id)
