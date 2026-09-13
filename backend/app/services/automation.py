@@ -3,11 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agents.base import AgentTask
 from app.agents.orchestrator import AgentOrchestrator
 from app.models.automation import AutomationRule, AutomationRun, AutomationRunStatus, AutomationStatus, AutomationTriggerType
+from app.models.core import MarketplaceAccount
+from app.services.marketplace_sync import MarketplaceSyncError, sync_marketplace_account
 from app.services.notifications import NotificationService
 
 
@@ -110,6 +113,18 @@ class AutomationService:
                         channels=list(action.get("channels", [action.get("channel", "in_app")])),
                     )
                     outputs.append({"type": "notification", "notification_id": notification.id, "channels": action.get("channels", [action.get("channel", "in_app")])})
+                elif action_type == "marketplace_sync":
+                    account_id = action.get("marketplace_account_id", context.get("marketplace_account_id"))
+                    if account_id is None:
+                        raise ValueError("marketplace_account_id is required for marketplace_sync")
+                    account = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == int(account_id), MarketplaceAccount.seller_account_id == rule.seller_account_id))
+                    if not account:
+                        raise ValueError("Marketplace account not found for seller")
+                    try:
+                        sync_result = sync_marketplace_account(db, account)
+                    except MarketplaceSyncError as exc:
+                        raise RuntimeError(str(exc)) from exc
+                    outputs.append({"type": "marketplace_sync", "marketplace_account_id": account.id, "result": sync_result})
                 elif action_type == "set_context":
                     context.update(action.get("values", {}))
                     outputs.append({"type": "set_context", "values": action.get("values", {})})
