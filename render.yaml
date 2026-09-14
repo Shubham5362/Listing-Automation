@@ -28,6 +28,28 @@ services:
         sync: false
       - key: ALLOWED_HOSTS
         sync: false
+      - key: PERSONAL_SELLER_NAME
+        value: My Business
+      - key: AMAZON_SELLER_ID
+        sync: false
+      - key: AMAZON_LWA_CLIENT_ID
+        sync: false
+      - key: AMAZON_LWA_CLIENT_SECRET
+        sync: false
+      - key: AMAZON_LWA_REFRESH_TOKEN
+        sync: false
+      - key: AMAZON_AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AMAZON_AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AMAZON_AWS_SESSION_TOKEN
+        sync: false
+      - key: FLIPKART_SELLER_ID
+        sync: false
+      - key: FLIPKART_APP_ID
+        sync: false
+      - key: FLIPKART_APP_SECRET
+        sync: false
       - key: REDIS_URL
         fromService:
           name: apna-mandla-redis
