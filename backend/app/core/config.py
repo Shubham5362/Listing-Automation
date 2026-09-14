@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     backup_dir: str = "./backups"
     backup_retention_days: int = 14
 
+    personal_seller_name: str = "My Business"
+
     amazon_sp_api_base_url: str = "https://sellingpartnerapi-eu.amazon.com"
     amazon_sp_api_region: str = "eu-west-1"
     amazon_sp_api_marketplace_id: str = "A21TJRUUN4KGV"
@@ -38,12 +40,14 @@ class Settings(BaseSettings):
     amazon_aws_access_key_id: str | None = None
     amazon_aws_secret_access_key: str | None = None
     amazon_aws_session_token: str | None = None
+    amazon_seller_id: str | None = None
     amazon_request_timeout_seconds: float = 30.0
     amazon_max_retries: int = 3
 
     flipkart_api_base_url: str = "https://api.flipkart.net"
     flipkart_app_id: str | None = None
     flipkart_app_secret: str | None = None
+    flipkart_seller_id: str | None = None
     flipkart_request_timeout_seconds: float = 30.0
     flipkart_max_retries: int = 3
 
