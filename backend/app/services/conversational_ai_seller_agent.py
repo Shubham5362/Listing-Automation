@@ -1,0 +1,124 @@
+from __future__ import annotations
+
+import json
+from typing import Any
+
+from app.models.core import AuditLog
+from app.services.llm_gateway import LLMGateway, LLMUnavailable
+from app.services.personal_ai_seller_agent import PersonalAISellerAgentService
+
+
+class ConversationalAISellerAgentService(PersonalAISellerAgentService):
+    """Conversation-aware layer over the verified Seller Hub agent tools.
+
+    The model handles language, intent and follow-up understanding; business data
+    still comes only from the controlled read tools inherited from the base agent.
+    """
+
+    @staticmethod
+    def _history_prompt(conversation: list[dict[str, str]], current: str) -> str:
+        lines: list[str] = []
+        for item in conversation[-12:]:
+            role = item.get("role", "user")
+            content = (item.get("content") or "").strip()
+            if content:
+                lines.append(f"{role}: {content[:2000]}")
+        if lines:
+            return "Conversation history (use only for continuity; current message has priority):\n" + "\n".join(lines) + f"\n\nCurrent user message:\n{current}"
+        return current
+
+    def chat(self, message: str, create_plan: bool = False, conversation: list[dict[str, str]] | None = None) -> dict[str, Any]:
+        message = message.strip()
+        if not message:
+            raise ValueError("message cannot be empty")
+        gateway = LLMGateway()
+        intent = self._infer_intent(message)
+        answer: str | None = None
+        provider = "deterministic"
+        model = None
+        tool_calls: list[dict[str, Any]] = []
+        fallback_reason = None
+        prompt = self._history_prompt(conversation or [], message)
+
+        if gateway.configured:
+            system = (
+                "You are the Personal AI Seller Agent for a single-user Amazon/Flipkart Seller Hub. "
+                "You are a real conversational assistant, not a scripted FAQ. Understand the user's meaning "
+                "from context and handle greetings, casual chat, explanations, business analysis, follow-up questions "
+                "and action requests naturally.\n\n"
+                "LANGUAGE: Reply in the same language/script the user is currently using. Detect Hindi, Hinglish, "
+                "English, Marathi, Gujarati, Bengali, Tamil, Telugu, Kannada, Malayalam, Punjabi, Urdu, Nepali "
+                "and other languages supported by the model. If the user switches language, switch with them. "
+                "Do not force English. Do not translate unless asked.\n\n"
+                "CONTEXT: Resolve references such as 'yeh', 'uska', 'isme', 'that product', 'Amazon wala', "
+                "'phir', and follow-up questions using the supplied conversation history. Never repeat a canned answer "
+                "when the user is asking something different.\n\n"
+                "BUSINESS: For Seller Hub facts, use the controlled tools and rely only on returned live data. "
+                "Never invent counts, sales, stock, prices, marketplace status or actions. If data is unavailable, say so. "
+                "You may analyze and propose plans, but never execute marketplace writes directly from chat. "
+                "All writes remain behind the existing approval/action-control pipeline.\n\n"
+                "STYLE: Be concise but conversational. Answer the actual question first. Ask a short clarification only "
+                "when necessary to avoid a wrong action."
+            )
+            try:
+                result = gateway.generate(
+                    system=system,
+                    user=prompt,
+                    tools=self._tool_definitions(),
+                    tool_executor=self._execute_tool,
+                )
+                answer, provider, model, tool_calls = result.text, result.provider, result.model, result.tool_calls
+            except LLMUnavailable as exc:
+                fallback_reason = str(exc)[:1200]
+
+        if answer is None:
+            if self._is_casual(message):
+                answer = "Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?"
+            else:
+                if intent == "inventory":
+                    focus = self.inventory_issues(10)
+                elif intent == "advertising":
+                    focus = self.advertising_issues(10)
+                elif intent == "pricing":
+                    focus = self.pricing_opportunities(10)
+                else:
+                    focus = self.recommendations(10)
+                answer = self._answer(intent, focus)
+
+        response = {
+            "agent": "personal_ai_seller_agent",
+            "message": message,
+            "answer": answer,
+            "intent": intent,
+            "provider": provider,
+            "model": model,
+            "fallback_reason": fallback_reason,
+            "tool_calls": [{"name": c.get("name") or c.get("function", {}).get("name")} for c in tool_calls],
+            "plan_requested": create_plan,
+            "created_actions": [],
+            "approval_required": True,
+            "execution": "No marketplace write is executed from chat; approved writes use the existing Action Control pipeline.",
+        }
+        self.db.add(
+            AuditLog(
+                action="ai_agent.chat",
+                resource_type="ai_agent",
+                resource_id=None,
+                details=json.dumps(
+                    {
+                        "message": message,
+                        "answer": answer,
+                        "provider": provider,
+                        "model": model,
+                        "intent": intent,
+                        "tool_calls": response["tool_calls"],
+                        "plan": create_plan,
+                        "fallback_reason": fallback_reason,
+                    },
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                ),
+            )
+        )
+        self.db.commit()
+        return response
