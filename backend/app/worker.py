@@ -17,6 +17,7 @@ from app.services.jobs import claim_next_job, mark_job_finished, recover_stale_j
 from app.services.listing_operations import execute_listing_publish
 from app.services.listing_updates import execute_listing_update
 from app.services.marketplace_operations import execute_marketplace_operation
+from app.services.marketplace_scheduler import enqueue_due_marketplace_syncs
 from app.services.marketplace_sync import sync_marketplace_account
 from app.services.scheduled_reports import dispatch_scheduled_reports
 
@@ -72,6 +73,7 @@ class BackgroundWorker:
         db = SessionLocal()
         try:
             recover_stale_jobs(db)
+            enqueue_due_marketplace_syncs(db, self.settings)
             enqueue_due_scheduled_automations(db)
             dispatch_scheduled_reports(db)
             processed = 0
