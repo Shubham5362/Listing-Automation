@@ -1,8 +1,7 @@
 import json
 
-from app.core.config import Settings
 from app.models.catalog import Product
-from app.models.core import MarketplaceAccount, SellerAccount
+from app.models.core import SellerAccount
 from app.services.ai_listing import ListingGenerationService
 
 
