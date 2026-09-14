@@ -55,12 +55,14 @@ def _sync_products(db: Session, account: MarketplaceAccount, seller_id: int, cli
         product.attributes_json = json.dumps(item.attributes or {}, default=str, separators=(",", ":"))
         listing = db.scalar(select(Listing).where(Listing.marketplace_account_id == account.id, Listing.sku == item.sku))
         if not listing:
-            db.add(Listing(product_id=product.id, marketplace_account_id=account.id, sku=item.sku, external_listing_id=item.external_id, title=item.title, status=ListingStatus.ACTIVE.value))
+            listing = Listing(product_id=product.id, marketplace_account_id=account.id, sku=item.sku, external_listing_id=item.external_id, title=item.title, status=ListingStatus.ACTIVE.value)
+            db.add(listing)
         else:
             listing.product_id = product.id
             listing.external_listing_id = item.external_id or listing.external_listing_id
             listing.title = item.title
             listing.status = ListingStatus.ACTIVE.value
+        listing.marketplace_data_json = json.dumps(item.attributes or {}, default=str, separators=(",", ":"))
         count += 1
     return count
 
@@ -93,15 +95,32 @@ def _sync_inventory(db: Session, account: MarketplaceAccount, seller_id: int, cl
     return count
 
 
+def _normalize_order_status(raw_status: str) -> str:
+    status = raw_status.strip().lower().replace("-", "_").replace(" ", "_")
+    mapping = {
+        "pending": OrderStatus.PENDING.value,
+        "unshipped": OrderStatus.CONFIRMED.value,
+        "confirmed": OrderStatus.CONFIRMED.value,
+        "ready_to_ship": OrderStatus.PACKED.value,
+        "packed": OrderStatus.PACKED.value,
+        "shipped": OrderStatus.SHIPPED.value,
+        "partially_shipped": OrderStatus.SHIPPED.value,
+        "delivered": OrderStatus.DELIVERED.value,
+        "completed": OrderStatus.DELIVERED.value,
+        "cancelled": OrderStatus.CANCELLED.value,
+        "canceled": OrderStatus.CANCELLED.value,
+        "returned": OrderStatus.RETURNED.value,
+    }
+    return mapping.get(status, OrderStatus.PENDING.value)
+
+
 def _sync_orders(db: Session, account: MarketplaceAccount, seller_id: int, client: Any, context: MarketplaceAccountContext) -> int:
     count = 0
     for item in client.list_orders(context, limit=100):
         order = db.scalar(select(Order).where(Order.marketplace_account_id == account.id, Order.external_order_id == item.external_order_id))
-        status = item.status.lower()
-        if status not in {value.value for value in OrderStatus}:
-            status = OrderStatus.PENDING.value
+        status = _normalize_order_status(item.status)
         if not order:
-            order = Order(seller_account_id=seller_id, marketplace_account_id=account.id, external_order_id=item.external_order_id, status=status, currency=item.currency, total_amount=float(item.total), subtotal=float(item.total), ordered_at=item.ordered_at, marketplace_data_json=json.dumps({"items": item.items or []}, default=str, separators=(",", ":")))
+            order = Order(seller_account_id=seller_id, marketplace_account_id=account.id, external_order_id=item.external_order_id, status=status, currency=item.currency, total_amount=float(item.total), subtotal=float(item.total), ordered_at=item.ordered_at, marketplace_data_json=json.dumps({"items": item.items or [], "status": item.status}, default=str, separators=(",", ":")))
             db.add(order)
             db.flush()
         else:
@@ -110,7 +129,7 @@ def _sync_orders(db: Session, account: MarketplaceAccount, seller_id: int, clien
             order.subtotal = float(item.total)
             order.currency = item.currency
             order.ordered_at = item.ordered_at
-            order.marketplace_data_json = json.dumps({"items": item.items or []}, default=str, separators=(",", ":"))
+            order.marketplace_data_json = json.dumps({"items": item.items or [], "status": item.status}, default=str, separators=(",", ":"))
             db.query(OrderItem).filter(OrderItem.order_id == order.id).delete(synchronize_session=False)
         for raw in item.items or []:
             sku = str(raw.get("sku") or raw.get("seller_sku") or "unknown")
@@ -119,6 +138,17 @@ def _sync_orders(db: Session, account: MarketplaceAccount, seller_id: int, clien
             product = db.scalar(select(Product).where(Product.seller_account_id == seller_id, Product.sku == sku))
             db.add(OrderItem(order_id=order.id, product_id=product.id if product else None, sku=sku, title=str(raw.get("title") or sku), quantity=quantity, unit_price=float(unit_price), total_amount=float(unit_price * quantity)))
         count += 1
+    return count
+
+
+def _sync_prices(db: Session, account: MarketplaceAccount, seller_id: int, client: Any, context: MarketplaceAccountContext) -> int:
+    skus = list(db.scalars(select(Product.sku).where(Product.seller_account_id == seller_id, Product.is_active.is_(True)).limit(100)).all())
+    count = 0
+    for quote in client.get_prices(context, skus=skus):
+        listing = db.scalar(select(Listing).where(Listing.marketplace_account_id == account.id, Listing.sku == quote.sku))
+        if listing:
+            listing.price = quote.price
+            count += 1
     return count
 
 
@@ -148,9 +178,9 @@ def _finish(db: Session, run: MarketplaceSyncRun, status: MarketplaceSyncRunStat
 
 
 def sync_marketplace_account(db: Session, account: MarketplaceAccount) -> dict[str, Any]:
-    """Run a resilient, idempotent full sync and persist its execution history."""
+    """Run a resilient, idempotent marketplace sync and persist execution history."""
     run = _new_run(db, account)
-    result: dict[str, Any] = {"run_id": run.id, "account_id": account.id, "marketplace": account.marketplace, "products": 0, "inventory": 0, "orders": 0, "errors": {}}
+    result: dict[str, Any] = {"run_id": run.id, "account_id": account.id, "marketplace": account.marketplace, "products": 0, "inventory": 0, "orders": 0, "prices": 0, "errors": {}}
     try:
         client, context = _client_context(account)
         if not client.test_connection(context):
@@ -162,13 +192,12 @@ def sync_marketplace_account(db: Session, account: MarketplaceAccount) -> dict[s
         _finish(db, run, MarketplaceSyncRunStatus.FAILED, result, str(exc))
         raise
 
-    phases = (("products", _sync_products), ("inventory", _sync_inventory), ("orders", _sync_orders))
+    phases = (("products", _sync_products), ("inventory", _sync_inventory), ("orders", _sync_orders), ("prices", _sync_prices))
     for name, handler in phases:
         try:
             with db.begin_nested():
                 result[name] = handler(db, account, account.seller_account_id, client, context)
-        except Exception as exc:  # each dataset is isolated so one API failure does not erase successful phases
-            db.rollback()
+        except Exception as exc:
             result["errors"][name] = str(exc)[:1000]
 
     successful = [name for name, _ in phases if not result["errors"].get(name)]
@@ -179,7 +208,7 @@ def sync_marketplace_account(db: Session, account: MarketplaceAccount) -> dict[s
         return result
 
     account.is_connected = True
-    account.connection_error = None if not result["errors"] else "; ".join(f"{key}: {value}" for key, value in result["errors"].items())[:2000]
+    account.connection_error = "; ".join(f"{key}: {value}" for key, value in result["errors"].items())[:2000] if result["errors"] else None
     account.last_connected_at = datetime.utcnow()
     account.last_sync_at = datetime.utcnow()
     status = MarketplaceSyncRunStatus.PARTIAL if result["errors"] else MarketplaceSyncRunStatus.COMPLETED
