@@ -6,7 +6,7 @@ const api = (path: string, init?: RequestInit) => fetch(`${API_BASE}/api/v1${pat
 
 type Recommendation = { type: string; priority: string; title: string; reason: string; suggested_action: string; confidence: number; data: Record<string, unknown> };
 type Brief = { summary: string; context: { products: number; inventory_units: number; low_stock: number; out_of_stock: number; campaigns: number }; recommendations: Recommendation[]; approval_required_for_writes: boolean };
-type ChatMessage = { role: 'user' | 'agent'; text: string; provider?: string; model?: string };
+type ChatMessage = { role: 'user' | 'agent'; text: string; provider?: string; model?: string; fallbackReason?: string };
 
 type ConversationItem = { role: 'user' | 'assistant'; content: string };
 
@@ -67,7 +67,7 @@ export default function AISellerAgentWorkspace() {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || `AI Agent API returned ${r.status}`);
-      const agentItem: ChatMessage = { role: 'agent', text: data.answer || 'No answer returned.', provider: data.provider, model: data.model };
+      const agentItem: ChatMessage = { role: 'agent', text: data.answer || 'No answer returned.', provider: data.provider, model: data.model, fallbackReason: data.fallback_reason || undefined };
       setMessages(prev => [...prev, agentItem]);
       if (data.provider) setProvider(`${data.provider}${data.model ? ` · ${data.model}` : ''}`);
       if (data.recommendations) setRecommendations(data.recommendations);
@@ -103,7 +103,7 @@ export default function AISellerAgentWorkspace() {
         <div className="agent-chat">
           <div className="chat-history" aria-live="polite">
             {!messages.length && <div className="empty"><strong>Start a real conversation</strong><small>Ask in any language: “Kaise ho?”, “What is my stock?”, “मेरा सबसे profitable product कौन सा है?”, or switch languages mid-conversation.</small></div>}
-            {messages.map((item, i) => <div className={`chat-message ${item.role}`} key={`${item.role}-${i}`}><b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>{item.provider && <small>via {item.provider}{item.model ? ` · ${item.model}` : ''}</small>}</div>)}
+            {messages.map((item, i) => <div className={`chat-message ${item.role}`} key={`${item.role}-${i}`}><b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>{item.provider && <small>via {item.provider}{item.model ? ` · ${item.model}` : ''}</small>}{item.fallbackReason && <small className="fallback-reason">AI diagnostic: {item.fallbackReason}</small>}</div>)}
           </div>
           <textarea value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') ask(); }} placeholder="Ask in any language…" rows={3} disabled={chatting}/>
           <div className="chat-actions"><button onClick={() => ask()} disabled={chatting || !message.trim()}>{chatting ? 'Thinking…' : 'Ask Agent'}</button><button onClick={() => ask(true)} disabled={chatting || !message.trim()}>Build Action Plan</button><button onClick={clearConversation} disabled={chatting || !messages.length}>Clear Chat</button></div>
