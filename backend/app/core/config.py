@@ -30,6 +30,17 @@ class Settings(BaseSettings):
 
     personal_seller_name: str = "My Business"
 
+    # LLM providers. Keys are server-side only; never expose them to the browser.
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
+    openrouter_api_key: str | None = None
+    openrouter_model: str = "openrouter/free"
+    openrouter_http_referer: str = "https://apna-mandla-44656706-3e7f7.web.app"
+    llm_primary_provider: str = "gemini"
+    llm_timeout_seconds: float = 30.0
+    llm_temperature: float = 0.2
+    llm_max_output_tokens: int = 1200
+
     amazon_sp_api_base_url: str = "https://sellingpartnerapi-eu.amazon.com"
     amazon_sp_api_region: str = "eu-west-1"
     amazon_sp_api_marketplace_id: str = "A21TJRUUN4KGV"
