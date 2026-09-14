@@ -105,10 +105,19 @@ class PersonalAISellerAgentService:
         if name == "get_recommendations": return {"recommendations": self.recommendations(limit)}
         raise ValueError(f"Unknown or unauthorized AI tool: {name}")
 
+    @staticmethod
+    def _infer_intent(message: str) -> str:
+        text = message.lower()
+        if any(w in text for w in ("stock", "inventory", "out of stock", "replenish")): return "inventory"
+        if any(w in text for w in ("ad", "advertising", "campaign", "acos", "roas")): return "advertising"
+        if any(w in text for w in ("price", "pricing", "margin", "competitor")): return "pricing"
+        return "business_health"
+
     def chat(self, message: str, create_plan: bool = False) -> dict[str, Any]:
         message = message.strip()
         if not message: raise ValueError("message cannot be empty")
         gateway = LLMGateway()
+        intent = self._infer_intent(message)
         answer = None; provider = "deterministic"; model = None; tool_calls: list[dict[str, Any]] = []
         if gateway.configured:
             system = ("You are the Personal AI Seller Agent for a single-user Amazon/Flipkart Seller Hub. "
@@ -122,14 +131,13 @@ class PersonalAISellerAgentService:
             except LLMUnavailable:
                 pass
         if answer is None:
-            text = message.lower()
-            if any(w in text for w in ("stock", "inventory", "out of stock", "replenish")): focus = self.inventory_issues(10); intent = "inventory"
-            elif any(w in text for w in ("ad", "advertising", "campaign", "acos", "roas")): focus = self.advertising_issues(10); intent = "advertising"
-            elif any(w in text for w in ("price", "pricing", "margin", "competitor")): focus = self.pricing_opportunities(10); intent = "pricing"
-            else: focus = self.recommendations(10); intent = "business_health"
+            if intent == "inventory": focus = self.inventory_issues(10)
+            elif intent == "advertising": focus = self.advertising_issues(10)
+            elif intent == "pricing": focus = self.pricing_opportunities(10)
+            else: focus = self.recommendations(10)
             answer = self._answer(intent, focus)
-        response = {"agent": "personal_ai_seller_agent", "message": message, "answer": answer, "provider": provider, "model": model, "tool_calls": [{"name": c.get("name") or c.get("function", {}).get("name")} for c in tool_calls], "plan_requested": create_plan, "created_actions": [], "approval_required": True, "execution": "No marketplace write is executed from chat; approved writes use the existing Action Control pipeline."}
-        self.db.add(AuditLog(action="ai_agent.chat", resource_type="ai_agent", resource_id=None, details=json.dumps({"provider": provider, "model": model, "tool_calls": response["tool_calls"], "plan": create_plan}, separators=(",", ":"))))
+        response = {"agent": "personal_ai_seller_agent", "message": message, "answer": answer, "intent": intent, "provider": provider, "model": model, "tool_calls": [{"name": c.get("name") or c.get("function", {}).get("name")} for c in tool_calls], "plan_requested": create_plan, "created_actions": [], "approval_required": True, "execution": "No marketplace write is executed from chat; approved writes use the existing Action Control pipeline."}
+        self.db.add(AuditLog(action="ai_agent.chat", resource_type="ai_agent", resource_id=None, details=json.dumps({"provider": provider, "model": model, "intent": intent, "tool_calls": response["tool_calls"], "plan": create_plan}, separators=(",", ":"))))
         self.db.commit()
         return response
 
