@@ -88,6 +88,8 @@ export default function MarketplaceWorkspace() {
     }
   };
 
+  const recentRuns = accounts.flatMap(account => (runs[account.id] || []).slice(0, 5).map(run => ({ ...run, marketplace: account.display_name })));
+
   return <section className="module-page">
     <div className="module-hero teal"><div className="module-mark">◇</div><div><p className="eyebrow">CONFIGURATION CENTER</p><h2>Marketplaces</h2><p>Real Amazon and Flipkart connections with encrypted server-side credentials and background synchronization.</p></div><span className="connection">● Direct personal workspace</span></div>
     {message && <div className="errorbar" role="status">{message} <button onClick={load}>Refresh</button></div>}
@@ -107,7 +109,7 @@ export default function MarketplaceWorkspace() {
         </div>)}</div> : <Empty text="No marketplace accounts configured" sub="Set the personal marketplace environment variables on the backend, then refresh this workspace."/>}
       </article>
       <article className="panel"><PanelHead title="Recent sync runs" sub="Products, inventory, orders and prices"/>
-        {accounts.flatMap(account => (runs[account.id] || []).slice(0, 5).map(run => <div className="check" key={`${account.id}-${run.id}`}><b>{run.status === 'completed' ? '✓' : run.status === 'failed' ? '!' : '•'}</b><span><strong>{account.display_name} · #{run.id}</strong><small>{run.status} · {time(run.finished_at || run.started_at)}{run.error ? ` · ${run.error}` : ''}</small></span></div>)).length ? accounts.flatMap(account => (runs[account.id] || []).slice(0, 5).map(run => <div className="check" key={`run-${account.id}-${run.id}`}><b>{run.status === 'completed' ? '✓' : run.status === 'failed' ? '!' : '•'}</b><span><strong>{account.display_name} · Sync #{run.id}</strong><small>{run.status} · {time(run.finished_at || run.started_at)}{run.error ? ` · ${run.error}` : ''}</small></span></div>)) : <Empty text="No sync runs yet" sub="Use Sync to queue the first marketplace synchronization."/>}
+        {recentRuns.length ? recentRuns.map(run => <div className="check" key={`${run.marketplace}-${run.id}`}><b>{run.status === 'completed' ? '✓' : run.status === 'failed' ? '!' : '•'}</b><span><strong>{run.marketplace} · Sync #{run.id}</strong><small>{run.status} · {time(run.finished_at || run.started_at)}{run.error ? ` · ${run.error}` : ''}</small></span></div>) : <Empty text="No sync runs yet" sub="Use Sync to queue the first marketplace synchronization."/>}
       </article>
     </div>
     <div className="screen-shortcuts"><button onClick={load}>↻ Refresh marketplace status</button></div>
