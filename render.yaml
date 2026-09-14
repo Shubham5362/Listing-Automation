@@ -1,4 +1,13 @@
 services:
+  # Free Render Key Value (Valkey) for cache/job-queue coordination.
+  - type: keyvalue
+    name: seller-hub-redis
+    plan: free
+    region: singapore
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: off
+
   - type: web
     name: seller-hub-api
     runtime: docker
@@ -20,10 +29,11 @@ services:
         sync: false
       - key: ALLOWED_HOSTS
         sync: false
-      - key: UPSTASH_REDIS_REST_URL
-        sync: false
-      - key: UPSTASH_REDIS_REST_TOKEN
-        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: seller-hub-redis
+          type: keyvalue
+          property: connectionString
       - key: WORKER_POLL_INTERVAL_SECONDS
         value: "2"
       - key: WORKER_BATCH_SIZE
@@ -37,38 +47,6 @@ services:
       - key: WORKER_CONCURRENCY
         value: "1"
 
-  # Continuous worker service. Render does not offer a free plan for background
-  # workers; keep this definition ready for the first paid compute upgrade.
-  - type: worker
-    name: seller-hub-worker
-    runtime: docker
-    plan: 0.5c-512mb
-    region: singapore
-    dockerfilePath: ./backend/Dockerfile
-    dockerCommand: sh -c "alembic upgrade head && exec python -m app.worker"
-    maxShutdownDelaySeconds: 300
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: SECRET_KEY
-        sync: false
-      - key: CREDENTIALS_ENCRYPTION_KEY
-        sync: false
-      - key: UPSTASH_REDIS_REST_URL
-        sync: false
-      - key: UPSTASH_REDIS_REST_TOKEN
-        sync: false
-      - key: WORKER_POLL_INTERVAL_SECONDS
-        value: "2"
-      - key: WORKER_BATCH_SIZE
-        value: "5"
-      - key: WORKER_MAX_ATTEMPTS
-        value: "3"
-      - key: WORKER_RETRY_BACKOFF_SECONDS
-        value: "10"
-      - key: WORKER_STALE_AFTER_SECONDS
-        value: "1800"
-      - key: WORKER_CONCURRENCY
-        value: "1"
+# Note: Render Background Workers are intentionally not provisioned here because
+# they are not available on the Free plan. The worker process will be handled
+# separately through the project's zero-cost scheduled worker strategy.
