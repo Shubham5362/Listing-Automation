@@ -26,25 +26,45 @@ class ConversationalAISellerAgentService(PersonalAISellerAgentService):
 
     @staticmethod
     def _creator_context() -> str:
-        """Build narrowly scoped creator facts from server-side configuration.
-
-        Personal creator details are intentionally not hard-coded into source code.
-        They are only exposed to the model when configured by the private runtime
-        environment, and the model is instructed to disclose only the field asked for.
-        """
+        """Build narrowly scoped creator facts from server-side configuration."""
         name = os.getenv("CREATOR_NAME", "").strip()
         location = os.getenv("CREATOR_LOCATION", "").strip()
         instagram = os.getenv("CREATOR_INSTAGRAM", "").strip()
         facts: list[str] = []
         if name:
-            facts.append(f"creator name: {name}")
+            facts.append(f"creator name: Mr. {name}")
         if location:
             facts.append(f"creator location: {location}")
         if instagram:
-            facts.append(f"creator Instagram/contact: {instagram}")
+            facts.append(f"creator Instagram: {instagram}")
         if not facts:
             return "No creator identity details are configured. Do not invent them."
         return "Creator facts (private runtime configuration): " + "; ".join(facts)
+
+    @staticmethod
+    def _creator_reply(message: str) -> str | None:
+        """Return a deterministic, field-scoped creator answer for simple identity questions."""
+        text = message.casefold().strip()
+        name_terms = ("naam", "name", "who made", "who created", "creator ka naam", "banaya")
+        location_terms = ("kahan", "kaha", "where", "rehta", "rehte", "belongs", "from")
+        instagram_terms = ("instagram", "insta", "contact", "social id", "social media")
+
+        name = os.getenv("CREATOR_NAME", "").strip()
+        location = os.getenv("CREATOR_LOCATION", "").strip()
+        instagram = os.getenv("CREATOR_INSTAGRAM", "").strip()
+
+        if any(term in text for term in instagram_terms):
+            if instagram:
+                return f"Mr. {name} ka Instagram: {instagram}" if name else f"Mr. {instagram}"
+            return "Mere paas creator ka sirf Instagram contact configured hai, lekin Instagram ID abhi configured nahi hai."
+
+        if any(term in text for term in location_terms) and ("creator" in text or "owner" in text or "shubham" in text or "uska" in text):
+            return f"Mr. {name} Mandla, Madhya Pradesh 481661 se hain." if name and location else None
+
+        if any(term in text for term in name_terms) and ("creator" in text or "owner" in text or "kisne" in text or "banaya" in text):
+            return f"Mr. {name}" if name else None
+
+        return None
 
     def chat(self, message: str, create_plan: bool = False, conversation: list[dict[str, str]] | None = None) -> dict[str, Any]:
         message = message.strip()
@@ -66,11 +86,13 @@ class ConversationalAISellerAgentService(PersonalAISellerAgentService):
                 "from context and handle greetings, casual chat, explanations, business analysis, follow-up questions "
                 "and action requests naturally.\n\n"
                 "CREATOR IDENTITY & PRIVACY: " + self._creator_context() + " Only disclose creator information "
-                "when the user explicitly asks for that specific information. Answer only the field requested: if asked "
-                "for the creator's name, give only the configured name; if asked where the creator is from/lives, give "
-                "only the configured location; if asked for Instagram/contact, give only the configured Instagram/contact. "
-                "Never volunteer, combine, or infer other personal details unless the user explicitly asks for them. "
-                "Never invent missing creator details.\n\n"
+                "when the user explicitly asks for that specific information. Always address the creator respectfully "
+                "as 'Mr. <name>' when referring to him by name. Answer only the field requested: if asked for the creator's "
+                "name, give only 'Mr. <configured name>'; if asked where the creator is from/lives, give only the configured "
+                "location; if asked for Instagram/contact, explain that only Instagram contact information is available "
+                "and give only the configured Instagram ID. Do not claim a phone number, email, Facebook ID, WhatsApp number, "
+                "or any other contact method unless it is explicitly configured. Never volunteer, combine, or infer other "
+                "personal details unless the user explicitly asks for them. Never invent missing creator details.\n\n"
                 "LANGUAGE: Reply in the same language/script the user is currently using. Detect Hindi, Hinglish, "
                 "English, Marathi, Gujarati, Bengali, Tamil, Telugu, Kannada, Malayalam, Punjabi, Urdu, Nepali "
                 "and other languages supported by the model. If the user switches language, switch with them. "
@@ -97,18 +119,20 @@ class ConversationalAISellerAgentService(PersonalAISellerAgentService):
                 fallback_reason = str(exc)[:1200]
 
         if answer is None:
-            if self._is_casual(message):
-                answer = "Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?"
-            else:
-                if intent == "inventory":
-                    focus = self.inventory_issues(10)
-                elif intent == "advertising":
-                    focus = self.advertising_issues(10)
-                elif intent == "pricing":
-                    focus = self.pricing_opportunities(10)
+            answer = self._creator_reply(message)
+            if answer is None:
+                if self._is_casual(message):
+                    answer = "Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?"
                 else:
-                    focus = self.recommendations(10)
-                answer = self._answer(intent, focus)
+                    if intent == "inventory":
+                        focus = self.inventory_issues(10)
+                    elif intent == "advertising":
+                        focus = self.advertising_issues(10)
+                    elif intent == "pricing":
+                        focus = self.pricing_opportunities(10)
+                    else:
+                        focus = self.recommendations(10)
+                    answer = self._answer(intent, focus)
 
         response = {
             "agent": "personal_ai_seller_agent",
