@@ -11,9 +11,9 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.catalog import Product
 from app.models.core import SellerAccount, User
-from app.services.auth import get_user_by_token
-from app.services.product_knowledge import build_product_knowledge, canonical_attribute, knowledge_history, read_knowledge
 from app.models.product_knowledge import ProductKnowledge
+from app.services.auth import get_user_by_token
+from app.services.product_knowledge import build_product_knowledge, canonical_attribute, detect_contradictions, knowledge_history, read_knowledge
 
 router = APIRouter(prefix="/product-knowledge", tags=["product-knowledge"])
 bearer = HTTPBearer(auto_error=False)
@@ -26,6 +26,10 @@ class ProductKnowledgeAnalyzeRequest(BaseModel):
 
 class AttributeMapRequest(BaseModel):
     attributes: dict[str, Any]
+
+
+class ConflictCheckRequest(BaseModel):
+    candidates: dict[str, Any]
 
 
 def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer), db: Session = Depends(get_db)) -> User:
@@ -48,8 +52,7 @@ def owned_product(db: Session, product_id: int, user: User) -> Product:
 def analyze(product_id: int, payload: ProductKnowledgeAnalyzeRequest, db: Session = Depends(get_db), user: User = Depends(current_user)) -> dict[str, Any]:
     product = owned_product(db, product_id, user)
     row = build_product_knowledge(db, product, reason=payload.reason, source=payload.source)
-    db.commit()
-    db.refresh(row)
+    db.commit(); db.refresh(row)
     return read_knowledge(row)
 
 
@@ -58,16 +61,25 @@ def get_knowledge(product_id: int, db: Session = Depends(get_db), user: User = D
     product = owned_product(db, product_id, user)
     row = db.scalar(select(ProductKnowledge).where(ProductKnowledge.product_id == product.id, ProductKnowledge.seller_account_id == product.seller_account_id))
     if row is None:
-        row = build_product_knowledge(db, product)
-        db.commit()
-        db.refresh(row)
+        row = build_product_knowledge(db, product); db.commit(); db.refresh(row)
     return read_knowledge(row)
 
 
 @router.get("/products/{product_id}/history")
-def history(product_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)) -> dict[str, Any]:
+def history(product_id: int, db: Session = Depends(get_db), user: User = Depends(current_user) -> dict[str, Any]:
     owned_product(db, product_id, user)
     return {"product_id": product_id, "versions": knowledge_history(db, product_id)}
+
+
+@router.post("/products/{product_id}/check-conflicts")
+def check_conflicts(product_id: int, payload: ConflictCheckRequest, db: Session = Depends(get_db), user: User = Depends(current_user)) -> dict[str, Any]:
+    product = owned_product(db, product_id, user)
+    row = db.scalar(select(ProductKnowledge).where(ProductKnowledge.product_id == product.id, ProductKnowledge.seller_account_id == product.seller_account_id))
+    if row is None:
+        row = build_product_knowledge(db, product); db.commit(); db.refresh(row)
+    facts = {str(k): v for k, v in __import__("json").loads(row.facts_json or "{}").items()}
+    conflicts = detect_contradictions(facts, payload.candidates)
+    return {"product_id": product_id, "conflict_count": len(conflicts), "conflicts": conflicts}
 
 
 @router.post("/normalize-attributes")
