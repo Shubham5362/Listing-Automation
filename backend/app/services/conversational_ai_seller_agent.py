@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 
 from app.models.core import AuditLog
@@ -9,11 +10,7 @@ from app.services.personal_ai_seller_agent import PersonalAISellerAgentService
 
 
 class ConversationalAISellerAgentService(PersonalAISellerAgentService):
-    """Conversation-aware layer over the verified Seller Hub agent tools.
-
-    The model handles language, intent and follow-up understanding; business data
-    still comes only from the controlled read tools inherited from the base agent.
-    """
+    """Conversation-aware layer over the verified Seller Hub agent tools."""
 
     @staticmethod
     def _history_prompt(conversation: list[dict[str, str]], current: str) -> str:
@@ -26,6 +23,28 @@ class ConversationalAISellerAgentService(PersonalAISellerAgentService):
         if lines:
             return "Conversation history (use only for continuity; current message has priority):\n" + "\n".join(lines) + f"\n\nCurrent user message:\n{current}"
         return current
+
+    @staticmethod
+    def _creator_context() -> str:
+        """Build narrowly scoped creator facts from server-side configuration.
+
+        Personal creator details are intentionally not hard-coded into source code.
+        They are only exposed to the model when configured by the private runtime
+        environment, and the model is instructed to disclose only the field asked for.
+        """
+        name = os.getenv("CREATOR_NAME", "").strip()
+        location = os.getenv("CREATOR_LOCATION", "").strip()
+        instagram = os.getenv("CREATOR_INSTAGRAM", "").strip()
+        facts: list[str] = []
+        if name:
+            facts.append(f"creator name: {name}")
+        if location:
+            facts.append(f"creator location: {location}")
+        if instagram:
+            facts.append(f"creator Instagram/contact: {instagram}")
+        if not facts:
+            return "No creator identity details are configured. Do not invent them."
+        return "Creator facts (private runtime configuration): " + "; ".join(facts)
 
     def chat(self, message: str, create_plan: bool = False, conversation: list[dict[str, str]] | None = None) -> dict[str, Any]:
         message = message.strip()
@@ -46,6 +65,12 @@ class ConversationalAISellerAgentService(PersonalAISellerAgentService):
                 "You are a real conversational assistant, not a scripted FAQ. Understand the user's meaning "
                 "from context and handle greetings, casual chat, explanations, business analysis, follow-up questions "
                 "and action requests naturally.\n\n"
+                "CREATOR IDENTITY & PRIVACY: " + self._creator_context() + " Only disclose creator information "
+                "when the user explicitly asks for that specific information. Answer only the field requested: if asked "
+                "for the creator's name, give only the configured name; if asked where the creator is from/lives, give "
+                "only the configured location; if asked for Instagram/contact, give only the configured Instagram/contact. "
+                "Never volunteer, combine, or infer other personal details unless the user explicitly asks for them. "
+                "Never invent missing creator details.\n\n"
                 "LANGUAGE: Reply in the same language/script the user is currently using. Detect Hindi, Hinglish, "
                 "English, Marathi, Gujarati, Bengali, Tamil, Telugu, Kannada, Malayalam, Punjabi, Urdu, Nepali "
                 "and other languages supported by the model. If the user switches language, switch with them. "
