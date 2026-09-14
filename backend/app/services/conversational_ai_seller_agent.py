@@ -55,8 +55,8 @@ class ConversationalAISellerAgentService(PersonalAISellerAgentService):
 
         if any(term in text for term in instagram_terms):
             if instagram:
-                return f"Mr. {name} ka Instagram: {instagram}" if name else f"Mr. {instagram}"
-            return "Mere paas creator ka sirf Instagram contact configured hai, lekin Instagram ID abhi configured nahi hai."
+                return f"Instagram: {instagram}"
+            return "Mere paas creator ka Instagram contact configured nahi hai."
 
         if any(term in text for term in location_terms) and ("creator" in text or "owner" in text or "shubham" in text or "uska" in text):
             return f"Mr. {name} Mandla, Madhya Pradesh 481661 se hain." if name and location else None
