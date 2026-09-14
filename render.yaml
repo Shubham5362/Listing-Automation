@@ -15,7 +15,6 @@ services:
     region: singapore
     dockerfilePath: ./backend/Dockerfile
     healthCheckPath: /health
-    maxShutdownDelaySeconds: 60
     envVars:
       - key: ENVIRONMENT
         value: production
