@@ -26,6 +26,9 @@ class FakeClient:
     def list_orders(self, account, *, limit=100):
         return [MarketplaceOrder(external_order_id="ORD-1", status="confirmed", ordered_at=datetime.now(timezone.utc).replace(tzinfo=None), total=Decimal("499.00"), items=[{"sku": "SKU-1", "quantity": 1, "unit_price": "499"}])]
 
+    def get_prices(self, account, *, skus=None):
+        return []
+
 
 def _account(db_session):
     seller = SellerAccount(name="Seller")
