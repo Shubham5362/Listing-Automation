@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,6 +14,7 @@ from app.models.core import MarketplaceAccount, SellerAccount, User
 from app.schemas.ai_listing import AdvancedListingRead, AdvancedListingRequest, ListingDraftRead, ListingDraftStatusUpdate, ListingGenerateRequest
 from app.services.advanced_listing_agent import AdvancedListingAgent
 from app.services.ai_listing import ListingGenerationService
+from app.services.listing_operations import enqueue_listing_publish
 
 router = APIRouter(prefix="/ai/listings", tags=["ai-listings"])
 service = ListingGenerationService()
@@ -88,3 +91,16 @@ def update_draft_status(draft_id: int, payload: ListingDraftStatusUpdate, user: 
     db.commit()
     db.refresh(draft)
     return _serialize(draft)
+
+
+@router.post("/{draft_id}/publish", status_code=202)
+def publish_listing(draft_id: int, product_type: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, int | str]:
+    draft = _owned_draft(db, user, draft_id)
+    try:
+        seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == user.id, SellerAccount.id == select(Product.seller_account_id).where(Product.id == draft.product_id).scalar_subquery()))
+        if seller is None:
+            raise ValueError("Seller account not found")
+        job_id = enqueue_listing_publish(db, seller_account_id=seller.id, draft_id=draft.id, product_type=product_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"job_id": job_id, "draft_id": draft.id, "status": "queued"}
