@@ -1,77 +1,49 @@
 import React from 'react';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-const STORAGE_KEY = 'seller-hub-ai-agent-conversation-v2';
+const STORAGE_KEY = 'seller-hub-ai-agent-conversation-v3';
 const api = (path: string, init?: RequestInit) => fetch(`${API_BASE}/api/v1${path}`, { headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, ...init });
 
-type Recommendation = { type: string; priority: string; title: string; reason: string; suggested_action: string; confidence: number; data: Record<string, unknown> };
-type Brief = { summary: string; context: { products: number; inventory_units: number; low_stock: number; out_of_stock: number; campaigns: number }; recommendations: Recommendation[]; approval_required_for_writes: boolean };
-type ChatMessage = { role: 'user' | 'agent'; text: string; provider?: string; model?: string; fallbackReason?: string };
-
+type ChatMessage = { role: 'user' | 'agent'; text: string; createdAt: string };
 type ConversationItem = { role: 'user' | 'assistant'; content: string };
 
-export default function AISellerAgentWorkspace() {
-  const [brief, setBrief] = React.useState<Brief | null>(null);
+type Props = { onClose: () => void };
+
+export default function AISellerAgentWorkspace({ onClose }: Props) {
   const [message, setMessage] = React.useState('');
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
-  const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [chatting, setChatting] = React.useState(false);
   const [error, setError] = React.useState('');
-  const [provider, setProvider] = React.useState('Checking AI…');
+  const endRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      if (Array.isArray(saved)) setMessages(saved.slice(-30));
-    } catch { /* ignore malformed local history */ }
+      if (Array.isArray(saved)) setMessages(saved.slice(-60));
+    } catch { /* ignore malformed history */ }
   }, []);
 
   React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-30)));
-  }, [messages]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-60)));
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, chatting]);
 
-  const load = React.useCallback(async () => {
-    try {
-      const [b, s] = await Promise.all([api('/personal/ai/seller-agent/brief'), api('/personal/ai/seller-agent/status')]);
-      if (!b.ok) throw new Error(`AI Agent API returned ${b.status}`);
-      const data = await b.json();
-      setBrief(data);
-      setRecommendations(data.recommendations || []);
-      if (s.ok) {
-        const status = await s.json();
-        setProvider(status.configured ? `${status.primary_provider} · ${status.primary_model}` : 'LLM not configured · safe fallback');
-      }
-      setError('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load AI Seller Agent');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  React.useEffect(() => { load(); }, [load]);
-
-  async function ask(createPlan = false) {
+  async function ask() {
     const text = message.trim();
     if (!text || chatting) return;
     const priorConversation: ConversationItem[] = messages.slice(-12).map(item => ({ role: item.role === 'user' ? 'user' : 'assistant', content: item.text }));
-    const userItem: ChatMessage = { role: 'user', text };
-    setMessages(prev => [...prev, userItem]);
+    setMessages(prev => [...prev, { role: 'user', text, createdAt: new Date().toISOString() }]);
+    setMessage('');
     setChatting(true);
     setError('');
     try {
       const r = await api('/personal/ai/seller-agent/chat', {
         method: 'POST',
-        body: JSON.stringify({ message: text, create_plan: createPlan, conversation: priorConversation })
+        body: JSON.stringify({ message: text, create_plan: false, conversation: priorConversation })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || `AI Agent API returned ${r.status}`);
-      const agentItem: ChatMessage = { role: 'agent', text: data.answer || 'No answer returned.', provider: data.provider, model: data.model, fallbackReason: data.fallback_reason || undefined };
-      setMessages(prev => [...prev, agentItem]);
-      if (data.provider) setProvider(`${data.provider}${data.model ? ` · ${data.model}` : ''}`);
-      if (data.recommendations) setRecommendations(data.recommendations);
-      setMessage('');
+      setMessages(prev => [...prev, { role: 'agent', text: data.answer || 'No answer returned.', createdAt: new Date().toISOString() }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'AI request failed');
       setMessages(prev => prev.slice(0, -1));
@@ -80,46 +52,43 @@ export default function AISellerAgentWorkspace() {
     }
   }
 
-  function clearConversation() {
+  function clearChat() {
     setMessages([]);
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  const c = brief?.context;
-  const live = provider !== 'Checking AI…' && !provider.includes('safe fallback');
-  return <section className="module-page">
-    <div className="module-hero ai">
-      <div className="module-mark">✦</div>
-      <div><p className="eyebrow">INTELLIGENCE CENTER</p><h2>AI Seller Agent</h2><p>Multilingual natural conversation, live Seller Hub tools and supervised marketplace actions.</p></div>
-      <span className="connection">● {loading ? 'Connecting' : live ? 'AI Live' : 'Fallback'}</span>
-    </div>
-    {error && <div className="errorbar" role="alert">{error} <button onClick={load}>Retry</button></div>}
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      ask();
+    }
+  }
 
-    <section className="cards">{[["Products", c?.products ?? 0, 'catalog'], ["Inventory", c?.inventory_units ?? 0, 'available units'], ["Low stock", c?.low_stock ?? 0, 'needs attention'], ["Out of stock", c?.out_of_stock ?? 0, 'critical'], ["Campaigns", c?.campaigns ?? 0, 'advertising']].map(([title, value, sub]) => <article className="card" key={title}><span>{title}</span><strong>{loading ? '—' : String(value)}</strong><small>{sub}</small></article>)}</section>
-
-    <div className="grid module-grid">
-      <article className="panel">
-        <PanelHead title="Ask your seller agent" sub={`Multilingual · ${provider}`} />
-        <div className="agent-chat">
-          <div className="chat-history" aria-live="polite">
-            {!messages.length && <div className="empty"><strong>Start a real conversation</strong><small>Ask in any language: “Kaise ho?”, “What is my stock?”, “मेरा सबसे profitable product कौन सा है?”, or switch languages mid-conversation.</small></div>}
-            {messages.map((item, i) => <div className={`chat-message ${item.role}`} key={`${item.role}-${i}`}><b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>{item.provider && <small>via {item.provider}{item.model ? ` · ${item.model}` : ''}</small>}{item.fallbackReason && <small className="fallback-reason">AI diagnostic: {item.fallbackReason}</small>}</div>)}
-          </div>
-          <textarea value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') ask(); }} placeholder="Ask in any language…" rows={3} disabled={chatting}/>
-          <div className="chat-actions"><button onClick={() => ask()} disabled={chatting || !message.trim()}>{chatting ? 'Thinking…' : 'Ask Agent'}</button><button onClick={() => ask(true)} disabled={chatting || !message.trim()}>Build Action Plan</button><button onClick={clearConversation} disabled={chatting || !messages.length}>Clear Chat</button></div>
+  return <div className="ai-chat-overlay" role="dialog" aria-modal="true" aria-label="AI Seller Agent">
+    <section className="ai-chat-window">
+      <header className="ai-chat-header">
+        <div className="ai-chat-avatar">✦</div>
+        <div className="ai-chat-title"><strong>AI Seller Agent</strong><span>● Online</span></div>
+        <div className="ai-chat-header-actions">
+          <button aria-label="Clear chat" title="Clear chat" onClick={clearChat}>⌫</button>
+          <button aria-label="Close AI chat" title="Close" onClick={onClose}>×</button>
         </div>
-      </article>
-      <article className="panel">
-        <PanelHead title="Business brief" sub="Prioritized live signals" />
-        <p className="brief-summary">{brief?.summary || (loading ? 'Analyzing current workspace…' : 'No summary available.')}</p>
-        {brief?.approval_required_for_writes && <div className="safety-note">✓ Marketplace writes remain approval-gated. The agent never executes an unapproved write.</div>}
-        <div className="safety-note">✓ Any supported language · ✓ Conversation context · ✓ Live data · ✓ Tool calls audited</div>
-      </article>
-    </div>
+      </header>
 
-    <article className="panel"><PanelHead title="Priority recommendations" sub="Explainable actions from current business data"/>{recommendations.length ? <div className="rows">{recommendations.map((item, i) => <div key={`${item.type}-${i}`}><b>{item.title}</b><strong>{item.priority} · {Math.round(item.confidence * 100)}%</strong><em>{item.reason}</em></div>)}</div> : <div className="empty"><strong>No priority recommendations</strong><small>There is no current live data requiring agent attention.</small></div>}</article>
-    <div className="screen-shortcuts"><button onClick={load}>↻ Refresh analysis</button><button onClick={() => setMessage('What needs attention today?')}>Ask what needs attention →</button></div>
-  </section>;
+      <div className="ai-chat-body" aria-live="polite">
+        {!messages.length && <div className="ai-chat-welcome"><div className="welcome-icon">✦</div><h2>AI Seller Agent</h2><p>Namaste 👋 Main aapke Seller Hub ka personal AI assistant hoon. Inventory, orders, pricing, advertising, listings aur business operations ke baare mein poochhiye.</p><div className="ai-chat-suggestions"><button onClick={() => setMessage('Aaj mere business mein kya attention chahiye?')}>Aaj kya attention chahiye?</button><button onClick={() => setMessage('Mera inventory health batao')}>Inventory health</button><button onClick={() => setMessage('Mere profitable products kaun se hain?')}>Profitable products</button></div></div>}
+        {messages.map((item, i) => <div className={`wa-message-row ${item.role}`} key={`${item.createdAt}-${i}`}><div className="wa-bubble"><p>{item.text}</p><time>{new Date(item.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</time></div></div>)}
+        {chatting && <div className="wa-message-row agent"><div className="wa-bubble typing"><i></i><i></i><i></i></div></div>}
+        <div ref={endRef} />
+      </div>
+
+      {error && <div className="ai-chat-error">{error}</div>}
+      <footer className="ai-chat-composer">
+        <button className="composer-icon" aria-label="Emoji">☺</button>
+        <textarea value={message} onChange={e => setMessage(e.target.value)} onKeyDown={handleKeyDown} placeholder="Message AI Seller Agent…" rows={1} disabled={chatting} />
+        <button className="send-button" aria-label="Send" onClick={ask} disabled={chatting || !message.trim()}>➤</button>
+      </footer>
+      <div className="ai-chat-footer-note">AI Seller Agent · Marketplace actions always require your approval</div>
+    </section>
+  </div>;
 }
-
-function PanelHead({ title, sub }: { title: string; sub: string }) { return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>; }
