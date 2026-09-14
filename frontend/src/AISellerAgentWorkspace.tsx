@@ -1,22 +1,125 @@
 import React from 'react';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const STORAGE_KEY = 'seller-hub-ai-agent-conversation-v2';
 const api = (path: string, init?: RequestInit) => fetch(`${API_BASE}/api/v1${path}`, { headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, ...init });
 
 type Recommendation = { type: string; priority: string; title: string; reason: string; suggested_action: string; confidence: number; data: Record<string, unknown> };
 type Brief = { summary: string; context: { products: number; inventory_units: number; low_stock: number; out_of_stock: number; campaigns: number }; recommendations: Recommendation[]; approval_required_for_writes: boolean };
-type ChatMessage = { role: 'user' | 'agent'; text: string; provider?: string };
+type ChatMessage = { role: 'user' | 'agent'; text: string; provider?: string; model?: string };
+
+type ConversationItem = { role: 'user' | 'assistant'; content: string };
 
 export default function AISellerAgentWorkspace() {
-  const [brief, setBrief] = React.useState<Brief | null>(null); const [message, setMessage] = React.useState(''); const [messages, setMessages] = React.useState<ChatMessage[]>([]); const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]); const [loading, setLoading] = React.useState(true); const [chatting, setChatting] = React.useState(false); const [error, setError] = React.useState(''); const [provider, setProvider] = React.useState('Checking AI…');
-  const load = React.useCallback(async () => { try { const [b, s] = await Promise.all([api('/personal/ai/seller-agent/brief'), api('/personal/ai/seller-agent/status')]); if (!b.ok) throw new Error(`AI Agent API returned ${b.status}`); const data = await b.json(); setBrief(data); setRecommendations(data.recommendations || []); if (s.ok) { const status = await s.json(); setProvider(status.configured ? `${status.primary_provider} · ${status.primary_model}` : 'LLM not configured · safe fallback'); } setError(''); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load AI Seller Agent'); } finally { setLoading(false); } }, []);
+  const [brief, setBrief] = React.useState<Brief | null>(null);
+  const [message, setMessage] = React.useState('');
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [chatting, setChatting] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [provider, setProvider] = React.useState('Checking AI…');
+
+  React.useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (Array.isArray(saved)) setMessages(saved.slice(-30));
+    } catch { /* ignore malformed local history */ }
+  }, []);
+
+  React.useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-30)));
+  }, [messages]);
+
+  const load = React.useCallback(async () => {
+    try {
+      const [b, s] = await Promise.all([api('/personal/ai/seller-agent/brief'), api('/personal/ai/seller-agent/status')]);
+      if (!b.ok) throw new Error(`AI Agent API returned ${b.status}`);
+      const data = await b.json();
+      setBrief(data);
+      setRecommendations(data.recommendations || []);
+      if (s.ok) {
+        const status = await s.json();
+        setProvider(status.configured ? `${status.primary_provider} · ${status.primary_model}` : 'LLM not configured · safe fallback');
+      }
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load AI Seller Agent');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => { load(); }, [load]);
-  async function ask(createPlan = false) { const text = message.trim(); if (!text) return; setChatting(true); setError(''); setMessages(prev => [...prev, { role: 'user', text }]); try { const r = await api('/personal/ai/seller-agent/chat', { method: 'POST', body: JSON.stringify({ message: text, create_plan: createPlan }) }); const data = await r.json(); if (!r.ok) throw new Error(data.detail || `AI Agent API returned ${r.status}`); setMessages(prev => [...prev, { role: 'agent', text: data.answer || 'No answer returned.', provider: data.provider }]); if (data.provider) setProvider(`${data.provider}${data.model ? ` · ${data.model}` : ''}`); if (data.recommendations) setRecommendations(data.recommendations); setMessage(''); } catch (err) { setError(err instanceof Error ? err.message : 'AI request failed'); setMessages(prev => prev.slice(0, -1)); } finally { setChatting(false); } }
+
+  async function ask(createPlan = false) {
+    const text = message.trim();
+    if (!text || chatting) return;
+    const priorConversation: ConversationItem[] = messages.slice(-12).map(item => ({ role: item.role === 'user' ? 'user' : 'assistant', content: item.text }));
+    const userItem: ChatMessage = { role: 'user', text };
+    setMessages(prev => [...prev, userItem]);
+    setChatting(true);
+    setError('');
+    try {
+      const r = await api('/personal/ai/seller-agent/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: text, create_plan: createPlan, conversation: priorConversation })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || `AI Agent API returned ${r.status}`);
+      const agentItem: ChatMessage = { role: 'agent', text: data.answer || 'No answer returned.', provider: data.provider, model: data.model };
+      setMessages(prev => [...prev, agentItem]);
+      if (data.provider) setProvider(`${data.provider}${data.model ? ` · ${data.model}` : ''}`);
+      if (data.recommendations) setRecommendations(data.recommendations);
+      setMessage('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI request failed');
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setChatting(false);
+    }
+  }
+
+  function clearConversation() {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
   const c = brief?.context;
-  return <section className="module-page"><div className="module-hero ai"><div className="module-mark">✦</div><div><p className="eyebrow">INTELLIGENCE CENTER</p><h2>AI Seller Agent</h2><p>Natural conversation with live Seller Hub tools. Marketplace writes remain supervised.</p></div><span className="connection">● {loading ? 'Connecting' : 'Live'}</span></div>{error && <div className="errorbar" role="alert">{error} <button onClick={load}>Retry</button></div>}
+  const live = provider !== 'Checking AI…' && !provider.includes('safe fallback');
+  return <section className="module-page">
+    <div className="module-hero ai">
+      <div className="module-mark">✦</div>
+      <div><p className="eyebrow">INTELLIGENCE CENTER</p><h2>AI Seller Agent</h2><p>Multilingual natural conversation, live Seller Hub tools and supervised marketplace actions.</p></div>
+      <span className="connection">● {loading ? 'Connecting' : live ? 'AI Live' : 'Fallback'}</span>
+    </div>
+    {error && <div className="errorbar" role="alert">{error} <button onClick={load}>Retry</button></div>}
+
     <section className="cards">{[["Products", c?.products ?? 0, 'catalog'], ["Inventory", c?.inventory_units ?? 0, 'available units'], ["Low stock", c?.low_stock ?? 0, 'needs attention'], ["Out of stock", c?.out_of_stock ?? 0, 'critical'], ["Campaigns", c?.campaigns ?? 0, 'advertising']].map(([title, value, sub]) => <article className="card" key={title}><span>{title}</span><strong>{loading ? '—' : String(value)}</strong><small>{sub}</small></article>)}</section>
-    <div className="grid module-grid"><article className="panel"><PanelHead title="Ask your seller agent" sub={`Natural language · ${provider}`}/><div className="agent-chat"><div className="chat-history" aria-live="polite">{!messages.length && <div className="empty"><strong>Start a conversation</strong><small>Try “Kaise ho?”, “Mera stock kaisa hai?” or “Aaj business mein kya dikkat hai?”</small></div>}{messages.map((item, i) => <div className={`chat-message ${item.role}`} key={`${item.role}-${i}`}><b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>{item.provider && <small>via {item.provider}</small>}</div>)}</div><textarea value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') ask(); }} placeholder="Ask anything about your business…" rows={3}/><div className="chat-actions"><button onClick={() => ask()} disabled={chatting || !message.trim()}>{chatting ? 'Thinking…' : 'Ask Agent'}</button><button onClick={() => ask(true)} disabled={chatting || !message.trim()}>Build Action Plan</button></div></div></article>
-      <article className="panel"><PanelHead title="Business brief" sub="Prioritized live signals"/><p className="brief-summary">{brief?.summary || (loading ? 'Analyzing current workspace…' : 'No summary available.')}</p>{brief?.approval_required_for_writes && <div className="safety-note">✓ Marketplace writes remain approval-gated. The agent never executes an unapproved write.</div>}<div className="safety-note">✓ Provider keys stay server-side · ✓ Live data · ✓ Tool calls audited</div></article></div>
-    <article className="panel"><PanelHead title="Priority recommendations" sub="Explainable actions from current business data"/>{recommendations.length ? <div className="rows">{recommendations.map((item, i) => <div key={`${item.type}-${i}`}><b>{item.title}</b><strong>{item.priority} · {Math.round(item.confidence * 100)}%</strong><em>{item.reason}</em></div>)}</div> : <div className="empty"><strong>No priority recommendations</strong><small>There is no current live data requiring agent attention.</small></div>}</article><div className="screen-shortcuts"><button onClick={load}>↻ Refresh analysis</button><button onClick={() => setMessage('What needs attention today?')}>Ask what needs attention →</button></div></section>;
+
+    <div className="grid module-grid">
+      <article className="panel">
+        <PanelHead title="Ask your seller agent" sub={`Multilingual · ${provider}`} />
+        <div className="agent-chat">
+          <div className="chat-history" aria-live="polite">
+            {!messages.length && <div className="empty"><strong>Start a real conversation</strong><small>Ask in any language: “Kaise ho?”, “What is my stock?”, “मेरा सबसे profitable product कौन सा है?”, or switch languages mid-conversation.</small></div>}
+            {messages.map((item, i) => <div className={`chat-message ${item.role}`} key={`${item.role}-${i}`}><b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>{item.provider && <small>via {item.provider}{item.model ? ` · ${item.model}` : ''}</small>}</div>)}
+          </div>
+          <textarea value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') ask(); }} placeholder="Ask in any language…" rows={3} disabled={chatting}/>
+          <div className="chat-actions"><button onClick={() => ask()} disabled={chatting || !message.trim()}>{chatting ? 'Thinking…' : 'Ask Agent'}</button><button onClick={() => ask(true)} disabled={chatting || !message.trim()}>Build Action Plan</button><button onClick={clearConversation} disabled={chatting || !messages.length}>Clear Chat</button></div>
+        </div>
+      </article>
+      <article className="panel">
+        <PanelHead title="Business brief" sub="Prioritized live signals" />
+        <p className="brief-summary">{brief?.summary || (loading ? 'Analyzing current workspace…' : 'No summary available.')}</p>
+        {brief?.approval_required_for_writes && <div className="safety-note">✓ Marketplace writes remain approval-gated. The agent never executes an unapproved write.</div>}
+        <div className="safety-note">✓ Any supported language · ✓ Conversation context · ✓ Live data · ✓ Tool calls audited</div>
+      </article>
+    </div>
+
+    <article className="panel"><PanelHead title="Priority recommendations" sub="Explainable actions from current business data"/>{recommendations.length ? <div className="rows">{recommendations.map((item, i) => <div key={`${item.type}-${i}`}><b>{item.title}</b><strong>{item.priority} · {Math.round(item.confidence * 100)}%</strong><em>{item.reason}</em></div>)}</div> : <div className="empty"><strong>No priority recommendations</strong><small>There is no current live data requiring agent attention.</small></div>}</article>
+    <div className="screen-shortcuts"><button onClick={load}>↻ Refresh analysis</button><button onClick={() => setMessage('What needs attention today?')}>Ask what needs attention →</button></div>
+  </section>;
 }
+
 function PanelHead({ title, sub }: { title: string; sub: string }) { return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>; }
