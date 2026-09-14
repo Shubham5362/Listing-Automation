@@ -15,6 +15,12 @@ uvicorn app.main:app --reload
 ```
 
 Health check: `GET /health`
+Readiness: `GET /ready`
+Dependency health: `GET /health/dependencies`
 API status: `GET /api/v1/status`
 
 Configuration is supplied through environment variables; see `.env.example`.
+
+## Phase 62 deployment
+
+Production deployment wiring is in `render.yaml`, `firebase.json`, and `.github/workflows/`. The detailed no-card deployment runbook is in `docs/PHASE_62_DEPLOYMENT.md`.
