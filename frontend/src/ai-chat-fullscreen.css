@@ -1,30 +1,48 @@
-/* Ask AI must be a true app-level full-screen chat, not a centered modal. */
-.ai-chat-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  display: block !important;
-  z-index: 9999 !important;
-  background: rgba(6, 12, 22, .72) !important;
+/* App-level AI chat layout and touch-friendly controls. Loaded after the base stylesheet. */
+.ai-chat-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;padding:0!important;margin:0!important;display:block!important;z-index:9999!important;background:rgba(6,12,22,.72)!important}
+.ai-chat-window{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;border-radius:0!important;box-shadow:none!important}
+.ai-chat-body{min-height:0!important}
+.ai-chat-header-actions{gap:8px!important}
+.ai-chat-header-actions button{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;font-size:24px!important;display:grid!important;place-items:center!important;touch-action:manipulation!important}
+.ai-chat-composer{min-height:68px!important;padding:10px 16px!important;gap:10px!important}
+.composer-icon,.ai-chat-composer .send-button{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;border-radius:50%!important;display:grid!important;place-items:center!important;touch-action:manipulation!important}
+.ai-chat-composer .send-button{background:#8693a7!important;color:#fff!important;border:0!important;font-size:21px!important}
+.ai-chat-composer .send-button:not(:disabled){background:#172033!important}
+.ai-chat-composer textarea{min-height:48px!important;max-height:140px!important;padding:12px 14px!important;border-radius:24px!important;font-size:13px!important;line-height:1.35!important}
+.ai-chat-footer-note{min-height:22px!important;padding:3px 12px!important;text-align:center!important;font-size:8px!important}
+
+/* Keep Ask AI reachable on compact/mobile headers. */
+.topbar .top-actions{display:flex!important;align-items:center!important;gap:8px!important}
+.topbar .ai-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;min-width:92px!important;padding:10px 14px!important;white-space:nowrap!important;touch-action:manipulation!important}
+
+/* The dashboard refresh control should stay compact on phones. */
+.refresh-meta{display:flex!important;align-items:center!important;gap:10px!important}
+.refresh-meta button{width:auto!important;min-width:0!important;height:44px!important;padding:8px 14px!important;white-space:nowrap!important;font-size:14px!important;touch-action:manipulation!important}
+
+@media (max-width:900px){
+  .topbar{align-items:center!important;gap:10px!important}
+  .topbar>div:nth-child(2){min-width:0!important;flex:1!important}
+  .topbar h1{font-size:24px!important}
+  .top-actions .live-status,.top-actions>button:not(.ai-button){display:none!important}
+  .top-actions{margin-left:auto!important;flex:none!important}
+  .topbar .ai-button{min-width:88px!important;min-height:44px!important;padding:9px 12px!important;font-size:13px!important}
+  .hero-strip{align-items:flex-start!important;flex-direction:column!important}
+  .refresh-meta{width:100%!important;justify-content:space-between!important}
+  .refresh-meta button{height:40px!important;padding:7px 12px!important;font-size:13px!important}
 }
-.ai-chat-window {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+
+@media (max-width:600px){
+  .ai-chat-header{height:64px!important;padding:8px 10px!important}
+  .ai-chat-avatar{width:42px!important;height:42px!important}
+  .ai-chat-title strong{font-size:13px!important}
+  .ai-chat-title span{font-size:9px!important}
+  .ai-chat-body{padding:16px 10px!important}
+  .wa-bubble{max-width:88%!important;padding:9px 10px 6px!important}
+  .wa-bubble p{font-size:13px!important;line-height:1.48!important}
+  .ai-chat-composer{padding:8px 10px!important;min-height:66px!important}
+  .composer-icon,.ai-chat-composer .send-button,.ai-chat-header-actions button{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important}
+  .ai-chat-composer textarea{font-size:13px!important;min-height:46px!important}
+  .ai-chat-footer-note{font-size:7px!important}
 }
-.ai-chat-body {
-  min-height: 0 !important;
-}
-@supports not (height: 100dvh) {
-  .ai-chat-overlay { height: 100vh !important; }
-}
+
+@supports not (height:100dvh){.ai-chat-overlay{height:100vh!important}}
