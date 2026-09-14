@@ -65,7 +65,6 @@ function App() {
 
   const current = modules.find(module => module.name === active) || modules[0];
   const go = (name: string) => { setActive(name); setMobile(false); };
-  const k = data?.kpis;
 
   return <div className="app-shell">
     <a className="skip-link" href="#main">Skip to content</a>
@@ -96,7 +95,7 @@ function Dashboard({ data, loading, updated, go }: { data: Overview | null; load
     ['Orders', k?.orders ?? 0, 'All imported orders', '▣'],
     ['Inventory', k?.inventory_units ?? 0, 'Available units', '▥'],
     ['Products', k?.products ?? 0, 'Catalog products', '◫'],
-    ['Listings', k?.listings ?? 0, `${k?.listings ? k.active_listings : 0} active`, '▤'],
+    ['Listings', k?.listings ?? 0, `${k?.listings ? data?.catalog.active_listings : 0} active`, '▤'],
     ['Returns', k?.returns ?? 0, 'Return requests', '↩'],
     ['Pending Jobs', k?.pending_jobs ?? 0, 'Queued / running', '⚙'],
   ];
@@ -118,7 +117,7 @@ function Dashboard({ data, loading, updated, go }: { data: Overview | null; load
 function ModulePage({ module, data, loading, updated, go }: { module: Module; data: Overview | null; loading: boolean; updated: Date | null; go: (name: string) => void }) {
   const k = data?.kpis;
   const cards: Record<string, [string, unknown, string][]> = {
-    Orders: [['Total orders', k?.orders || 0, 'Imported orders'], ...Object.entries(data?.orders.by_status || {}).slice(0, 5).map(([status, count]) => [status.replaceAll('_', ' '), count, 'orders'])],
+    Orders: [['Total orders', k?.orders || 0, 'Imported orders'], ...Object.entries(data?.orders.by_status || {}).slice(0, 5).map(([status, count]): [string, unknown, string] => [status.replaceAll('_', ' '), count, 'orders'])],
     Inventory: [['Available units', data?.inventory.units || 0, 'Sellable stock'], ['Inventory items', data?.inventory.total_items || 0, 'Tracked SKUs'], ['Low stock', data?.inventory.low_stock || 0, 'At reorder level'], ['Out of stock', data?.inventory.out_of_stock || 0, 'Needs replenishment']],
     Products: [['Products', k?.products || 0, 'Catalog'], ['Listings', k?.listings || 0, 'All listings'], ['Active listings', data?.catalog.active_listings || 0, 'Published active']],
     Listings: [['Listings', k?.listings || 0, 'All listings'], ['Active', data?.catalog.active_listings || 0, 'Published']],
