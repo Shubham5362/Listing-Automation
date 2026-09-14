@@ -4,7 +4,7 @@
 
 - **Frontend:** Firebase Hosting (Vite static SPA)
 - **API:** Render Web Service running FastAPI/Docker
-- **Database:** Neon PostgreSQL
+- **Database:** Supabase PostgreSQL (Mumbai / `ap-south-1`)
 - **Redis:** Upstash Redis over REST
 - **Background jobs:** existing DB-backed worker; continuous Render worker definition is included for a paid upgrade
 - **₹0 fallback worker:** GitHub Actions `no-card-worker.yml` pulses the worker every 5 minutes for up to 4 minutes
@@ -15,13 +15,19 @@ Render's current free compute plans support web services, static sites, Postgres
 
 This is an infrastructure limitation, not an application limitation.
 
+## Supabase database status
+
+The Supabase project **Listing Automation** is provisioned in Mumbai (`ap-south-1`). The database schema has been created from the repository's existing Alembic model/migration design, including seller accounts, marketplace accounts, products, listings, orders, inventory, returns, finance, advertising, automation, AI commands, notifications, catalog intelligence, media, and worker job tables.
+
+A final Alembic merge migration `0018_merge_final_heads` was added so the repository has a single migration head and `alembic upgrade head` works cleanly.
+
 ## Required secrets
 
 ### Render API service
 
 Set these in the `seller-hub-api` service:
 
-- `DATABASE_URL` — Neon pooled/direct PostgreSQL URL using `postgresql+psycopg://...` and SSL
+- `DATABASE_URL` — Supabase PostgreSQL connection URL using `postgresql+psycopg://...` and SSL
 - `SECRET_KEY` — 32+ character random secret
 - `CREDENTIALS_ENCRYPTION_KEY` — Fernet key
 - `ALLOWED_ORIGINS` — Firebase Hosting origin, e.g. `https://YOUR_PROJECT.web.app`
@@ -49,18 +55,18 @@ Add these repository Actions secrets:
 
 ## Deployment order
 
-1. Create the Neon PostgreSQL database and copy its connection string.
-2. Create an Upstash Redis database and copy its REST URL/token. Upstash's FastAPI integration uses these environment variables. citeturn0search0
-3. In Render, create a Blueprint from `render.yaml`. The API service is configured for the free web plan; the worker definition is ready for a paid plan because Render does not offer free background workers. citeturn2search0turn2search1
+1. Create/use the Supabase PostgreSQL project in Mumbai. The Listing Automation schema is already provisioned from the repository migrations.
+2. Create an Upstash Redis database and copy its REST URL/token.
+3. In Render, create a Blueprint from `render.yaml`. The API service is configured for the free web plan; the worker definition is ready for a paid plan because Render does not offer free background workers.
 4. Set the Render secrets, deploy, and verify `/health`, `/ready`, and `/health/dependencies`.
-5. Create a Firebase project and initialize/use Firebase Hosting. Firebase Hosting serves static assets with SSL and provides `web.app` / `firebaseapp.com` project subdomains. citeturn0search4
+5. Create a Firebase project and initialize/use Firebase Hosting. Firebase Hosting serves static assets with SSL and provides `web.app` / `firebaseapp.com` project subdomains.
 6. Add the Firebase Actions secrets and push `main`. The `firebase-hosting.yml` workflow builds `frontend` and deploys `frontend/dist`.
 7. Enable the GitHub Actions `No-Card Worker Pulse` workflow. It processes the existing database-backed jobs without requiring a paid Render worker.
 
 ## Verification checklist
 
 - Render API `/health` returns `{"status":"ok"}`.
-- Render API `/ready` can execute `SELECT 1` against Neon.
+- Render API `/ready` can execute `SELECT 1` against Supabase PostgreSQL.
 - `/health/dependencies` reports database `ok` and Redis `ok` (or `disabled` if intentionally not configured).
 - Firebase Hosting serves the SPA and deep links resolve to `index.html`.
 - Frontend uses `VITE_API_BASE_URL` rather than a localhost API URL in production.
@@ -70,6 +76,6 @@ Add these repository Actions secrets:
 
 ## Why this remains ₹0 / no-card
 
-Firebase Hosting can be used for static hosting at no cost, and Render offers free web services, while Neon and Upstash provide free/start-for-free options subject to their current usage limits. Render's free compute limitation is specifically the continuous background-worker service; the repository therefore includes the GitHub Actions pulse as the no-card worker path. citeturn0search4turn2search0turn1search1turn1search2
+Firebase Hosting can be used for static hosting at no cost, and Render offers free web services, while Supabase and Upstash provide free/start-for-free options subject to their current usage limits. Render's free compute limitation is specifically the continuous background-worker service; the repository therefore includes the GitHub Actions pulse as the no-card worker path.
 
 The system should be treated as hobby/personal production rather than an SLA-backed production environment while it remains on free tiers.
