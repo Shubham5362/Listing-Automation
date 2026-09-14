@@ -32,8 +32,21 @@ def overview(db: Session = Depends(get_db)) -> dict:
     low_stock = sum(1 for row in inventory_rows if row.quantity - row.reserved_quantity <= row.reorder_level)
     out_of_stock = sum(1 for row in inventory_rows if row.quantity - row.reserved_quantity <= 0)
     products = db.scalar(select(func.count(Product.id)).where(Product.seller_account_id == seller_id)) or 0
-    listings = db.scalar(select(func.count(Listing.id)).where(Listing.seller_account_id == seller_id)) or 0
-    active_listings = db.scalar(select(func.count(Listing.id)).where(Listing.seller_account_id == seller_id, Listing.status == "active")) or 0
+
+    # Listings belong to a marketplace account, not directly to a seller.
+    # Scope them through their related product so the personal dashboard
+    # remains correctly seller-isolated without relying on a non-existent
+    # Listing.seller_account_id column.
+    listings = db.scalar(
+        select(func.count(Listing.id))
+        .join(Product, Listing.product_id == Product.id)
+        .where(Product.seller_account_id == seller_id)
+    ) or 0
+    active_listings = db.scalar(
+        select(func.count(Listing.id))
+        .join(Product, Listing.product_id == Product.id)
+        .where(Product.seller_account_id == seller_id, Listing.status == "active")
+    ) or 0
     returns = db.scalar(select(func.count(ReturnRequest.id)).where(ReturnRequest.seller_account_id == seller_id)) or 0
 
     job_rows = db.execute(select(Job.status, func.count(Job.id)).where(Job.seller_account_id == seller_id).group_by(Job.status)).all()
