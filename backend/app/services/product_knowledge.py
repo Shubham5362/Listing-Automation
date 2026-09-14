@@ -33,6 +33,10 @@ def canonical_attribute(name: str) -> str:
 def _json_value(value: Any) -> Any:
     if isinstance(value, Decimal):
         return float(value)
+    if isinstance(value, dict):
+        return {str(k): _json_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_value(v) for v in value]
     return value
 
 
@@ -54,6 +58,23 @@ def _product_facts(product: Product) -> dict[str, dict[str, Any]]:
             if key not in facts:
                 facts[key] = {"value": _json_value(value), "source": "product.attributes_json", "confidence": 1.0, "status": "verified"}
     return facts
+
+
+def detect_contradictions(facts: dict[str, dict[str, Any]], candidates: dict[str, Any]) -> list[dict[str, Any]]:
+    conflicts: list[dict[str, Any]] = []
+    for raw_name, candidate in candidates.items():
+        key = canonical_attribute(raw_name)
+        current = facts.get(key)
+        if not current or candidate in (None, "", []):
+            continue
+        old = current.get("value")
+        if isinstance(old, str) and isinstance(candidate, str):
+            same = _norm(old) == _norm(candidate)
+        else:
+            same = old == candidate
+        if not same:
+            conflicts.append({"attribute": key, "current": old, "candidate": candidate, "current_source": current.get("source"), "current_confidence": current.get("confidence", 0.0), "status": "conflict"})
+    return conflicts
 
 
 def _score(facts: dict[str, dict[str, Any]]) -> int:
