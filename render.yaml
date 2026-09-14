@@ -34,6 +34,12 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
+      - key: GEMINI_FALLBACK_MODEL
+        value: gemini-3.5-flash-lite
+      - key: LLM_RETRY_ATTEMPTS
+        value: "3"
+      - key: LLM_RETRY_BACKOFF_SECONDS
+        value: "1.5"
       - key: LLM_PRIMARY_PROVIDER
         value: gemini
       - key: MARKETPLACE_SYNC_INTERVAL_MINUTES
