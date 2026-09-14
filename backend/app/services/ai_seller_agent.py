@@ -21,6 +21,8 @@ class AISellerAgentService:
         self.user = user
 
     def _knowledge_health(self) -> dict:
+        if self.db is None or self.user is None:
+            return {"product_count": 0, "ready_products": 0, "incomplete_products": 0, "conflict_count": 0, "average_completeness_score": 0}
         seller_ids = select(SellerAccount.id).where(SellerAccount.user_id == self.user.id)
         products = self.db.scalars(select(Product).where(Product.seller_account_id.in_(seller_ids))).all()
         ready = 0
@@ -37,13 +39,7 @@ class AISellerAgentService:
             conflicts += row.conflict_count
         if self.db.new:
             self.db.flush()
-        return {
-            "product_count": len(products),
-            "ready_products": ready,
-            "incomplete_products": incomplete,
-            "conflict_count": conflicts,
-            "average_completeness_score": round(sum(scores) / len(scores)) if scores else 0,
-        }
+        return {"product_count": len(products), "ready_products": ready, "incomplete_products": incomplete, "conflict_count": conflicts, "average_completeness_score": round(sum(scores) / len(scores)) if scores else 0}
 
     def assess(self, start: datetime | None = None, end: datetime | None = None, marketplace_account_id: int | None = None, horizon: str = "daily") -> dict:
         plan = StrategyActionPlannerService(self.db, self.user).plan(start=start, end=end, marketplace_account_id=marketplace_account_id, horizon=horizon)
