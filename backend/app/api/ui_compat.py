@@ -1,15 +1,16 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.advertising import AdvertisingCampaign
-from app.models.core import SellerAccount, User
-from app.models.pricing import PricingRule
+from app.models.catalog import Listing, Product
+from app.models.core import Job, MarketplaceAccount, SellerAccount, User
 from app.models.finance import FinanceEntry
+from app.models.inventory import InventoryItem
+from app.models.orders import Order
+from app.models.pricing import PricingRule
 from app.services.advanced_analytics import AdvancedAnalyticsService
 
 router = APIRouter(tags=["ui-compat"])
@@ -48,3 +49,35 @@ def analytics_workspace(user: User = Depends(get_current_user), db: Session = De
         return AdvancedAnalyticsService(db, user).report()
     except (ValueError, LookupError) as exc:
         return {"error": str(exc), "items": []}
+
+
+@router.get("/operations/overview")
+def operations_overview(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    sellers = _seller_ids(db, user)
+    if not sellers:
+        return {"seller_accounts": 0, "orders": {}, "inventory": {}, "catalog": {}, "marketplaces": {}, "jobs": {}, "recent_jobs": []}
+
+    def counts(model, column, values=None):
+        stmt = select(column, func.count()).where(model.seller_account_id.in_(sellers))
+        if values:
+            stmt = stmt.where(column.in_(values))
+        return {str(key): count for key, count in db.execute(stmt.group_by(column)).all()}
+
+    order_counts = counts(Order, Order.status)
+    inventory_low = db.scalar(select(func.count()).select_from(InventoryItem).where(InventoryItem.seller_account_id.in_(sellers), InventoryItem.quantity - InventoryItem.reserved_quantity <= InventoryItem.reorder_level)) or 0
+    inventory_total = db.scalar(select(func.count()).select_from(InventoryItem).where(InventoryItem.seller_account_id.in_(sellers))) or 0
+    product_total = db.scalar(select(func.count()).select_from(Product).where(Product.seller_account_id.in_(sellers))) or 0
+    listing_total = db.scalar(select(func.count()).select_from(Listing).where(Listing.seller_account_id.in_(sellers))) or 0
+    marketplace_total = db.scalar(select(func.count()).select_from(MarketplaceAccount).join(SellerAccount).where(SellerAccount.user_id == user.id)) or 0
+    job_counts = counts(Job, Job.status)
+    recent = db.scalars(select(Job).where(Job.seller_account_id.in_(sellers)).order_by(Job.id.desc()).limit(10)).all()
+
+    return {
+        "seller_accounts": len(sellers),
+        "orders": order_counts,
+        "inventory": {"total_items": inventory_total, "low_stock": inventory_low},
+        "catalog": {"products": product_total, "listings": listing_total},
+        "marketplaces": {"accounts": marketplace_total},
+        "jobs": job_counts,
+        "recent_jobs": [{"id": j.id, "name": j.name, "status": j.status, "attempts": j.attempts, "created_at": j.created_at, "finished_at": j.finished_at, "error": j.error} for j in recent],
+    }
