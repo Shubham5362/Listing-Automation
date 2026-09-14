@@ -48,8 +48,17 @@ class LLMGateway:
                 if provider == "openrouter" and self.settings.openrouter_api_key:
                     return self._openrouter(system, user, tools, tool_executor)
             except Exception as exc:
-                errors.append(f"{provider}: {exc}")
+                errors.append(f"{provider}: {self._safe_error(exc)}")
         raise LLMUnavailable("; ".join(errors) or "No LLM provider is configured")
+
+    @staticmethod
+    def _safe_error(exc: Exception) -> str:
+        """Return a useful provider error without ever exposing credentials."""
+        text = str(exc).replace("\n", " ").strip()
+        for marker in ("key=", "api_key=", "Authorization:", "x-goog-api-key:"):
+            if marker.lower() in text.lower():
+                return text.split(marker, 1)[0].strip() + "[redacted]"
+        return text[:700]
 
     def _gemini(
         self,
