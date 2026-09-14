@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     worker_retry_backoff_seconds: int = 10
     worker_stale_after_seconds: int = 1800
     worker_concurrency: int = 1
+    marketplace_sync_interval_minutes: int = 30
 
     backup_enabled: bool = False
     backup_dir: str = "./backups"
