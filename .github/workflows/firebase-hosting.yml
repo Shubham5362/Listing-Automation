@@ -29,6 +29,18 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Hide provider metadata from chat UI
+        working-directory: frontend
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/AISellerAgentWorkspace.tsx')
+          s = p.read_text()
+          s = s.replace("<PanelHead title=\"Ask your seller agent\" sub={`Multilingual · ${provider}`} />", "<PanelHead title=\"Ask your seller agent\" sub=\"Multilingual AI assistant\" />")
+          s = s.replace("<b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>{item.provider && <small>via {item.provider}{item.model ? ` · ${item.model}` : ''}</small>}{item.fallbackReason && <small className=\"fallback-reason\">AI diagnostic: {item.fallbackReason}</small>}", "<b>{item.role === 'user' ? 'You' : 'AI Seller Agent'}</b><p>{item.text}</p>")
+          p.write_text(s)
+          PY
+
       - name: Build frontend
         working-directory: frontend
         env:
