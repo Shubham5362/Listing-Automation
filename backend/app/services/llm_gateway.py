@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from app.core.config import get_settings
+
+
+logger = logging.getLogger("seller_hub.llm")
 
 
 @dataclass(frozen=True)
@@ -48,8 +52,15 @@ class LLMGateway:
                 if provider == "openrouter" and self.settings.openrouter_api_key:
                     return self._openrouter(system, user, tools, tool_executor)
             except Exception as exc:
-                errors.append(f"{provider}: {self._safe_error(exc)}")
+                safe_error = self._safe_error(exc)
+                errors.append(f"{provider}: {safe_error}")
+                logger.warning("LLM provider failed provider=%s model=%s error=%s", provider, self._provider_model(provider), safe_error)
         raise LLMUnavailable("; ".join(errors) or "No LLM provider is configured")
+
+    def _provider_model(self, provider: str) -> str:
+        if provider == "gemini":
+            return self.settings.gemini_model
+        return self.settings.openrouter_model
 
     @staticmethod
     def _safe_error(exc: Exception) -> str:
@@ -59,6 +70,37 @@ class LLMGateway:
             if marker.lower() in text.lower():
                 return text.split(marker, 1)[0].strip() + "[redacted]"
         return text[:700]
+
+    @staticmethod
+    def _gemini_schema(schema: Any) -> Any:
+        """Convert OpenAI/JSON-schema style types to Gemini REST Schema enum values."""
+        if not isinstance(schema, dict):
+            return schema
+        normalized: dict[str, Any] = {}
+        for key, value in schema.items():
+            if key == "type" and isinstance(value, str):
+                normalized[key] = value.upper()
+            elif key == "properties" and isinstance(value, dict):
+                normalized[key] = {name: LLMGateway._gemini_schema(item) for name, item in value.items()}
+            elif key == "items":
+                normalized[key] = LLMGateway._gemini_schema(value)
+            elif key == "required" and isinstance(value, list):
+                normalized[key] = value
+            else:
+                normalized[key] = value
+        return normalized
+
+    def _gemini_tools(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        declarations = []
+        for tool in tools:
+            declarations.append(
+                {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": self._gemini_schema(tool.get("parameters") or {"type": "OBJECT", "properties": {}}),
+                }
+            )
+        return [{"function_declarations": declarations}]
 
     def _gemini(
         self,
@@ -78,7 +120,7 @@ class LLMGateway:
             },
         }
         if tools:
-            payload["tools"] = [{"function_declarations": tools}]
+            payload["tools"] = self._gemini_tools(tools)
 
         data = self._post_json(endpoint, payload, timeout=self.settings.llm_timeout_seconds, headers=headers)
         parts = self._response_parts(data)
@@ -105,7 +147,7 @@ class LLMGateway:
                 },
             }
             if tools:
-                followup["tools"] = [{"function_declarations": tools}]
+                followup["tools"] = self._gemini_tools(tools)
             data = self._post_json(endpoint, followup, timeout=self.settings.llm_timeout_seconds, headers=headers)
             parts = self._response_parts(data)
 
