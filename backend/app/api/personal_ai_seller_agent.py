@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.core import AuditLog
+from app.services.ai_tool_registry import list_tools
 from app.services.personal_ai_seller_agent import PersonalAISellerAgentService
 
 router = APIRouter(prefix="/personal/ai/seller-agent", tags=["personal-ai-seller-agent"])
@@ -20,6 +21,11 @@ def _agent(db: Session) -> PersonalAISellerAgentService:
         return PersonalAISellerAgentService(db)
     except LookupError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/tools")
+def tools() -> dict:
+    return {"tools": list_tools(), "write_policy": "All marketplace write tools require explicit owner approval."}
 
 
 @router.get("/context")
