@@ -30,6 +30,8 @@ services:
         sync: false
       - key: PERSONAL_SELLER_NAME
         value: My Business
+      - key: MARKETPLACE_SYNC_INTERVAL_MINUTES
+        value: "30"
       - key: AMAZON_SELLER_ID
         sync: false
       - key: AMAZON_LWA_CLIENT_ID
