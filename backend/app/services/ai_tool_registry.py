@@ -17,13 +17,11 @@ TOOLS: tuple[AgentTool, ...] = (
     AgentTool("analyze_inventory_risk", "Identify stockout and replenishment risks from verified inventory movements.", "read", False),
     AgentTool("analyze_advertising", "Evaluate campaign spend, sales, ACOS and ROAS signals.", "read", False),
     AgentTool("analyze_pricing", "Identify low-margin pricing opportunities from current listings and product cost.", "read", False),
+    AgentTool("get_recommendations", "Read prioritized business recommendations from verified live data.", "read", False),
     AgentTool("build_action_plan", "Build a prioritized, explainable action plan without executing writes.", "plan", False),
     AgentTool("request_marketplace_action", "Create a concrete marketplace operation for the existing approval pipeline.", "write", True),
 )
 
 
 def list_tools() -> list[dict[str, object]]:
-    return [
-        {"name": tool.name, "description": tool.description, "capability": tool.capability, "approval_required": tool.approval_required}
-        for tool in TOOLS
-    ]
+    return [{"name": t.name, "description": t.description, "capability": t.capability, "approval_required": t.approval_required} for t in TOOLS]
