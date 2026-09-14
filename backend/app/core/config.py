@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     # LLM providers. Keys are server-side only; never expose them to the browser.
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.6-flash"
     openrouter_api_key: str | None = None
     openrouter_model: str = "openrouter/free"
     openrouter_http_referer: str = "https://apna-mandla-44656706-3e7f7.web.app"
