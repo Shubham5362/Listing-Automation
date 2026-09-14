@@ -37,27 +37,77 @@ class AmazonSpApiAdapter(MarketplaceClient):
 
     def list_products(self, account: MarketplaceAccountContext, *, limit: int = 50) -> list[MarketplaceProduct]:
         seller_id = quote(self._seller_id(account), safe="")
-        data = self.client.request("GET", f"/listings/2021-08-01/items/{seller_id}", query={"marketplaceIds": self.client.settings.amazon_sp_api_marketplace_id, "includedData": "summaries,attributes,issues,offers,fulfillmentAvailability", "pageSize": max(1, min(limit, 100))})
+        target = max(1, min(limit, 1000))
+        products: list[MarketplaceProduct] = []
+        page_token: str | None = None
+        while len(products) < target:
+            query: dict[str, Any] = {
+                "marketplaceIds": self.client.settings.amazon_sp_api_marketplace_id,
+                "includedData": "summaries,attributes,issues,offers,fulfillmentAvailability",
+                "pageSize": min(100, target - len(products)),
+            }
+            if page_token:
+                query["pageToken"] = page_token
+            data = self.client.request("GET", f"/listings/2021-08-01/items/{seller_id}", query=query)
+            payload = data.get("payload", data)
+            items = payload.get("items", []) if isinstance(payload, dict) else []
+            for item in items:
+                summaries = item.get("summaries") or []
+                summary = summaries[0] if isinstance(summaries, list) and summaries else {}
+                sku = str(item.get("sku", ""))
+                if sku:
+                    products.append(MarketplaceProduct(sku=sku, title=str(summary.get("itemName", sku)), external_id=item.get("asin") or summary.get("asin"), attributes=item))
+            page_token = payload.get("pagination", {}).get("nextToken") if isinstance(payload, dict) else None
+            if not page_token or not items:
+                break
+        return products[:target]
+
+    def _order_items(self, order_id: str) -> list[dict[str, Any]]:
+        data = self.client.request("GET", f"/orders/v0/orders/{quote(order_id, safe='')}/orderItems")
         payload = data.get("payload", data)
-        items = payload.get("items", []) if isinstance(payload, dict) else []
-        return [MarketplaceProduct(sku=str(item.get("sku", "")), title=str((item.get("summaries") or [{}])[0].get("itemName", item.get("sku", ""))), external_id=item.get("asin"), attributes=item.get("attributes")) for item in items if item.get("sku")]
+        rows = payload.get("OrderItems", []) if isinstance(payload, dict) else []
+        result: list[dict[str, Any]] = []
+        for item in rows:
+            price = item.get("ItemPrice") or {}
+            result.append({
+                "sku": item.get("SellerSKU") or item.get("ASIN"),
+                "title": item.get("Title"),
+                "quantity": item.get("QuantityOrdered", 1),
+                "unit_price": price.get("Amount", 0),
+            })
+        return result
 
     def list_orders(self, account: MarketplaceAccountContext, *, limit: int = 50) -> list[MarketplaceOrder]:
-        data = self.client.request("GET", "/orders/v0/orders", query={"MarketplaceIds": self.client.settings.amazon_sp_api_marketplace_id, "MaxResultsPerPage": max(1, min(limit, 100))})
-        payload = data.get("payload", data)
-        orders = payload.get("Orders", []) if isinstance(payload, dict) else []
+        target = max(1, min(limit, 100))
         result: list[MarketplaceOrder] = []
-        for order in orders:
-            raw_date = order.get("PurchaseDate") or order.get("LastUpdateDate")
-            ordered_at = datetime.fromisoformat(raw_date.replace("Z", "+00:00")) if raw_date else datetime.now(timezone.utc)
-            total = order.get("OrderTotal") or {}
-            result.append(MarketplaceOrder(external_order_id=str(order.get("AmazonOrderId", "")), status=str(order.get("OrderStatus", "UNKNOWN")), ordered_at=ordered_at, total=Decimal(str(total.get("Amount", "0"))), currency=str(total.get("CurrencyCode", "INR"))))
-        return [order for order in result if order.external_order_id]
+        next_token: str | None = None
+        while len(result) < target:
+            query: dict[str, Any] = {
+                "MarketplaceIds": self.client.settings.amazon_sp_api_marketplace_id,
+                "MaxResultsPerPage": min(100, target - len(result)),
+            }
+            if next_token:
+                query = {"NextToken": next_token}
+            data = self.client.request("GET", "/orders/v0/orders", query=query)
+            payload = data.get("payload", data)
+            orders = payload.get("Orders", []) if isinstance(payload, dict) else []
+            for order in orders:
+                raw_date = order.get("PurchaseDate") or order.get("LastUpdateDate")
+                ordered_at = datetime.fromisoformat(raw_date.replace("Z", "+00:00")) if raw_date else datetime.now(timezone.utc)
+                total = order.get("OrderTotal") or {}
+                external_id = str(order.get("AmazonOrderId", ""))
+                if external_id:
+                    result.append(MarketplaceOrder(external_order_id=external_id, status=str(order.get("OrderStatus", "UNKNOWN")), ordered_at=ordered_at, total=Decimal(str(total.get("Amount", "0"))), currency=str(total.get("CurrencyCode", "INR")), items=self._order_items(external_id)))
+            next_token = payload.get("NextToken") if isinstance(payload, dict) else None
+            if not next_token or not orders:
+                break
+        return result[:target]
 
     def get_inventory(self, account: MarketplaceAccountContext, *, skus: list[str] | None = None) -> list[InventoryItem]:
         products = self.list_products(account, limit=100)
         if skus is not None:
-            products = [product for product in products if product.sku in set(skus)]
+            selected = set(skus)
+            products = [product for product in products if product.sku in selected]
         result: list[InventoryItem] = []
         for product in products:
             data = self.client.request("GET", f"/listings/2021-08-01/items/{quote(self._seller_id(account), safe='')}/{quote(product.sku, safe='')}", query={"marketplaceIds": self.client.settings.amazon_sp_api_marketplace_id, "includedData": "fulfillmentAvailability"})
@@ -87,7 +137,7 @@ class AmazonSpApiAdapter(MarketplaceClient):
     def update_price(self, account: MarketplaceAccountContext, *, sku: str, price: Decimal) -> None:
         if price <= 0:
             raise ValueError("price must be greater than zero")
-        self._patch_listing(account, sku, {"op": "replace", "path": "/attributes/purchasable_offer", "value": [{"audience": "ALL", "marketplace_id": self.client.settings.amazon_sp_api_marketplace_id, "currency": "INR", "our_price": [{"schedule": [{"value_with_tax": str(price)}]}]}]})
+        self._patch_listing(account, sku, {"op": "replace", "path": "/attributes/purchasable_offer", "value": [{"audience": "ALL", "marketplace_id": self.client.settings.amazon_sp_api_marketplace_id, "currency": "INR", "our_price": [{"schedule": [{"value_with_tax": str(price)}]}] }]})
 
     def publish_listing(self, account: MarketplaceAccountContext, *, sku: str, product_type: str, attributes: dict[str, Any]) -> dict[str, Any]:
         if not sku.strip() or not product_type.strip():
