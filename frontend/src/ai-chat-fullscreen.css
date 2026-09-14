@@ -1,0 +1,30 @@
+/* Ask AI must be a true app-level full-screen chat, not a centered modal. */
+.ai-chat-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  z-index: 9999 !important;
+  background: rgba(6, 12, 22, .72) !important;
+}
+.ai-chat-window {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.ai-chat-body {
+  min-height: 0 !important;
+}
+@supports not (height: 100dvh) {
+  .ai-chat-overlay { height: 100vh !important; }
+}
