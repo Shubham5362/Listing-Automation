@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import MarketplaceWorkspace from './MarketplaceWorkspace';
 
 type Module = { name: string; icon: string; group: string; description: string; tone: string };
 
@@ -34,7 +35,6 @@ const modules: Module[] = [
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const api = (path: string) => fetch(`${API_BASE}/api/v1${path}`, { headers: { Accept: 'application/json' } });
-const money = (value: unknown) => `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const time = (value: string | null) => value ? new Date(value).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 
 function App() {
@@ -84,7 +84,7 @@ function App() {
         <div className="top-actions"><span className="live-status">● Live</span><button onClick={() => setDark(!dark)}>{dark ? '☀' : '◐'}</button><button className="ai-button" onClick={() => go('AI Agents')}>✦ Ask AI</button></div>
       </header>
       {error && <div className="errorbar" role="alert">{error} <button onClick={load}>Retry</button></div>}
-      {active === 'Dashboard' ? <Dashboard data={data} loading={loading} updated={updated} go={go} /> : <ModulePage module={current} data={data} loading={loading} updated={updated} go={go} />}
+      {active === 'Dashboard' ? <Dashboard data={data} loading={loading} updated={updated} go={go} /> : active === 'Marketplaces' ? <MarketplaceWorkspace /> : <ModulePage module={current} data={data} loading={loading} updated={updated} go={go} />}
     </main>
   </div>;
 }
@@ -131,7 +131,7 @@ function ModulePage({ module, data, loading, updated, go }: { module: Module; da
   return <section className="module-page">
     <div className={`module-hero ${module.tone}`}><div className="module-mark">{module.icon}</div><div><p className="eyebrow">{module.group.toUpperCase()} CENTER</p><h2>{module.name}</h2><p>{module.description}. This workspace is connected to the live Seller Hub overview.</p></div><span className="connection">● {loading ? 'Refreshing' : `Live · ${updated ? updated.toLocaleTimeString('en-IN') : 'ready'}`}</span></div>
     <section className="cards">{moduleCards.map(([title, value, sub]) => <article className="card" key={title}><span>{title}</span><strong>{loading ? '—' : String(value)}</strong><small>{sub}</small></article>)}</section>
-    <div className="grid module-grid"><article className="panel"><PanelHead title="Live workspace data" sub="Read from the central operations API"/>{module.name === 'Marketplaces' ? <MarketplaceRows data={data} /> : module.name === 'Notifications' ? <Rows items={(data?.alerts || []).map(alert => ({ a: alert.message, b: alert.count, c: alert.severity }))} empty="No active alerts" /> : module.name === 'Automations' ? <Rows items={(data?.jobs.recent || []).map(job => ({ a: job.title, b: job.status, c: time(job.created_at) }))} empty="No jobs yet" /> : <Rows items={genericRows(module.name, data)} empty="No records available yet" />}</article><article className="panel"><PanelHead title="Phase 1 controls" sub="Core workspace health"/><Check text="Direct dashboard access"/><Check text="Real API data"/><Check text="Supabase-backed data"/><Check text="Auto-refresh enabled"/><Check text="No fabricated live records"/></article></div>
+    <div className="grid module-grid"><article className="panel"><PanelHead title="Live workspace data" sub="Read from the central operations API"/>{module.name === 'Notifications' ? <Rows items={(data?.alerts || []).map(alert => ({ a: alert.message, b: alert.count, c: alert.severity }))} empty="No active alerts" /> : module.name === 'Automations' ? <Rows items={(data?.jobs.recent || []).map(job => ({ a: job.title, b: job.status, c: time(job.created_at) }))} empty="No jobs yet" /> : <Rows items={genericRows(module.name, data)} empty="No records available yet" />}</article><article className="panel"><PanelHead title="Phase 1 controls" sub="Core workspace health"/><Check text="Direct dashboard access"/><Check text="Real API data"/><Check text="Supabase-backed data"/><Check text="Auto-refresh enabled"/><Check text="No fabricated live records"/></article></div>
     <div className="screen-shortcuts"><button onClick={() => go('Dashboard')}>← Dashboard</button><button onClick={() => go('Marketplaces')}>Marketplaces →</button><button onClick={() => go('AI Agents')}>Ask AI →</button></div>
   </section>;
 }
@@ -144,7 +144,6 @@ function genericRows(name: string, data: Overview | null) {
   return [{a:'Products in catalog', b:data?.kpis.products || 0, c:'available for this workspace'}];
 }
 
-function MarketplaceRows({ data }: { data: Overview | null }) { return data?.marketplaces.length ? <div className="rows">{data.marketplaces.map(m => <div key={m.id}><b>{m.marketplace}</b><strong>{m.status}</strong><em>Last sync: {time(m.last_sync_at)}{m.last_error ? ` · ${m.last_error}` : ''}</em></div>)}</div> : <Empty text="No marketplace accounts configured" sub="Connect Amazon or Flipkart when Phase 2 integration is enabled." />; }
 function PanelHead({ title, sub }: { title: string; sub: string }) { return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>; }
 function Rows({ items, empty = 'No data available yet' }: { items: { a: unknown; b: unknown; c: unknown }[]; empty?: string }) { return items.length ? <div className="rows">{items.map((item, index) => <div key={`${String(item.a)}-${index}`}><b>{String(item.a)}</b><strong>{String(item.b)}</strong><em>{String(item.c)}</em></div>)}</div> : <Empty text={empty} />; }
 function Check({ text }: { text: string }) { return <div className="check"><b>✓</b><span>{text}</span></div>; }
