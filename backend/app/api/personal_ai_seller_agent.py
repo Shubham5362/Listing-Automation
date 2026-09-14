@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.core import AuditLog
 from app.services.ai_tool_registry import list_tools
+from app.services.llm_gateway import LLMGateway
 from app.services.personal_ai_seller_agent import PersonalAISellerAgentService
 
 router = APIRouter(prefix="/personal/ai/seller-agent", tags=["personal-ai-seller-agent"])
@@ -21,6 +22,12 @@ def _agent(db: Session) -> PersonalAISellerAgentService:
         return PersonalAISellerAgentService(db)
     except LookupError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/status")
+def status() -> dict:
+    gateway = LLMGateway()
+    return {"configured": gateway.configured, "primary_provider": gateway.settings.llm_primary_provider, "primary_model": gateway.settings.gemini_model if gateway.settings.llm_primary_provider == "gemini" else gateway.settings.openrouter_model, "fallback_available": bool(gateway.settings.openrouter_api_key if gateway.settings.llm_primary_provider == "gemini" else gateway.settings.gemini_api_key), "write_policy": "All marketplace write operations remain approval-gated."}
 
 
 @router.get("/tools")
