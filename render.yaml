@@ -1,9 +1,9 @@
 services:
-  # Free Render Key Value (Valkey) for cache/job-queue coordination.
+  # Reuse the existing Free Render Key Value instance in this workspace.
   - type: keyvalue
-    name: seller-hub-redis
+    name: apna-mandla-redis
     plan: free
-    region: singapore
+    region: virginia
     ipAllowList: []
     maxmemoryPolicy: noeviction
     persistenceMode: off
@@ -12,7 +12,7 @@ services:
     name: seller-hub-api
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./backend/Dockerfile
     healthCheckPath: /health
     envVars:
@@ -30,7 +30,7 @@ services:
         sync: false
       - key: REDIS_URL
         fromService:
-          name: seller-hub-redis
+          name: apna-mandla-redis
           type: keyvalue
           property: connectionString
       - key: WORKER_POLL_INTERVAL_SECONDS
@@ -46,6 +46,6 @@ services:
       - key: WORKER_CONCURRENCY
         value: "1"
 
-# Note: Render Background Workers are intentionally not provisioned here because
-# they are not available on the Free plan. The worker process will be handled
-# separately through the project's zero-cost scheduled worker strategy.
+# Render Background Workers are not provisioned here because they are not
+# available on the Free plan. The worker process uses the zero-cost scheduled
+# GitHub Actions worker strategy instead.
