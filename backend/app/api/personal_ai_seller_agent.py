@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.core import AuditLog
 from app.services.ai_tool_registry import list_tools
+from app.services.conversational_ai_seller_agent import ConversationalAISellerAgentService
 from app.services.llm_gateway import LLMGateway
 from app.services.personal_ai_seller_agent import PersonalAISellerAgentService
 
@@ -15,11 +16,19 @@ router = APIRouter(prefix="/personal/ai/seller-agent", tags=["personal-ai-seller
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     create_plan: bool = False
+    conversation: list[dict[str, str]] = Field(default_factory=list, max_length=20)
 
 
 def _agent(db: Session) -> PersonalAISellerAgentService:
     try:
         return PersonalAISellerAgentService(db)
+    except LookupError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+def _conversational_agent(db: Session) -> ConversationalAISellerAgentService:
+    try:
+        return ConversationalAISellerAgentService(db)
     except LookupError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
@@ -55,7 +64,7 @@ def recommendations(limit: int = 10, db: Session = Depends(get_db)) -> dict:
 @router.post("/chat")
 def chat(request: ChatRequest, db: Session = Depends(get_db)) -> dict:
     try:
-        return _agent(db).chat(request.message, request.create_plan)
+        return _conversational_agent(db).chat(request.message, request.create_plan, request.conversation)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
