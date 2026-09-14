@@ -2,38 +2,153 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
-type Module={name:string;icon:string;group:string;description:string;endpoint?:string;tone:string};
-const modules:Module[]=[
-{name:'Dashboard',icon:'⌂',group:'Overview',description:'Business command center',tone:'core'},
-{name:'Orders',icon:'▣',group:'Operations',description:'Unified Amazon + Flipkart orders',endpoint:'/orders',tone:'blue'},
-{name:'Inventory',icon:'▥',group:'Operations',description:'Stock, velocity and replenishment',endpoint:'/inventory',tone:'green'},
-{name:'Returns',icon:'↩',group:'Operations',description:'Returns, refunds and risk',endpoint:'/returns',tone:'rose'},
-{name:'Customers',icon:'◉',group:'Operations',description:'Customer issues and AI replies',endpoint:'/returns/customer-issues',tone:'rose'},
-{name:'Products',icon:'◫',group:'Catalog',description:'Central product catalog',endpoint:'/catalog/products',tone:'violet'},
-{name:'Listings',icon:'▤',group:'Catalog',description:'Listing lifecycle and publishing',endpoint:'/catalog/listings',tone:'violet'},
-{name:'Pricing',icon:'₹',group:'Growth',description:'Buy Box and margin-safe pricing',endpoint:'/pricing',tone:'amber'},
-{name:'Advertising',icon:'◒',group:'Growth',description:'ACOS, ROAS and campaign health',endpoint:'/advertising',tone:'orange'},
-{name:'Finance',icon:'◈',group:'Finance',description:'P&L, GST and settlements',endpoint:'/finance',tone:'cyan'},
-{name:'Analytics',icon:'⌁',group:'Intelligence',description:'Profitability and forecasts',endpoint:'/advanced-analytics',tone:'indigo'},
-{name:'AI Agents',icon:'✦',group:'Intelligence',description:'Natural-language operations',tone:'ai'},
-{name:'Automations',icon:'⚙',group:'Automation',description:'Approval-gated workflows',endpoint:'/automation',tone:'slate'},
-{name:'Notifications',icon:'♢',group:'Automation',description:'Alerts and reports',endpoint:'/notifications',tone:'slate'},
-{name:'Marketplaces',icon:'◇',group:'Configuration',description:'Amazon and Flipkart connections',endpoint:'/marketplaces',tone:'teal'},
-{name:'Settings',icon:'⚙',group:'Configuration',description:'Account and session settings',tone:'slate'}
+type Module = { name: string; icon: string; group: string; description: string; tone: string };
+
+type Overview = {
+  kpis: { orders: number; products: number; listings: number; inventory_units: number; low_stock: number; returns: number; pending_jobs: number };
+  orders: { by_status: Record<string, number> };
+  inventory: { total_items: number; units: number; low_stock: number; out_of_stock: number };
+  catalog: { products: number; listings: number; active_listings: number };
+  jobs: { by_status: Record<string, number>; recent: { title: string; status: string; created_at: string | null }[] };
+  marketplaces: { id: number; marketplace: string; status: string; last_sync_at: string | null; last_error: string | null }[];
+  alerts: { type: string; severity: string; message: string; count: number }[];
+  activity: { title: string; status: string; created_at: string | null }[];
+};
+
+const modules: Module[] = [
+  { name: 'Dashboard', icon: '⌂', group: 'Overview', description: 'Business command center', tone: 'core' },
+  { name: 'Orders', icon: '▣', group: 'Operations', description: 'Unified order operations', tone: 'blue' },
+  { name: 'Inventory', icon: '▥', group: 'Operations', description: 'Stock health and availability', tone: 'green' },
+  { name: 'Returns', icon: '↩', group: 'Operations', description: 'Returns and customer issues', tone: 'rose' },
+  { name: 'Products', icon: '◫', group: 'Catalog', description: 'Central product catalog', tone: 'violet' },
+  { name: 'Listings', icon: '▤', group: 'Catalog', description: 'Listing lifecycle', tone: 'violet' },
+  { name: 'Pricing', icon: '₹', group: 'Growth', description: 'Pricing intelligence', tone: 'amber' },
+  { name: 'Advertising', icon: '◒', group: 'Growth', description: 'Campaign performance', tone: 'orange' },
+  { name: 'Finance', icon: '◈', group: 'Finance', description: 'Revenue and profitability', tone: 'cyan' },
+  { name: 'Analytics', icon: '⌁', group: 'Intelligence', description: 'Business intelligence', tone: 'indigo' },
+  { name: 'AI Agents', icon: '✦', group: 'Intelligence', description: 'AI seller command center', tone: 'ai' },
+  { name: 'Automations', icon: '⚙', group: 'Automation', description: 'Automated workflows', tone: 'slate' },
+  { name: 'Notifications', icon: '♢', group: 'Automation', description: 'Alerts and activity', tone: 'slate' },
+  { name: 'Marketplaces', icon: '◇', group: 'Configuration', description: 'Amazon and Flipkart status', tone: 'teal' },
 ];
-const API_BASE=(import.meta.env.VITE_API_BASE_URL||'').replace(/\/$/,'');
-const api=(path:string,init?:RequestInit)=>{const token=sessionStorage.getItem('seller_hub_token');return fetch(`${API_BASE}/api/v1${path}`,{...init,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{}) ,...(init?.headers||{})}})};
-const money=(v:unknown)=>`₹${Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:0})}`;
-function useRealtimeLoad(load:()=>void,interval=30000){React.useEffect(()=>{const timer=window.setInterval(load,interval);return()=>window.clearInterval(timer)},[load,interval])}
-function AuthGate({children}:{children:React.ReactNode}){const[token,setToken]=React.useState(()=>sessionStorage.getItem('seller_hub_token'));const[email,setEmail]=React.useState('');const[password,setPassword]=React.useState('');const[name,setName]=React.useState('');const[register,setRegister]=React.useState(false);const[loading,setLoading]=React.useState(false);const[error,setError]=React.useState('');const submit=async(e:React.FormEvent)=>{e.preventDefault();setLoading(true);setError('');try{const r=await api(register?'/auth/register':'/auth/login',{method:'POST',body:JSON.stringify(register?{email,password,full_name:name||null}:{email,password})});const b=await r.json();if(!r.ok)throw new Error(b.detail||`Authentication failed (${r.status})`);sessionStorage.setItem('seller_hub_token',b.token);setToken(b.token)}catch(err){setError(err instanceof Error?err.message:'Authentication failed')}finally{setLoading(false)}};if(token)return <>{children}</>;return <main className="auth-shell"><section className="auth-card"><div className="brand"><span>◆</span><div><b>Seller Hub</b><small>AI Operations</small></div></div><p className="eyebrow">PRIVATE SELLER WORKSPACE</p><h1>{register?'Create your seller workspace':'Welcome back'}</h1><p className="muted">Secure server-side session for your Amazon + Flipkart operations.</p><form onSubmit={submit}>{register&&<label>Full name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" autoComplete="name"/></label>}<label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email"/></label><label>Password<input type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete={register?'new-password':'current-password'}/></label>{error&&<div className="errorbar" role="alert">{error}</div>}<button className="ai-button auth-submit" disabled={loading}>{loading?'Please wait…':register?'Create account':'Sign in'}</button></form><button className="auth-toggle" onClick={()=>{setRegister(!register);setError('')}}>{register?'Already have an account? Sign in':'New here? Create an account'}</button></section></main>}
-function App(){const[active,setActive]=React.useState('Dashboard');const[dark,setDark]=React.useState(()=>localStorage.getItem('seller_hub_theme')==='dark');const[mobile,setMobile]=React.useState(false);React.useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';localStorage.setItem('seller_hub_theme',dark?'dark':'light')},[dark]);const current=modules.find(x=>x.name===active)||modules[0];const go=(name:string)=>{setActive(name);setMobile(false)};const logout=()=>{const token=sessionStorage.getItem('seller_hub_token');if(token)api('/auth/logout',{method:'POST'}).catch(()=>{});sessionStorage.removeItem('seller_hub_token');sessionStorage.removeItem('seller_hub_seller_id');window.location.reload()};return <div className="app-shell"><a className="skip-link" href="#main">Skip to content</a><aside className={mobile?'open':''}><div className="brand"><span>◆</span><div><b>Seller Hub</b><small>AI Operations</small></div><button className="mobile-close" onClick={()=>setMobile(false)}>×</button></div><nav className="nav-scroll">{['Overview','Operations','Catalog','Growth','Finance','Intelligence','Automation','Configuration'].map(g=><div className="nav-group" key={g}><small>{g}</small>{modules.filter(m=>m.group===g).map(m=><button className={active===m.name?'active':''} aria-current={active===m.name?'page':undefined} key={m.name} onClick={()=>go(m.name)}><i>{m.icon}</i>{m.name}</button>)}</div>)}</nav><div className="seller"><small>SELLER ACCOUNT</small><strong>My Business</strong><span>● Private workspace</span><button onClick={logout}>Sign out</button></div></aside><main id="main" tabIndex={-1}><header className="topbar"><button className="mobile-menu" onClick={()=>setMobile(true)}>☰</button><div><p className="eyebrow">{current.group.toUpperCase()} · SELLER HUB 2.0</p><h1>{active}</h1><p className="muted">{current.description}</p></div><div className="top-actions"><span className="live-status" title="Operational screens refresh automatically">● Live</span><button onClick={()=>setDark(!dark)}>{dark?'☀':'◐'}</button><button className="ai-button" onClick={()=>go('AI Agents')}>✦ Ask AI</button></div></header>{active==='Dashboard'?<Dashboard go={go}/>:active==='AI Agents'?<AICommandCenter/>:active==='Settings'?<Settings/>:<OperationalScreen module={current} go={go}/>}</main></div>}
-function Dashboard({go}:{go:(x:string)=>void}){const[data,setData]=React.useState<any>(null);const[error,setError]=React.useState('');const[updated,setUpdated]=React.useState<Date|null>(null);const load=React.useCallback(()=>{setError('');api('/dashboard').then(async r=>{if(r.status===401){sessionStorage.removeItem('seller_hub_token');window.location.reload();return}if(!r.ok)throw new Error(`Dashboard request failed (${r.status})`);setData(await r.json());setUpdated(new Date())}).catch(e=>setError(e.message))},[]);React.useEffect(load,[load]);useRealtimeLoad(load,30000);const k=data?.kpis||{};const cards=[['Revenue',money(k.revenue),'Last 30 days','₹'],['Net Profit',money(k.net_profit),'After tracked expenses','+'],['Orders',k.orders||0,'Amazon + Flipkart','▣'],['Inventory',k.inventory_units||0,'Available units','▥'],['Buy Box',`${k.buy_box_rate||0}%`,'Captured snapshots','◆'],['Returns',k.returns||0,'Selected period','↩']];return <section className="dashboard"><section className="hero-strip"><div><span className="live-dot">● LIVE</span><h2>Business pulse at a glance.</h2><p>Revenue, operations, AI decisions and approvals in one workspace.</p></div><div className="refresh-meta"><small>{updated?`Updated ${updated.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`:'Waiting for data'}</small><button onClick={load}>↻ Refresh</button></div></section>{error&&<div className="errorbar" role="alert">{error}</div>}<section className="cards">{cards.map(c=><article className="card" key={c[0]}><div className="card-icon">{c[3]}</div><span>{c[0]}</span><strong>{data?c[1]:'—'}</strong><small>{c[2]}</small></article>)}</section><section className="grid dashboard-grid"><article className="panel"><PanelHead title="Sales & Profit" sub="Actual stored data"/><Rows items={(data?.trends||[]).slice(-10).map((x:any)=>({a:x.key,b:money(x.revenue),c:`Profit ${money(x.net_profit)}`}))}/></article><article className="panel"><PanelHead title="Needs attention" sub="Operational alerts"/><Rows items={(data?.alerts||[]).slice(0,6).map((x:any)=>({a:x.message,b:x.severity,c:`${x.count} item(s)`}))}/></article></section><section className="grid bottom"><article className="panel"><PanelHead title="Marketplace performance" sub="Amazon vs Flipkart"/><Rows items={(data?.marketplaces||[]).map((x:any)=>({a:x.marketplace,b:money(x.revenue),c:`${x.orders} orders · ${money(x.net_profit)} profit`}))}/></article><article className="panel"><PanelHead title="Top products" sub="By revenue"/><Rows items={(data?.top_products||[]).slice(0,6).map((x:any)=>({a:x.sku,b:money(x.revenue),c:`${x.units} units · ${x.title}`}))}/></article></section><div className="screen-shortcuts">{['Orders','Inventory','Listings','Finance','Advertising','Analytics'].map(x=><button key={x} onClick={()=>go(x)}>{x} →</button>)}</div></section>}
-function OperationalScreen({module,go}:{module:Module;go:(x:string)=>void}){const[data,setData]=React.useState<any>(null);const[loading,setLoading]=React.useState(true);const[error,setError]=React.useState('');const[updated,setUpdated]=React.useState<Date|null>(null);const load=React.useCallback(()=>{if(!module.endpoint)return;setError('');api(module.endpoint).then(async r=>{if(r.status===401){sessionStorage.removeItem('seller_hub_token');window.location.reload();return}if(!r.ok)throw new Error(`API returned ${r.status}`);setData(await r.json());setUpdated(new Date())}).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[module.endpoint]);React.useEffect(()=>{setLoading(true);load()},[load]);useRealtimeLoad(load,20000);const quick=module.name==='Orders'?['SLA risk','Unfulfilled orders','Cancellation risk']:module.name==='Inventory'?['Low stock','Reorder plan','Marketplace sync']:module.name==='Listings'?['Drafts','Catalog conflicts','Approved publishing']:module.name==='Pricing'?['Buy Box losses','Price recommendations','Margin protection']:module.name==='Advertising'?['Wasted spend','ACOS review','Budget optimization']:module.name==='Finance'?['Profitability','Fee anomalies','Settlement reconciliation']:module.name==='Returns'?['Return risk','Refund anomalies','Escalations']:['Live records','Recommendations','Ask AI'];return <section className="module-page"><div className={`module-hero ${module.tone}`}><div className="module-mark">{module.icon}</div><div><p className="eyebrow">{module.group.toUpperCase()} CENTER</p><h2>{module.name} workspace</h2><p>{module.description}. Seller-scoped controls with approval gates for mutations.</p></div><span className="connection">● {loading?'Refreshing':'Live · '+(updated?updated.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'ready')}</span></div><div className="quick-grid">{quick.map(q=><button key={q} onClick={()=>go('AI Agents')}><span>✦</span><div><strong>{q}</strong><small>Open with AI Command Center</small></div><b>→</b></button>)}</div><div className="grid module-grid"><article className="panel"><PanelHead title="Live operational data" sub="Auto-refresh every 20 seconds"/>{error?<div className="errorbar" role="alert">{error}</div>:loading?<Empty text="Loading live data…"/>:<OperationalData data={data}/>}</article><article className="panel"><PanelHead title="Controls" sub="Safety and execution"/><Check text="Seller isolation enforced"/><Check text="Marketplace routing enforced"/><Check text="Approval required for mutations"/><Check text="AI recommendations remain explainable"/><Check text="No fabricated live data"/></article></div></section>}
-function OperationalData({data}:{data:any}){const arr=Array.isArray(data)?data:(data?.items||data?.results||data?.orders||data?.products||data?.listings||data?.campaigns||[]);if(arr.length)return <div className="data-table"><div className="table-head"><span>Record</span><span>Status / details</span></div>{arr.slice(0,12).map((x:any,i:number)=>{const id=x.sku||x.order_number||x.order_id||x.id||x.asin||`Record ${i+1}`;const detail=Object.entries(x||{}).filter(([k])=>!['id','sku','order_number','order_id','asin'].includes(k)).slice(0,3).map(([k,v])=>`${k}: ${String(v)}`).join(' · ');return <div className="table-row" key={String(id)+i}><strong>{String(id)}</strong><span>{detail||'Live record'}</span></div>})}</div>;return <Empty text="No records returned" sub="Connect and sync your marketplace accounts to populate this screen."/>}
-function AICommandCenter(){const[q,setQ]=React.useState('Which products are losing money?');const[result,setResult]=React.useState<any>(null);const[loading,setLoading]=React.useState(false);const[error,setError]=React.useState('');const seller=()=>sessionStorage.getItem('seller_hub_seller_id')||'';const run=async()=>{if(!seller()){setError('Set Seller Account ID in Settings first.');return}setLoading(true);setError('');try{const r=await api(`/ai/commands?seller_account_id=${encodeURIComponent(seller())}`,{method:'POST',body:JSON.stringify({query:q,execute_actions:false,approved:false})});const b=await r.json();if(r.status===401){sessionStorage.removeItem('seller_hub_token');window.location.reload();return}if(!r.ok)throw new Error(b.detail||`Command failed (${r.status})`);setResult(b)}catch(e){setError(e instanceof Error?e.message:'Command failed')}finally{setLoading(false)}};return <section className="ai-page"><div className="ai-banner"><div className="ai-orb">✦</div><div><p className="eyebrow">AI COMMAND CENTER 2.0</p><h2>Run the business in natural language.</h2><p>Analyze, route to specialist agents, then stop for human approval before operations.</p></div></div><article className="panel command-panel"><div className="commandbox"><textarea value={q} onChange={e=>setQ(e.target.value)} rows={3} aria-label="AI command"/><button className="ai-button" onClick={run} disabled={loading}>{loading?'Analyzing…':'✦ Analyze'}</button></div><div className="suggestions">{['Sales decline','Low stock','Pricing','Advertising','Profitability','Returns'].map(x=><button key={x} onClick={()=>setQ(x==='Sales decline'?'Why did sales decline today?':`Analyze ${x.toLowerCase()} performance`)}>{x}</button>)}</div>{error&&<div className="errorbar" role="alert">{error}</div>}</article>{result&&<article className="panel result-panel"><PanelHead title="AI analysis" sub={`${result.intent||'analysis'} · ${String(result.trace_id||'').slice(0,10)}`}/><p className="answer">{result.answer||'Analysis completed.'}</p>{result.recommendations?.length>0&&<><h3>Recommendations</h3><ul>{result.recommendations.map((x:string,i:number)=><li key={i}>{x}</li>)}</ul></>}<div className="approval-note">Operational actions remain approval-gated. Analysis does not execute marketplace changes.</div></article>}</section>}
-function Settings(){const[id,setId]=React.useState(()=>sessionStorage.getItem('seller_hub_seller_id')||'');const[sellers,setSellers]=React.useState<any[]>([]);const[msg,setMsg]=React.useState('');const[error,setError]=React.useState('');const load=React.useCallback(()=>{api('/accounts/sellers').then(async r=>{if(!r.ok)throw new Error(`Could not load seller accounts (${r.status})`);const b=await r.json();setSellers(b);if(!id&&b[0])setId(String(b[0].id))}).catch(e=>setError(e.message))},[id]);React.useEffect(load,[load]);const create=async()=>{const name=window.prompt('Seller account name','My Business');if(!name?.trim())return;setError('');try{const r=await api('/accounts/sellers',{method:'POST',body:JSON.stringify({name:name.trim()})});const b=await r.json();if(!r.ok)throw new Error(b.detail||'Could not create seller account');setSellers(x=>[...x,b]);setId(String(b.id));sessionStorage.setItem('seller_hub_seller_id',String(b.id));setMsg('Seller account created and selected.')}catch(e){setError(e instanceof Error?e.message:'Could not create seller account')}};return <section className="settings-page"><article className="panel settings"><div className="settings-icon">⚙</div><PanelHead title="Seller Hub settings" sub="Private account configuration"/>{error&&<div className="errorbar" role="alert">{error}</div>}<label>Seller Account<select value={id} onChange={e=>{setId(e.target.value);sessionStorage.setItem('seller_hub_seller_id',e.target.value);setMsg('Seller context changed.')}}>{!sellers.length&&<option value="">No seller account yet</option>}{sellers.map(s=><option key={s.id} value={s.id}>{s.name} · ID {s.id}</option>)}</select></label><div className="settings-actions"><button onClick={create}>+ Create seller account</button>{sellers.length>0&&<button className="ai-button save" onClick={()=>{sessionStorage.setItem('seller_hub_seller_id',id);setMsg('Saved for this session.')}}>Save seller context</button>}</div>{msg&&<p className="save-status">{msg}</p>}<div className="settings-note"><b>Security</b><span>Credentials stay server-side. The frontend never displays marketplace secrets.</span></div></article></section>}
-function PanelHead({title,sub}:{title:string;sub:string}){return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>}
-function Rows({items}:{items:{a:string;b:string;c:string}[]}){return items.length?<div className="rows">{items.map((x,i)=><div key={i}><span>{x.a}</span><b>{x.b}</b><em>{x.c}</em></div>)}</div>:<Empty text="No data yet" sub="Sync marketplace data to populate this view."/>}
-function Check({text}:{text:string}){return <div className="check"><b>✓</b><span>{text}</span></div>}
-function Empty({text,sub}:{text:string;sub?:string}){return <div className="empty"><strong>{text}</strong>{sub&&<small>{sub}</small>}</div>}
-createRoot(document.getElementById('root')!).render(<AuthGate><App/></AuthGate>);
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const api = (path: string) => fetch(`${API_BASE}/api/v1${path}`, { headers: { Accept: 'application/json' } });
+const money = (value: unknown) => `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+const time = (value: string | null) => value ? new Date(value).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+
+function App() {
+  const [active, setActive] = React.useState('Dashboard');
+  const [dark, setDark] = React.useState(() => localStorage.getItem('seller_hub_theme') === 'dark');
+  const [mobile, setMobile] = React.useState(false);
+  const [data, setData] = React.useState<Overview | null>(null);
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
+  const [updated, setUpdated] = React.useState<Date | null>(null);
+
+  const load = React.useCallback(async () => {
+    try {
+      const response = await api('/operations/overview');
+      if (!response.ok) throw new Error(`Seller Hub API returned ${response.status}`);
+      setData(await response.json());
+      setUpdated(new Date());
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load Seller Hub data');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; localStorage.setItem('seller_hub_theme', dark ? 'dark' : 'light'); }, [dark]);
+  React.useEffect(() => { load(); const timer = window.setInterval(load, 30000); return () => window.clearInterval(timer); }, [load]);
+
+  const current = modules.find(module => module.name === active) || modules[0];
+  const go = (name: string) => { setActive(name); setMobile(false); };
+  const k = data?.kpis;
+
+  return <div className="app-shell">
+    <a className="skip-link" href="#main">Skip to content</a>
+    <aside className={mobile ? 'open' : ''}>
+      <div className="brand"><span>◆</span><div><b>Seller Hub</b><small>Personal AI Operations</small></div><button className="mobile-close" onClick={() => setMobile(false)}>×</button></div>
+      <nav className="nav-scroll">
+        {['Overview', 'Operations', 'Catalog', 'Growth', 'Finance', 'Intelligence', 'Automation', 'Configuration'].map(group => <div className="nav-group" key={group}>
+          <small>{group}</small>{modules.filter(module => module.group === group).map(module => <button key={module.name} className={active === module.name ? 'active' : ''} aria-current={active === module.name ? 'page' : undefined} onClick={() => go(module.name)}><i>{module.icon}</i>{module.name}</button>)}
+        </div>)}
+      </nav>
+      <div className="seller"><small>PERSONAL WORKSPACE</small><strong>My Business</strong><span>● Direct access enabled</span></div>
+    </aside>
+    <main id="main" tabIndex={-1}>
+      <header className="topbar">
+        <button className="mobile-menu" onClick={() => setMobile(true)}>☰</button>
+        <div><p className="eyebrow">{current.group.toUpperCase()} · SELLER HUB</p><h1>{active}</h1><p className="muted">{current.description}</p></div>
+        <div className="top-actions"><span className="live-status">● Live</span><button onClick={() => setDark(!dark)}>{dark ? '☀' : '◐'}</button><button className="ai-button" onClick={() => go('AI Agents')}>✦ Ask AI</button></div>
+      </header>
+      {error && <div className="errorbar" role="alert">{error} <button onClick={load}>Retry</button></div>}
+      {active === 'Dashboard' ? <Dashboard data={data} loading={loading} updated={updated} go={go} /> : <ModulePage module={current} data={data} loading={loading} updated={updated} go={go} />}
+    </main>
+  </div>;
+}
+
+function Dashboard({ data, loading, updated, go }: { data: Overview | null; loading: boolean; updated: Date | null; go: (name: string) => void }) {
+  const k = data?.kpis;
+  const cards = [
+    ['Orders', k?.orders ?? 0, 'All imported orders', '▣'],
+    ['Inventory', k?.inventory_units ?? 0, 'Available units', '▥'],
+    ['Products', k?.products ?? 0, 'Catalog products', '◫'],
+    ['Listings', k?.listings ?? 0, `${k?.listings ? k.active_listings : 0} active`, '▤'],
+    ['Returns', k?.returns ?? 0, 'Return requests', '↩'],
+    ['Pending Jobs', k?.pending_jobs ?? 0, 'Queued / running', '⚙'],
+  ];
+  return <section className="dashboard">
+    <section className="hero-strip"><div><span className="live-dot">● LIVE DATA</span><h2>Business pulse at a glance.</h2><p>One workspace for orders, stock, catalog, marketplaces and operational health.</p></div><div className="refresh-meta"><small>{loading ? 'Loading…' : updated ? `Updated ${updated.toLocaleTimeString('en-IN')}` : 'Waiting for data'}</small><button onClick={() => window.location.reload()}>↻ Refresh</button></div></section>
+    <section className="cards">{cards.map(card => <article className="card" key={card[0]}><div className="card-icon">{card[3]}</div><span>{card[0]}</span><strong>{loading ? '—' : card[1]}</strong><small>{card[2]}</small></article>)}</section>
+    <section className="grid dashboard-grid">
+      <article className="panel"><PanelHead title="Order status" sub="All marketplace orders"/><Rows items={Object.entries(data?.orders.by_status || {}).map(([status, count]) => ({ a: status.replaceAll('_', ' '), b: count, c: 'orders' }))} empty="No orders imported yet" /></article>
+      <article className="panel"><PanelHead title="Needs attention" sub="Live operational alerts"/><Rows items={(data?.alerts || []).map(alert => ({ a: alert.message, b: alert.count, c: alert.severity }))} empty="No active alerts" /></article>
+    </section>
+    <section className="grid bottom">
+      <article className="panel"><PanelHead title="Marketplaces" sub="Connection and sync status"/>{data?.marketplaces.length ? <div className="rows">{data.marketplaces.map(market => <div key={market.id}><b>{market.marketplace}</b><strong>{market.status}</strong><em>Last sync: {time(market.last_sync_at)}{market.last_error ? ` · ${market.last_error}` : ''}</em></div>)}</div> : <Empty text="No marketplace accounts configured" sub="Amazon and Flipkart can be connected in the Marketplace workspace." />}</article>
+      <article className="panel"><PanelHead title="Recent activity" sub="Background operations"/><Rows items={(data?.activity || []).slice(0, 6).map(item => ({ a: item.title, b: item.status, c: time(item.created_at) }))} empty="No background activity yet" /></article>
+    </section>
+    <div className="screen-shortcuts">{['Orders', 'Inventory', 'Products', 'Listings', 'Marketplaces', 'AI Agents'].map(name => <button key={name} onClick={() => go(name)}>{name} →</button>)}</div>
+  </section>;
+}
+
+function ModulePage({ module, data, loading, updated, go }: { module: Module; data: Overview | null; loading: boolean; updated: Date | null; go: (name: string) => void }) {
+  const k = data?.kpis;
+  const cards: Record<string, [string, unknown, string][]> = {
+    Orders: [['Total orders', k?.orders || 0, 'Imported orders'], ...Object.entries(data?.orders.by_status || {}).slice(0, 5).map(([status, count]) => [status.replaceAll('_', ' '), count, 'orders'])],
+    Inventory: [['Available units', data?.inventory.units || 0, 'Sellable stock'], ['Inventory items', data?.inventory.total_items || 0, 'Tracked SKUs'], ['Low stock', data?.inventory.low_stock || 0, 'At reorder level'], ['Out of stock', data?.inventory.out_of_stock || 0, 'Needs replenishment']],
+    Products: [['Products', k?.products || 0, 'Catalog'], ['Listings', k?.listings || 0, 'All listings'], ['Active listings', data?.catalog.active_listings || 0, 'Published active']],
+    Listings: [['Listings', k?.listings || 0, 'All listings'], ['Active', data?.catalog.active_listings || 0, 'Published']],
+    Returns: [['Returns', k?.returns || 0, 'Return requests']],
+    Automations: [['Pending jobs', k?.pending_jobs || 0, 'Queued / running']],
+    Notifications: [['Active alerts', data?.alerts.length || 0, 'Current issues']],
+    Marketplaces: [['Connected/configured', data?.marketplaces.length || 0, 'Marketplace accounts']],
+    Pricing: [['Products', k?.products || 0, 'Pricing scope']], Advertising: [['Products', k?.products || 0, 'Advertising scope']], Finance: [['Orders', k?.orders || 0, 'Finance source']], Analytics: [['Orders', k?.orders || 0, 'Analytics source']], 'AI Agents': [['Operational records', (k?.orders || 0) + (k?.products || 0), 'Available for analysis']],
+  };
+  const moduleCards = cards[module.name] || [['Seller Hub', 1, 'Workspace']];
+  return <section className="module-page">
+    <div className={`module-hero ${module.tone}`}><div className="module-mark">{module.icon}</div><div><p className="eyebrow">{module.group.toUpperCase()} CENTER</p><h2>{module.name}</h2><p>{module.description}. This workspace is connected to the live Seller Hub overview.</p></div><span className="connection">● {loading ? 'Refreshing' : `Live · ${updated ? updated.toLocaleTimeString('en-IN') : 'ready'}`}</span></div>
+    <section className="cards">{moduleCards.map(([title, value, sub]) => <article className="card" key={title}><span>{title}</span><strong>{loading ? '—' : String(value)}</strong><small>{sub}</small></article>)}</section>
+    <div className="grid module-grid"><article className="panel"><PanelHead title="Live workspace data" sub="Read from the central operations API"/>{module.name === 'Marketplaces' ? <MarketplaceRows data={data} /> : module.name === 'Notifications' ? <Rows items={(data?.alerts || []).map(alert => ({ a: alert.message, b: alert.count, c: alert.severity }))} empty="No active alerts" /> : module.name === 'Automations' ? <Rows items={(data?.jobs.recent || []).map(job => ({ a: job.title, b: job.status, c: time(job.created_at) }))} empty="No jobs yet" /> : <Rows items={genericRows(module.name, data)} empty="No records available yet" />}</article><article className="panel"><PanelHead title="Phase 1 controls" sub="Core workspace health"/><Check text="Direct dashboard access"/><Check text="Real API data"/><Check text="Supabase-backed data"/><Check text="Auto-refresh enabled"/><Check text="No fabricated live records"/></article></div>
+    <div className="screen-shortcuts"><button onClick={() => go('Dashboard')}>← Dashboard</button><button onClick={() => go('Marketplaces')}>Marketplaces →</button><button onClick={() => go('AI Agents')}>Ask AI →</button></div>
+  </section>;
+}
+
+function genericRows(name: string, data: Overview | null) {
+  if (name === 'Inventory') return [['Available units', data?.inventory.units || 0, 'sellable units'], ['Low stock', data?.inventory.low_stock || 0, 'reorder attention'], ['Out of stock', data?.inventory.out_of_stock || 0, 'critical attention']].map(([a,b,c]) => ({a,b,c}));
+  if (name === 'Listings') return [['All listings', data?.catalog.listings || 0, 'records'], ['Active listings', data?.catalog.active_listings || 0, 'published']].map(([a,b,c]) => ({a,b,c}));
+  if (name === 'Orders') return Object.entries(data?.orders.by_status || {}).map(([a,b]) => ({a, b, c: 'orders'}));
+  if (name === 'Returns') return [{a:'Return requests', b:data?.kpis.returns || 0, c:'records'}];
+  return [{a:'Products in catalog', b:data?.kpis.products || 0, c:'available for this workspace'}];
+}
+
+function MarketplaceRows({ data }: { data: Overview | null }) { return data?.marketplaces.length ? <div className="rows">{data.marketplaces.map(m => <div key={m.id}><b>{m.marketplace}</b><strong>{m.status}</strong><em>Last sync: {time(m.last_sync_at)}{m.last_error ? ` · ${m.last_error}` : ''}</em></div>)}</div> : <Empty text="No marketplace accounts configured" sub="Connect Amazon or Flipkart when Phase 2 integration is enabled." />; }
+function PanelHead({ title, sub }: { title: string; sub: string }) { return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>; }
+function Rows({ items, empty = 'No data available yet' }: { items: { a: unknown; b: unknown; c: unknown }[]; empty?: string }) { return items.length ? <div className="rows">{items.map((item, index) => <div key={`${String(item.a)}-${index}`}><b>{String(item.a)}</b><strong>{String(item.b)}</strong><em>{String(item.c)}</em></div>)}</div> : <Empty text={empty} />; }
+function Check({ text }: { text: string }) { return <div className="check"><b>✓</b><span>{text}</span></div>; }
+function Empty({ text, sub }: { text: string; sub?: string }) { return <div className="empty"><strong>{text}</strong>{sub && <small>{sub}</small>}</div>; }
+
+createRoot(document.getElementById('root')!).render(<App />);
