@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.models.action_control import ActionRequest, ActionRequestStatus
 from app.models.core import AuditLog, Job
 from app.services.action_control import approve_personal_action, create_personal_action, reject_personal_action
+from app.services.marketplace_reconciliation import reconcile_inventory
 from app.services.personal_marketplace import personal_seller_id
 
 router = APIRouter(prefix="/operations", tags=["operations-control"])
@@ -100,3 +101,11 @@ def personal_audit(db: Session = Depends(get_db), limit: int = Query(default=100
     action_ids = select(ActionRequest.id).where(ActionRequest.seller_account_id == seller_id)
     rows = db.scalars(select(AuditLog).where(AuditLog.resource_type == "action_request", AuditLog.resource_id.in_(action_ids)).order_by(AuditLog.created_at.desc()).limit(limit)).all()
     return [{"id": row.id, "action": row.action, "resource_type": row.resource_type, "resource_id": row.resource_id, "details": json.loads(row.details) if row.details else {}, "created_at": _dt(row.created_at)} for row in rows]
+
+
+@router.get("/marketplaces/{marketplace_account_id}/inventory-reconciliation")
+def marketplace_inventory_reconciliation(marketplace_account_id: int, limit: int = Query(default=100, ge=1, le=100), db: Session = Depends(get_db)) -> dict:
+    try:
+        return reconcile_inventory(db, seller_account_id=_seller(db), marketplace_account_id=marketplace_account_id, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
