@@ -2,22 +2,18 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from redis import Redis
+
 from app.core.config import get_settings
 
 
 @lru_cache
 def get_redis():
-    """Return an Upstash REST Redis client when configured, otherwise None."""
+    """Return the Render Key Value Redis/Valkey client when configured."""
     settings = get_settings()
-    if not settings.upstash_redis_rest_url or not settings.upstash_redis_rest_token:
+    if not settings.redis_url:
         return None
-
-    from upstash_redis import Redis
-
-    return Redis(
-        url=settings.upstash_redis_rest_url,
-        token=settings.upstash_redis_rest_token,
-    )
+    return Redis.from_url(settings.redis_url, decode_responses=True)
 
 
 def redis_health() -> dict[str, object]:
