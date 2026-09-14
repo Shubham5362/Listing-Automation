@@ -45,7 +45,7 @@ services:
     plan: 0.5c-512mb
     region: singapore
     dockerfilePath: ./backend/Dockerfile
-    dockerCommand: python -m app.worker
+    dockerCommand: sh -c "alembic upgrade head && exec python -m app.worker"
     maxShutdownDelaySeconds: 300
     envVars:
       - key: ENVIRONMENT
