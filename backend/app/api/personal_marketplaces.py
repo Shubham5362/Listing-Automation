@@ -12,7 +12,7 @@ from app.core.security import CredentialEncryptionError, decrypt_credentials
 from app.db.session import get_db
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
-from app.models.core import Marketplace, MarketplaceAccount
+from app.models.core import Marketplace, MarketplaceAccount, SellerAccount
 from app.models.marketplace_sync import MarketplaceSyncRun
 from app.services.jobs import enqueue_job
 from app.services.personal_marketplace import ensure_personal_marketplaces, personal_marketplace_account
@@ -53,7 +53,10 @@ def _serialize(account: MarketplaceAccount) -> dict[str, Any]:
 @router.get("")
 def list_personal_marketplaces(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     ensure_personal_marketplaces(db, get_settings())
-    accounts = list(db.scalars(select(MarketplaceAccount).join(MarketplaceAccount.seller_account).where(MarketplaceAccount.seller_account.has(user_id=None)).order_by(MarketplaceAccount.marketplace)).all())
+    seller_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id.is_(None)).order_by(SellerAccount.id.asc()))
+    if seller_id is None:
+        return []
+    accounts = list(db.scalars(select(MarketplaceAccount).where(MarketplaceAccount.seller_account_id == seller_id).order_by(MarketplaceAccount.marketplace)).all())
     return [_serialize(account) for account in accounts]
 
 
