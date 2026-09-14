@@ -13,6 +13,7 @@ from app.core.observability import configure_logging, metrics_snapshot, promethe
 from app.core.redis_client import redis_health
 from app.db.init_db import init_db
 from app.db.session import SessionLocal
+from app.services.personal_marketplace import ensure_personal_marketplaces
 
 settings = get_settings()
 configure_logging()
@@ -44,6 +45,8 @@ if hosts:
 @app.on_event("startup")
 def startup() -> None:
     init_db()
+    with SessionLocal() as session:
+        ensure_personal_marketplaces(session, settings)
     logger.info("application_started")
 
 
