@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
@@ -10,19 +11,13 @@ from sqlalchemy.orm import Session
 from app.models.catalog import Product
 from app.models.product_knowledge import ProductKnowledge, ProductKnowledgeVersion
 
-
 CANONICAL_ALIASES = {
-    "sku": "SKU", "product code": "SKU", "item code": "SKU",
-    "title": "TITLE", "product title": "TITLE", "name": "TITLE",
-    "brand": "BRAND", "brand name": "BRAND",
-    "category": "CATEGORY", "product category": "CATEGORY",
+    "sku": "SKU", "product code": "SKU", "item code": "SKU", "title": "TITLE", "product title": "TITLE", "name": "TITLE",
+    "brand": "BRAND", "brand name": "BRAND", "category": "CATEGORY", "product category": "CATEGORY",
     "color": "COLOR", "colour": "COLOR", "primary color": "COLOR", "primary colour": "COLOR",
     "material": "MATERIAL", "fabric": "MATERIAL", "fabric type": "MATERIAL", "material type": "MATERIAL",
-    "size": "SIZE", "size name": "SIZE",
-    "pattern": "PATTERN", "pattern type": "PATTERN",
-    "weight": "WEIGHT", "item weight": "WEIGHT",
-    "hsn": "HSN", "hsn code": "HSN",
-    "gst": "GST_RATE", "gst rate": "GST_RATE",
+    "size": "SIZE", "size name": "SIZE", "pattern": "PATTERN", "pattern type": "PATTERN",
+    "weight": "WEIGHT", "item weight": "WEIGHT", "hsn": "HSN", "hsn code": "HSN", "gst": "GST_RATE", "gst rate": "GST_RATE",
 }
 
 
@@ -35,27 +30,29 @@ def canonical_attribute(name: str) -> str:
     return CANONICAL_ALIASES.get(key, re.sub(r"[^A-Z0-9]+", "_", name.strip().upper()).strip("_"))
 
 
+def _json_value(value: Any) -> Any:
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
+
+
 def _product_facts(product: Product) -> dict[str, dict[str, Any]]:
     facts: dict[str, dict[str, Any]] = {}
-    fields = {
-        "SKU": (product.sku, "product.sku"), "TITLE": (product.title, "product.title"),
-        "BRAND": (product.brand, "product.brand"), "CATEGORY": (product.category, "product.category"),
-        "HSN": (product.hsn_code, "product.hsn_code"), "GST_RATE": (product.gst_rate, "product.gst_rate"),
-    }
+    fields = {"SKU": (product.sku, "product.sku"), "TITLE": (product.title, "product.title"), "BRAND": (product.brand, "product.brand"), "CATEGORY": (product.category, "product.category"), "HSN": (product.hsn_code, "product.hsn_code"), "GST_RATE": (product.gst_rate, "product.gst_rate")}
     for key, (value, source) in fields.items():
         if value is not None and str(value).strip():
-            facts[key] = {"value": value, "source": source, "confidence": 1.0, "status": "verified"}
+            facts[key] = {"value": _json_value(value), "source": source, "confidence": 1.0, "status": "verified"}
     try:
         attrs = json.loads(product.attributes_json or "{}")
     except json.JSONDecodeError:
         attrs = {}
     if isinstance(attrs, dict):
         for raw_name, value in attrs.items():
-            if value is None or value == "":
+            if value in (None, "", []):
                 continue
             key = canonical_attribute(str(raw_name))
             if key not in facts:
-                facts[key] = {"value": value, "source": "product.attributes_json", "confidence": 1.0, "status": "verified"}
+                facts[key] = {"value": _json_value(value), "source": "product.attributes_json", "confidence": 1.0, "status": "verified"}
     return facts
 
 
@@ -70,9 +67,7 @@ def build_product_knowledge(db: Session, product: Product, *, reason: str = "ini
     row = db.scalar(select(ProductKnowledge).where(ProductKnowledge.product_id == product.id, ProductKnowledge.seller_account_id == product.seller_account_id))
     if row is None:
         row = ProductKnowledge(seller_account_id=product.seller_account_id, product_id=product.id)
-        db.add(row)
-        db.flush()
-        version = 1
+        db.add(row); db.flush(); version = 1
     else:
         version = row.schema_version + 1
     previous = json.loads(row.facts_json or "{}") if row.facts_json else {}
@@ -84,19 +79,12 @@ def build_product_knowledge(db: Session, product: Product, *, reason: str = "ini
     row.completeness_score = _score(facts)
     row.conflict_count = 0
     row.status = "ready" if row.completeness_score >= 70 else "incomplete"
-    db.add(ProductKnowledgeVersion(product_knowledge_id=row.id, product_id=product.id, version=version, facts_json=row.facts_json, reason=reason, source=source))
-    db.flush()
+    db.add(ProductKnowledgeVersion(product_knowledge_id=row.id, product_id=product.id, version=version, facts_json=row.facts_json, reason=reason, source=source)); db.flush()
     return row
 
 
 def read_knowledge(row: ProductKnowledge) -> dict[str, Any]:
-    return {
-        "id": row.id, "product_id": row.product_id, "seller_account_id": row.seller_account_id,
-        "schema_version": row.schema_version, "facts": json.loads(row.facts_json or "{}"),
-        "attribute_aliases": json.loads(row.attribute_aliases_json or "{}"),
-        "completeness_score": row.completeness_score, "conflict_count": row.conflict_count, "status": row.status,
-        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
-    }
+    return {"id": row.id, "product_id": row.product_id, "seller_account_id": row.seller_account_id, "schema_version": row.schema_version, "facts": json.loads(row.facts_json or "{}"), "attribute_aliases": json.loads(row.attribute_aliases_json or "{}"), "completeness_score": row.completeness_score, "conflict_count": row.conflict_count, "status": row.status, "updated_at": row.updated_at.isoformat() if row.updated_at else None}
 
 
 def knowledge_history(db: Session, product_id: int) -> list[dict[str, Any]]:
