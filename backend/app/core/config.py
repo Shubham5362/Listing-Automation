@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     allowed_hosts: str = "localhost,127.0.0.1,testserver"
     rate_limit_per_minute: int = 120
     redis_url: str | None = None
-    upstash_redis_rest_url: str | None = None
-    upstash_redis_rest_token: str | None = None
     session_ttl_hours: int = 24
 
     worker_poll_interval_seconds: float = 2.0
