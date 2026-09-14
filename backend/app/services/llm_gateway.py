@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from dataclasses import dataclass
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
@@ -109,7 +110,31 @@ class LLMGateway:
         tools: list[dict[str, Any]],
         executor: Callable[[str, dict[str, Any]], dict[str, Any]],
     ) -> LLMResult:
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{self.settings.gemini_model}:generateContent"
+        models = [self.settings.gemini_model]
+        fallback = self.settings.gemini_fallback_model.strip()
+        if fallback and fallback != self.settings.gemini_model:
+            models.append(fallback)
+
+        errors: list[str] = []
+        for model in models:
+            try:
+                return self._gemini_model(model, system, user, tools, executor)
+            except Exception as exc:
+                safe_error = self._safe_error(exc)
+                errors.append(f"{model}: {safe_error}")
+                logger.warning("Gemini model failed model=%s error=%s", model, safe_error)
+
+        raise LLMUnavailable("Gemini models failed; " + "; ".join(errors))
+
+    def _gemini_model(
+        self,
+        model: str,
+        system: str,
+        user: str,
+        tools: list[dict[str, Any]],
+        executor: Callable[[str, dict[str, Any]], dict[str, Any]],
+    ) -> LLMResult:
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         headers = {"x-goog-api-key": self.settings.gemini_api_key or ""}
         payload: dict[str, Any] = {
             "system_instruction": {"parts": [{"text": system}]},
@@ -122,7 +147,12 @@ class LLMGateway:
         if tools:
             payload["tools"] = self._gemini_tools(tools)
 
-        data = self._post_json(endpoint, payload, timeout=self.settings.llm_timeout_seconds, headers=headers)
+        data = self._post_json_with_retry(
+            endpoint,
+            payload,
+            timeout=self.settings.llm_timeout_seconds,
+            headers=headers,
+        )
         parts = self._response_parts(data)
         calls = [p["functionCall"] for p in parts if isinstance(p.get("functionCall"), dict)]
 
@@ -148,13 +178,18 @@ class LLMGateway:
             }
             if tools:
                 followup["tools"] = self._gemini_tools(tools)
-            data = self._post_json(endpoint, followup, timeout=self.settings.llm_timeout_seconds, headers=headers)
+            data = self._post_json_with_retry(
+                endpoint,
+                followup,
+                timeout=self.settings.llm_timeout_seconds,
+                headers=headers,
+            )
             parts = self._response_parts(data)
 
         text = "\n".join(str(p.get("text", "")) for p in parts if p.get("text")).strip()
         if not text:
             raise LLMUnavailable("Gemini returned no text")
-        return LLMResult(text=text, provider="gemini", model=self.settings.gemini_model, tool_calls=calls)
+        return LLMResult(text=text, provider="gemini", model=model, tool_calls=calls)
 
     @staticmethod
     def _response_parts(data: dict[str, Any]) -> list[dict[str, Any]]:
@@ -212,6 +247,42 @@ class LLMGateway:
         if not text:
             raise LLMUnavailable("OpenRouter returned no text")
         return LLMResult(text=text, provider="openrouter", model=self.settings.openrouter_model, tool_calls=calls)
+
+    def _post_json_with_retry(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        *,
+        timeout: float,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        attempts = max(1, self.settings.llm_retry_attempts)
+        last_error: Exception | None = None
+        for attempt in range(attempts):
+            try:
+                return self._post_json(url, payload, timeout=timeout, headers=headers)
+            except HTTPError as exc:
+                last_error = exc
+                if exc.code not in {429, 500, 502, 503, 504} or attempt >= attempts - 1:
+                    raise
+                retry_after = exc.headers.get("Retry-After") if exc.headers else None
+                try:
+                    delay = float(retry_after) if retry_after else self.settings.llm_retry_backoff_seconds * (2**attempt)
+                except (TypeError, ValueError):
+                    delay = self.settings.llm_retry_backoff_seconds * (2**attempt)
+                delay = min(max(delay, 0.5), 8.0)
+                logger.info("Retrying transient LLM error status=%s attempt=%s/%s delay=%.1fs", exc.code, attempt + 1, attempts, delay)
+                time.sleep(delay)
+            except (URLError, TimeoutError) as exc:
+                last_error = exc
+                if attempt >= attempts - 1:
+                    raise
+                delay = min(max(self.settings.llm_retry_backoff_seconds * (2**attempt), 0.5), 8.0)
+                logger.info("Retrying transient LLM network error attempt=%s/%s delay=%.1fs", attempt + 1, attempts, delay)
+                time.sleep(delay)
+        if last_error:
+            raise last_error
+        raise LLMUnavailable("LLM request failed")
 
     @staticmethod
     def _post_json(
