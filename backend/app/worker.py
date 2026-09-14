@@ -18,6 +18,7 @@ from app.services.listing_operations import execute_listing_publish
 from app.services.listing_updates import execute_listing_update
 from app.services.marketplace_operations import execute_marketplace_operation
 from app.services.marketplace_sync import sync_marketplace_account
+from app.services.scheduled_reports import dispatch_scheduled_reports
 
 logger = logging.getLogger("seller_hub.worker")
 
@@ -72,6 +73,7 @@ class BackgroundWorker:
         try:
             recover_stale_jobs(db)
             enqueue_due_scheduled_automations(db)
+            dispatch_scheduled_reports(db)
             processed = 0
             for _ in range(max(1, self.settings.worker_batch_size)):
                 job = claim_next_job(db, self.worker_id)
