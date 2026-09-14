@@ -10,6 +10,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.middleware import SecurityMiddleware
 from app.core.observability import configure_logging, metrics_snapshot, prometheus_snapshot
+from app.core.redis_client import redis_health
 from app.db.init_db import init_db
 from app.db.session import SessionLocal
 
@@ -59,6 +60,21 @@ def readiness() -> dict[str, str]:
     with SessionLocal() as session:
         session.execute(text("SELECT 1"))
     return {"status": "ready"}
+
+
+@app.get("/health/dependencies", tags=["system"])
+def dependency_health() -> dict[str, object]:
+    db_status: dict[str, object]
+    try:
+        with SessionLocal() as session:
+            session.execute(text("SELECT 1"))
+        db_status = {"status": "ok"}
+    except Exception as exc:  # pragma: no cover - provider/network dependent
+        db_status = {"status": "error", "error": type(exc).__name__}
+
+    redis_status = redis_health()
+    overall = "ok" if db_status["status"] == "ok" and redis_status["status"] in {"ok", "disabled"} else "degraded"
+    return {"status": overall, "database": db_status, "redis": redis_status}
 
 
 @app.get("/metrics", tags=["system"])
