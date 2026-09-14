@@ -113,12 +113,17 @@ class PersonalAISellerAgentService:
         if any(w in text for w in ("price", "pricing", "margin", "competitor")): return "pricing"
         return "business_health"
 
+    @staticmethod
+    def _is_casual(message: str) -> bool:
+        normalized = " ".join(message.lower().split()).strip("?!.,")
+        return normalized in {"hi", "hello", "hey", "hii", "namaste", "kaise ho", "kese ho", "how are you", "good morning", "good afternoon", "good evening"}
+
     def chat(self, message: str, create_plan: bool = False) -> dict[str, Any]:
         message = message.strip()
         if not message: raise ValueError("message cannot be empty")
         gateway = LLMGateway()
         intent = self._infer_intent(message)
-        answer = None; provider = "deterministic"; model = None; tool_calls: list[dict[str, Any]] = []
+        answer = None; provider = "deterministic"; model = None; tool_calls: list[dict[str, Any]] = []; fallback_reason = None
         if gateway.configured:
             system = ("You are the Personal AI Seller Agent for a single-user Amazon/Flipkart Seller Hub. "
                       "Speak naturally in the user's language (Hindi/Hinglish/English). Handle greetings and casual conversation normally. "
@@ -128,16 +133,19 @@ class PersonalAISellerAgentService:
             try:
                 result = gateway.generate(system=system, user=message, tools=self._tool_definitions(), tool_executor=self._execute_tool)
                 answer, provider, model, tool_calls = result.text, result.provider, result.model, result.tool_calls
-            except LLMUnavailable:
-                pass
+            except LLMUnavailable as exc:
+                fallback_reason = str(exc)[:1200]
         if answer is None:
-            if intent == "inventory": focus = self.inventory_issues(10)
-            elif intent == "advertising": focus = self.advertising_issues(10)
-            elif intent == "pricing": focus = self.pricing_opportunities(10)
-            else: focus = self.recommendations(10)
-            answer = self._answer(intent, focus)
-        response = {"agent": "personal_ai_seller_agent", "message": message, "answer": answer, "intent": intent, "provider": provider, "model": model, "tool_calls": [{"name": c.get("name") or c.get("function", {}).get("name")} for c in tool_calls], "plan_requested": create_plan, "created_actions": [], "approval_required": True, "execution": "No marketplace write is executed from chat; approved writes use the existing Action Control pipeline."}
-        self.db.add(AuditLog(action="ai_agent.chat", resource_type="ai_agent", resource_id=None, details=json.dumps({"provider": provider, "model": model, "intent": intent, "tool_calls": response["tool_calls"], "plan": create_plan}, separators=(",", ":"))))
+            if self._is_casual(message):
+                answer = "Main badhiya hoon 😊 Seller Hub ke liye ready hoon. Aap products, inventory, pricing, ads, orders ya listings ke baare mein pooch sakte ho."
+            else:
+                if intent == "inventory": focus = self.inventory_issues(10)
+                elif intent == "advertising": focus = self.advertising_issues(10)
+                elif intent == "pricing": focus = self.pricing_opportunities(10)
+                else: focus = self.recommendations(10)
+                answer = self._answer(intent, focus)
+        response = {"agent": "personal_ai_seller_agent", "message": message, "answer": answer, "intent": intent, "provider": provider, "model": model, "fallback_reason": fallback_reason, "tool_calls": [{"name": c.get("name") or c.get("function", {}).get("name")} for c in tool_calls], "plan_requested": create_plan, "created_actions": [], "approval_required": True, "execution": "No marketplace write is executed from chat; approved writes use the existing Action Control pipeline."}
+        self.db.add(AuditLog(action="ai_agent.chat", resource_type="ai_agent", resource_id=None, details=json.dumps({"provider": provider, "model": model, "intent": intent, "tool_calls": response["tool_calls"], "plan": create_plan, "fallback_reason": fallback_reason}, separators=(",", ":"))))
         self.db.commit()
         return response
 
