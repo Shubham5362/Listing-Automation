@@ -147,12 +147,7 @@ class LLMGateway:
         if tools:
             payload["tools"] = self._gemini_tools(tools)
 
-        data = self._post_json_with_retry(
-            endpoint,
-            payload,
-            timeout=self.settings.llm_timeout_seconds,
-            headers=headers,
-        )
+        data = self._post_json_with_retry(endpoint, payload, timeout=self.settings.llm_timeout_seconds, headers=headers)
         parts = self._response_parts(data)
         calls = [p["functionCall"] for p in parts if isinstance(p.get("functionCall"), dict)]
 
@@ -178,12 +173,7 @@ class LLMGateway:
             }
             if tools:
                 followup["tools"] = self._gemini_tools(tools)
-            data = self._post_json_with_retry(
-                endpoint,
-                followup,
-                timeout=self.settings.llm_timeout_seconds,
-                headers=headers,
-            )
+            data = self._post_json_with_retry(endpoint, followup, timeout=self.settings.llm_timeout_seconds, headers=headers)
             parts = self._response_parts(data)
 
         text = "\n".join(str(p.get("text", "")) for p in parts if p.get("text")).strip()
@@ -248,6 +238,14 @@ class LLMGateway:
             raise LLMUnavailable("OpenRouter returned no text")
         return LLMResult(text=text, provider="openrouter", model=self.settings.openrouter_model, tool_calls=calls)
 
+    @staticmethod
+    def _format_http_error(exc: HTTPError) -> str:
+        try:
+            detail = exc.read().decode("utf-8", errors="replace")
+        except Exception:
+            detail = ""
+        return f"HTTP {exc.code}: {detail[:500]}".strip()
+
     def _post_json_with_retry(
         self,
         url: str,
@@ -264,7 +262,7 @@ class LLMGateway:
             except HTTPError as exc:
                 last_error = exc
                 if exc.code not in {429, 500, 502, 503, 504} or attempt >= attempts - 1:
-                    raise
+                    raise LLMUnavailable(self._format_http_error(exc)) from exc
                 retry_after = exc.headers.get("Retry-After") if exc.headers else None
                 try:
                     delay = float(retry_after) if retry_after else self.settings.llm_retry_backoff_seconds * (2**attempt)
@@ -273,15 +271,22 @@ class LLMGateway:
                 delay = min(max(delay, 0.5), 8.0)
                 logger.info("Retrying transient LLM error status=%s attempt=%s/%s delay=%.1fs", exc.code, attempt + 1, attempts, delay)
                 time.sleep(delay)
-            except (URLError, TimeoutError) as exc:
+            except URLError as exc:
                 last_error = exc
                 if attempt >= attempts - 1:
-                    raise
+                    raise LLMUnavailable(str(exc)) from exc
                 delay = min(max(self.settings.llm_retry_backoff_seconds * (2**attempt), 0.5), 8.0)
                 logger.info("Retrying transient LLM network error attempt=%s/%s delay=%.1fs", attempt + 1, attempts, delay)
                 time.sleep(delay)
+            except TimeoutError as exc:
+                last_error = exc
+                if attempt >= attempts - 1:
+                    raise LLMUnavailable(str(exc)) from exc
+                delay = min(max(self.settings.llm_retry_backoff_seconds * (2**attempt), 0.5), 8.0)
+                logger.info("Retrying transient LLM timeout attempt=%s/%s delay=%.1fs", attempt + 1, attempts, delay)
+                time.sleep(delay)
         if last_error:
-            raise last_error
+            raise LLMUnavailable(str(last_error)) from last_error
         raise LLMUnavailable("LLM request failed")
 
     @staticmethod
@@ -294,14 +299,5 @@ class LLMGateway:
     ) -> dict[str, Any]:
         body = json.dumps(payload).encode("utf-8")
         req = Request(url, data=body, headers={"Content-Type": "application/json", **(headers or {})}, method="POST")
-        try:
-            with urlopen(req, timeout=timeout) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            try:
-                detail = exc.read().decode("utf-8", errors="replace")
-            except Exception:
-                detail = ""
-            raise LLMUnavailable(f"HTTP {exc.code}: {detail[:500]}") from exc
-        except (URLError, TimeoutError) as exc:
-            raise LLMUnavailable(str(exc)) from exc
+        with urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
