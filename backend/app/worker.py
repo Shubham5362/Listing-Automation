@@ -4,11 +4,13 @@ import json
 import logging
 import socket
 import time
+from datetime import datetime
 
 from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
+from app.models.action_control import ActionRequest, ActionRequestStatus
 from app.models.automation import AutomationRule
 from app.models.core import Job, MarketplaceAccount
 from app.services.automation import AutomationService
@@ -69,6 +71,25 @@ class BackgroundWorker:
             return {"automation_run_id": run.id, "status": run.status}
         raise ValueError(f"Unsupported background job: {job.name}")
 
+    @staticmethod
+    def _update_action_request(db, job: Job, *, result: dict | None = None, error: str | None = None) -> None:
+        payload = json.loads(job.payload or "{}")
+        action_request_id = payload.get("action_request_id")
+        if action_request_id is None:
+            return
+        request = db.scalar(select(ActionRequest).where(ActionRequest.id == int(action_request_id), ActionRequest.seller_account_id == job.seller_account_id))
+        if not request:
+            return
+        if error:
+            if job.attempts >= job.max_attempts:
+                request.status = ActionRequestStatus.FAILED.value
+                request.completed_at = datetime.utcnow()
+                request.error = error[:2000]
+        else:
+            request.status = ActionRequestStatus.COMPLETED.value
+            request.completed_at = datetime.utcnow()
+            request.result = json.dumps(result or {}, separators=(",", ":"))
+
     def run_once(self) -> int:
         db = SessionLocal()
         try:
@@ -86,9 +107,12 @@ class BackgroundWorker:
                     result = self.execute_job(db, job)
                 except Exception as exc:
                     logger.exception("Background job %s failed", job.id)
+                    self._update_action_request(db, job, error=str(exc))
                     retry_job(db, job.id, str(exc))
                 else:
+                    self._update_action_request(db, job, result=result)
                     mark_job_finished(db, job.id, result=result)
+                db.commit()
             return processed
         finally:
             db.close()
