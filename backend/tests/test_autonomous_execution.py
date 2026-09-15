@@ -33,6 +33,7 @@ def test_plan_items_are_seller_scoped(db_session):
     plan = AutonomousExecutionService(db_session, 7).create_plan(
         "sync", [{"sku": "SKU-7", "operation": "inventory_push", "payload": {"quantity": 1}}], confidence=0.9, risk="medium"
     )
+    db_session.flush()
     item = db_session.query(AutonomousPlanItem).filter_by(plan_id=plan.id).one()
     assert item.seller_account_id == 7
     assert db_session.query(AutonomousPlan).filter_by(seller_account_id=8).count() == 0
