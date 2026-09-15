@@ -50,4 +50,10 @@ This checklist is the final release gate for the private AI Seller OS.
 - [ ] No obsolete provider/model labels are exposed to sellers.
 - [ ] No dead navigation or broken module entry points remain.
 
-A release is certified only when the automated gate is green and all applicable runtime, safety, business-flow, failure-mode, and UI checks are verified against the deployed environment.
+## Migration gate
+
+- [ ] Exactly one canonical revision exists for each migration ID.
+- [ ] The Seller Operations migration precedes Self-Learning.
+- [ ] Final Seller OS migration `0036_final_ai_seller_os` remains present.
+
+A release is certified only when the automated gate is green and all applicable runtime, safety, business-flow, failure-mode, UI, and migration checks are verified against the deployed environment.
