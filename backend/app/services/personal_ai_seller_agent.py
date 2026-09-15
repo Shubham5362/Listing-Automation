@@ -122,8 +122,6 @@ class PersonalAISellerAgentService:
         message = message.strip()
         if not message: raise ValueError("message cannot be empty")
 
-        # Greetings/acknowledgements are intentionally handled locally. This keeps
-        # the agent natural without turning every casual sentence into an LLM call.
         if self._is_casual(message):
             answer = casual_reply(message)
             provider = "deterministic"
@@ -137,19 +135,28 @@ class PersonalAISellerAgentService:
         intent = self._infer_intent(message)
         answer = None; provider = "deterministic"; model = None; tool_calls: list[dict[str, Any]] = []; fallback_reason = None
         if gateway.configured:
-            system = ("You are the Personal AI Seller Agent for a single-user Amazon/Flipkart Seller Hub. "
-                      "Speak naturally in the user's language (Hindi/Hinglish/English). Handle greetings and casual conversation normally. "
-                      "For business questions, use tools to obtain live verified data. Never invent numbers, marketplace status, or actions. "
-                      "Explain uncertainty when data is unavailable. You may analyze and plan, but never execute marketplace writes from chat. "
-                      "Keep answers concise and useful. Mention when a conclusion is based on available Seller Hub data.")
+            system = (
+                "ROLE AND HARD SCOPE: You are the Personal AI Seller Agent inside a private Amazon/Flipkart Seller Hub. "
+                "This is NOT a general-purpose chatbot. Your job is to help the owner operate, understand, improve and automate "
+                "this Seller Hub and the connected selling business. "
+                "Seller scope includes products, listings, inventory, stock, orders, returns, pricing, margins, sales, profitability, "
+                "advertising, finance, marketplace connections, reports, analytics, business strategy and related seller work. "
+                "You may explain how this Seller Hub and its agents/tools work. "
+                "If the user's primary request is outside this project (for example stories, poems, jokes, entertainment, travel planning, "
+                "homework, unrelated coding, general trivia, or other non-seller work), DO NOT perform it. Briefly and politely redirect "
+                "the user to Seller Hub/business help instead. Do not generate outside-scope content. "
+                "Basic greetings and brief pleasantries are allowed, but do not become a general-purpose social chatbot. "
+                "Understand intent semantically; do not require specific keywords. For business facts, use tools and never invent data. "
+                "Never execute marketplace writes directly from chat; approved writes use the existing action-control pipeline. "
+                "Reply in the user's current language. Keep answers concise and directly useful."
+            )
             try:
-                result = gateway.generate(system=system, user=message, tools=self._tool_definitions(), tool_executor=self._execute_tool)
+                result = gateway.generate(system=system, user=message, tools=self._tool_definitions(), tool_executor=self._execute_tool, scope_text=message)
                 answer, provider, model, tool_calls = result.text, result.provider, result.model, result.tool_calls
             except LLMUnavailable as exc:
                 fallback_reason = str(exc)[:1200]
         if answer is None:
-            if self._is_casual(message):
-                answer = casual_reply(message)
+            if self._is_casual(message): answer = casual_reply(message)
             else:
                 if intent == "inventory": focus = self.inventory_issues(10)
                 elif intent == "advertising": focus = self.advertising_issues(10)
