@@ -1,9 +1,12 @@
 name: Firebase Hosting
 
-# Deployment policy: Firebase is a phase-level release action, not a per-commit
-# workflow. Run it manually once after the phase is complete and CI is green.
+# Deploy the live Firebase frontend whenever main changes, so chat/UI fixes are not
+# left behind on an older manually-published build.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -24,10 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm install
 
       - name: Hide provider metadata from chat UI
         working-directory: frontend
