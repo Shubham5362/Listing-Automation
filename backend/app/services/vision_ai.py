@@ -1,5 +1,9 @@
 from __future__ import annotations
-import hashlib, io, json, urllib.request
+
+import hashlib
+import io
+import urllib.request
+
 from PIL import Image, ImageFilter, ImageStat
 
 
@@ -20,12 +24,13 @@ def analyze_image(url: str) -> dict[str, object]:
     if width <= 0 or height <= 0:
         raise ValueError("invalid image dimensions")
     gray = image.convert("L")
-    blur = float(ImageStat.Stat(gray.filter(ImageFilter.FIND_EDGES)).variance[0])
+    edge_stat = ImageStat.Stat(gray.filter(ImageFilter.FIND_EDGES))
+    blur = float(edge_stat.stddev[0] ** 2)
     resolution_score = min(100.0, (width * height) / 2_000_000 * 100)
     aspect = width / height
     framing = 100.0 if 0.5 <= aspect <= 2.0 else 70.0
     quality = round(max(0.0, min(100.0, resolution_score * 0.55 + min(100.0, blur * 2.0) * 0.25 + framing * 0.20)), 2)
-    findings = []
+    findings: list[dict[str, str]] = []
     if min(width, height) < 1000:
         findings.append({"code":"LOW_RESOLUTION","severity":"medium","message":"Image is below the recommended 1000px minimum on one axis."})
     if blur < 12:
