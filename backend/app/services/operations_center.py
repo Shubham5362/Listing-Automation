@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.action_control import ActionRequest, ActionRequestStatus
 from app.models.catalog import Listing, Product
-from app.models.core import MarketplaceAccount, SellerAccount, Job
+from app.models.core import MarketplaceAccount, Job
 from app.models.diagnostic import Diagnostic
 from app.models.inventory import InventoryItem
 from app.models.listing_validation import ListingValidation
@@ -35,7 +34,6 @@ class OperationsCenterService:
         listings = self.db.scalar(select(func.count(Listing.id)).join(Product, Listing.product_id == Product.id).where(Product.seller_account_id == self.seller_id)) or 0
         active = self.db.scalar(select(func.count(Listing.id)).join(Product, Listing.product_id == Product.id).where(Product.seller_account_id == self.seller_id, Listing.status == "active")) or 0
         inventory = list(self.db.scalars(select(InventoryItem).where(InventoryItem.seller_account_id == self.seller_id)).all())
-        available = sum(max(0, i.quantity - i.reserved_quantity) for i in inventory)
         low = sum(1 for i in inventory if i.quantity - i.reserved_quantity <= i.reorder_level)
         oos = sum(1 for i in inventory if i.quantity - i.reserved_quantity <= 0)
         order_rows = self.db.execute(select(Order.status, func.count(Order.id)).where(Order.seller_account_id == self.seller_id).group_by(Order.status)).all()
@@ -57,7 +55,7 @@ class OperationsCenterService:
         diag_counts, validation_counts = c["diag_counts"], c["validation_counts"]
         listing_score = 100 if not listings else self._score((active / listings) * 100)
         inventory_score = 100 if not inventory else self._score(100 - min(70, (low / len(inventory)) * 100) - min(30, (oos / len(inventory)) * 100))
-        order_total = sum(c["order_rows"])
+        order_total = sum(v for _, v in c["order_rows"])
         delayed = sum(v for s, v in c["order_rows"] if str(s) in {"pending", "confirmed"})
         order_score = 100 if not order_total else self._score(100 - min(70, delayed / order_total * 100))
         pricing_rows = self.db.scalar(select(func.count(PriceHistory.id)).join(Listing, PriceHistory.listing_id == Listing.id).join(Product, Listing.product_id == Product.id).where(Product.seller_account_id == self.seller_id)) or 0
@@ -110,4 +108,4 @@ class OperationsCenterService:
             alerts = list(self.db.scalars(select(OperationAlert).where(OperationAlert.seller_account_id == self.seller_id, OperationAlert.is_read.is_(False)).order_by(OperationAlert.created_at.desc()).limit(20)).all())
         accounts = list(self.db.scalars(select(MarketplaceAccount).where(MarketplaceAccount.seller_account_id == self.seller_id)).all())
         actions = list(self.db.scalars(select(ActionRequest).where(ActionRequest.seller_account_id == self.seller_id).order_by(ActionRequest.created_at.desc()).limit(20)).all())
-        return {"health": health, "kpis": {"orders": sum(c["order_rows"]), "products": c["products"], "listings": c["listings"], "inventory_units": sum(max(0, i.quantity - i.reserved_quantity) for i in c["inventory"]), "low_stock": c["low"], "out_of_stock": c["oos"], "returns": c["returns"], "pending_jobs": sum(c["job_counts"].get(s, 0) for s in ("queued", "running", "retrying")), "pending_approvals": c["pending"]}, "orders": {"by_status": {str(s): n for s, n in c["order_rows"]}}, "inventory": {"total_items": len(c["inventory"]), "units": sum(max(0, i.quantity - i.reserved_quantity) for i in c["inventory"]), "low_stock": c["low"], "out_of_stock": c["oos"]}, "catalog": {"products": c["products"], "listings": c["listings"], "active_listings": c["active"]}, "diagnostics": c["diag_counts"], "listing_validation": c["validation_counts"], "marketplaces": [{"id": a.id, "marketplace": a.marketplace, "status": "connected" if a.is_connected else "not_connected", "last_sync_at": a.last_sync_at.isoformat() if a.last_sync_at else None, "last_error": a.connection_error} for a in accounts], "alerts": [{"id": a.id, "severity": a.severity, "title": a.title, "message": a.message, "source": a.source, "is_read": a.is_read} for a in alerts], "action_queue": [{"id": a.id, "action": a.action, "risk": a.risk, "status": a.status, "reason": a.reason, "created_at": a.created_at.isoformat() if a.created_at else None} for a in actions]}
+        return {"health": health, "kpis": {"orders": sum(v for _, v in c["order_rows"]), "products": c["products"], "listings": c["listings"], "inventory_units": sum(max(0, i.quantity - i.reserved_quantity) for i in c["inventory"]), "low_stock": c["low"], "out_of_stock": c["oos"], "returns": c["returns"], "pending_jobs": sum(c["job_counts"].get(s, 0) for s in ("queued", "running", "retrying")), "pending_approvals": c["pending"]}, "orders": {"by_status": {str(s): n for s, n in c["order_rows"]}}, "inventory": {"total_items": len(c["inventory"]), "units": sum(max(0, i.quantity - i.reserved_quantity) for i in c["inventory"]), "low_stock": c["low"], "out_of_stock": c["oos"]}, "catalog": {"products": c["products"], "listings": c["listings"], "active_listings": c["active"]}, "diagnostics": c["diag_counts"], "listing_validation": c["validation_counts"], "marketplaces": [{"id": a.id, "marketplace": a.marketplace, "status": "connected" if a.is_connected else "not_connected", "last_sync_at": a.last_sync_at.isoformat() if a.last_sync_at else None, "last_error": a.connection_error} for a in accounts], "alerts": [{"id": a.id, "severity": a.severity, "title": a.title, "message": a.message, "source": a.source, "is_read": a.is_read} for a in alerts], "action_queue": [{"id": a.id, "action": a.action, "risk": a.risk, "status": a.status, "reason": a.reason, "created_at": a.created_at.isoformat() if a.created_at else None} for a in actions]}
