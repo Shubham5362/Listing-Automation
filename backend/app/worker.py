@@ -23,6 +23,8 @@ from app.services.marketplace_scheduler import enqueue_due_marketplace_syncs
 from app.services.marketplace_sync import sync_marketplace_account
 from app.services.marketplace_change import scan_marketplace
 from app.services.scheduled_reports import dispatch_scheduled_reports
+from app.services.operations_center import OperationsCenterService
+from app.services.personal_marketplace import personal_seller_id
 from app.marketplaces.registry import list_marketplaces
 
 logger = logging.getLogger("seller_hub.worker")
@@ -103,6 +105,16 @@ class BackgroundWorker:
             except Exception:
                 logger.exception("Marketplace schema scan failed for %s", name)
 
+    @staticmethod
+    def _refresh_operations(db) -> None:
+        seller_id = personal_seller_id(db)
+        if seller_id is None:
+            return
+        try:
+            OperationsCenterService(db, seller_id).overview(persist=True)
+        except Exception:
+            logger.exception("Operations center refresh failed")
+
     def run_once(self) -> int:
         db = SessionLocal()
         try:
@@ -111,6 +123,8 @@ class BackgroundWorker:
             enqueue_due_scheduled_automations(db)
             dispatch_scheduled_reports(db)
             self._scan_marketplace_schemas(db)
+            if int(time.time()) % 300 < max(1, int(self.settings.worker_poll_interval_seconds)):
+                self._refresh_operations(db)
             processed = 0
             for _ in range(max(1, self.settings.worker_batch_size)):
                 job = claim_next_job(db, self.worker_id)
