@@ -2,73 +2,67 @@ import React from 'react';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const api = (path: string, options?: RequestInit) => fetch(`${API_BASE}/api/v1${path}`, { ...options, headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options?.headers || {}) } });
-const time = (value: string | null) => value ? new Date(value).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 
-type Job = { id: number; name: string; status: string; attempts: number; max_attempts: number; error: string | null; created_at: string | null; started_at: string | null; finished_at: string | null };
-type Action = { id: number; action: string; risk: string; status: string; reason: string | null; job_id: number | null; error: string | null; created_at: string | null; approved_at: string | null; completed_at: string | null };
+type Data = { health: { overall: number; components: Record<string, number>; reasons: { area: string; impact: number; message: string }[] }; kpis: { orders: number; products: number; listings: number; inventory_units: number; low_stock: number; out_of_stock: number; returns: number; pending_jobs: number; pending_approvals: number }; orders: { by_status: Record<string, number> }; inventory: { total_items: number; units: number; low_stock: number; out_of_stock: number }; catalog: { products: number; listings: number; active_listings: number }; diagnostics: Record<string, number>; listing_validation: Record<string, number>; marketplaces: { id: number; marketplace: string; status: string; last_sync_at: string | null; last_error: string | null }[]; alerts: { id: number; severity: string; title: string; message: string; source: string; is_read: boolean }[]; action_queue: { id: number; action: string; risk: string; status: string; reason: string | null; created_at: string | null }[] };
 
 export default function OperationsControlCenter() {
-  const [tab, setTab] = React.useState<'control' | 'jobs' | 'approvals' | 'audit'>('control');
-  const [jobs, setJobs] = React.useState<Job[]>([]);
-  const [actions, setActions] = React.useState<Action[]>([]);
-  const [audit, setAudit] = React.useState<any[]>([]);
+  const [data, setData] = React.useState<Data | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [message, setMessage] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [updated, setUpdated] = React.useState<Date | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const [jobsResponse, actionsResponse, auditResponse] = await Promise.all([api('/operations/jobs'), api('/operations/actions'), api('/operations/audit')]);
-      if (!jobsResponse.ok || !actionsResponse.ok || !auditResponse.ok) throw new Error('Operations API unavailable');
-      setJobs((await jobsResponse.json()).jobs || []);
-      setActions((await actionsResponse.json()).actions || []);
-      setAudit(await auditResponse.json());
-      setMessage('');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to load operations');
-    } finally { setLoading(false); }
+      const response = await api('/seller-operations/overview?refresh=true');
+      if (!response.ok) throw new Error(`Operations API returned ${response.status}`);
+      setData(await response.json()); setUpdated(new Date()); setError('');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load operations center'); }
+    finally { setLoading(false); }
   }, []);
 
-  React.useEffect(() => { load(); const timer = window.setInterval(load, 15000); return () => window.clearInterval(timer); }, [load]);
+  React.useEffect(() => { load(); const timer = window.setInterval(load, 30000); return () => window.clearInterval(timer); }, [load]);
 
-  const approve = async (id: number) => { const response = await api(`/operations/actions/${id}/approve`, { method: 'POST' }); if (!response.ok) { setMessage(await response.text()); return; } setMessage('Action approved and queued.'); await load(); };
-  const reject = async (id: number) => { const response = await api(`/operations/actions/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason: 'Rejected from Operations Center' }) }); if (!response.ok) { setMessage(await response.text()); return; } setMessage('Action rejected.'); await load(); };
-  const retry = async (id: number) => { const response = await api(`/operations/jobs/${id}/retry`, { method: 'POST' }); if (!response.ok) { setMessage(await response.text()); return; } setMessage('Job re-queued.'); await load(); };
+  const markRead = async (id: number) => { const response = await api(`/seller-operations/alerts/${id}/read`, { method: 'POST' }); if (response.ok) await load(); };
+  const h = data?.health;
+  const k = data?.kpis;
+  const pending = data?.action_queue.filter(a => a.status === 'pending').length || 0;
 
-  const pending = actions.filter(item => item.status === 'pending').length;
-  const running = jobs.filter(item => item.status === 'running').length;
-  const failed = jobs.filter(item => item.status === 'failed').length;
-  const completed = jobs.filter(item => item.status === 'completed').length;
-
-  return <section className="module-page">
-    <div className="module-hero ai"><div className="module-mark">⚡</div><div><p className="eyebrow">OPERATIONS CONTROL</p><h2>Control Center</h2><p>Approve, execute, monitor and recover real Seller Hub operations from one place.</p></div><span className="connection">● {loading ? 'Refreshing' : 'Live'}</span></div>
-    {message && <div className="errorbar" role="status">{message}<button onClick={() => setMessage('')}>×</button></div>}
+  return <section className="module-page operations-center">
+    <div className="module-hero ai"><div className="module-mark">⚡</div><div><p className="eyebrow">OPERATIONS · COMMAND CENTER</p><h2>Seller Operations</h2><p>One operational view for listings, inventory, orders, marketplaces, diagnostics and controlled AI actions.</p></div><span className="connection">● {loading ? 'Refreshing' : 'Live'}</span></div>
+    {error && <div className="errorbar" role="alert">{error}<button onClick={load}>Retry</button></div>}
     <div className="cards">
-      <article className="card"><span>Pending approvals</span><strong>{pending}</strong><small>Require owner decision</small></article>
-      <article className="card"><span>Running jobs</span><strong>{running}</strong><small>Worker execution</small></article>
-      <article className="card"><span>Failed jobs</span><strong>{failed}</strong><small>Recovery available</small></article>
-      <article className="card"><span>Completed jobs</span><strong>{completed}</strong><small>Successful operations</small></article>
-    </div>
-    <div className="screen-shortcuts control-tabs">
-      {([['control','Overview'],['jobs','Job Center'],['approvals',`Approvals${pending ? ` (${pending})` : ''}`],['audit','Audit Log']] as const).map(([key,label]) => <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>{label}</button>)}
-      <button onClick={load}>↻ Refresh</button>
+      <Metric title="Business Health" value={h?.overall ?? '—'} sub="Explainable 0–100 score"/>
+      <Metric title="Listings" value={k?.listings ?? '—'} sub={`${k?.catalog_active ?? data?.catalog.active_listings ?? 0} active`}/>
+      <Metric title="Inventory" value={k?.inventory_units ?? '—'} sub={`${k?.low_stock ?? 0} low · ${k?.out_of_stock ?? 0} OOS`}/>
+      <Metric title="Orders" value={k?.orders ?? '—'} sub={`${k?.pending_jobs ?? 0} pending jobs`}/>
+      <Metric title="AI Actions" value={pending} sub="Awaiting approval"/>
     </div>
 
-    {tab === 'control' && <div className="grid module-grid">
-      <article className="panel"><PanelHead title="Operational pipeline" sub="Every sensitive action follows a controlled lifecycle"/><div className="pipeline"><Step n="01" title="Request" text="Action is recorded with risk and payload."/><Step n="02" title="Validate" text="Seller ownership and supported action are checked."/><Step n="03" title="Approve" text="Medium and high-risk actions wait for you."/><Step n="04" title="Queue" text="Approved actions become background jobs."/><Step n="05" title="Execute" text="Worker calls the marketplace adapter."/><Step n="06" title="Verify & audit" text="Result is stored and lifecycle is recorded."/></div></article>
-      <article className="panel"><PanelHead title="Safety policy" sub="Current Phase 3 execution gates"/><Check text="Low-risk sync can queue automatically"/><Check text="Medium-risk changes require approval"/><Check text="High-risk listing publish requires approval"/><Check text="Every action is seller-scoped"/><Check text="Marketplace credentials stay server-side"/><Check text="Failed jobs can be recovered"/></article>
-    </div>}
+    <div className="grid module-grid">
+      <article className="panel health-panel"><PanelHead title="Business Health" sub={updated ? `Updated ${updated.toLocaleTimeString('en-IN')}` : 'Calculating operational health'}/><div className="health-score"><strong>{h?.overall ?? '—'}</strong><span>/100</span></div><div className="health-bars">{Object.entries(h?.components || {}).map(([name, score]) => <div className="health-row" key={name}><span>{name.replaceAll('_',' ')}</span><b>{score}</b><i><em style={{ width: `${score}%` }}/></i></div>)}</div></article>
+      <article className="panel"><PanelHead title="Why this score?" sub="The biggest operational factors"/>{h?.reasons.length ? <div className="rows">{h.reasons.map((reason, i) => <div key={`${reason.area}-${i}`}><b>{reason.message}</b><strong>{reason.impact}</strong><em>{reason.area}</em></div>)}</div> : <Empty text="No health penalties detected" sub="Your operational signals are clean."/>}</article>
+    </div>
 
-    {tab === 'jobs' && <article className="panel"><PanelHead title="Job Center" sub="Background execution queue and recovery"/><JobRows jobs={jobs} retry={retry}/></article>}
-    {tab === 'approvals' && <article className="panel"><PanelHead title="Approval Center" sub="Only pending owner decisions are actionable"/>{actions.filter(item => item.status === 'pending').length ? <div className="rows">{actions.filter(item => item.status === 'pending').map(item => <div className="action-row" key={item.id}><b>#{item.id} · {item.action}</b><strong>{item.risk} risk</strong><em>{item.reason || 'No reason supplied'} · {time(item.created_at)}</em><span><button onClick={() => approve(item.id)}>Approve</button><button onClick={() => reject(item.id)}>Reject</button></span></div>)}</div> : <Empty text="No approvals waiting" sub="The approval queue is clear."/>}</article>}
-    {tab === 'audit' && <article className="panel"><PanelHead title="Audit Log" sub="Traceable action decisions and execution events"/><div className="rows">{audit.length ? audit.map(row => <div key={row.id}><b>{row.action}</b><strong>#{row.resource_id || row.id}</strong><em>{time(row.created_at)} · {JSON.stringify(row.details)}</em></div>) : <Empty text="No action audit entries yet"/>}</div></article>}
+    <div className="grid module-grid">
+      <article className="panel"><PanelHead title="AI Action Queue" sub="Risk-aware actions from the existing Seller Hub control layer"/>{data?.action_queue.length ? <div className="rows">{data.action_queue.slice(0,10).map(a => <div key={a.id}><b>#{a.id} · {a.action}</b><strong>{a.status}</strong><em>{a.risk} risk · {a.reason || 'No reason supplied'}</em></div>)}</div> : <Empty text="Action queue is clear" sub="No controlled AI action is waiting."/>}</article>
+      <article className="panel"><PanelHead title="Critical Alerts" sub="Seller-scoped operational signals"/>{data?.alerts.length ? <div className="rows">{data.alerts.slice(0,8).map(a => <div key={a.id}><b>{a.title}</b><strong>{a.severity}</strong><em>{a.message} · {a.source}</em><button onClick={() => markRead(a.id)}>Mark read</button></div>)}</div> : <Empty text="No active alerts" sub="Nothing requires immediate attention."/>}</article>
+    </div>
 
-    <article className="panel"><PanelHead title="Recent actions" sub="Full action lifecycle"/><div className="rows">{actions.slice(0, 8).map(item => <div key={item.id}><b>#{item.id} · {item.action}</b><strong>{item.status}</strong><em>{item.risk} risk · job {item.job_id ?? '—'} · {time(item.created_at)}</em></div>)}{!actions.length && <Empty text="No actions created yet"/>}</div></article>
+    <div className="grid module-grid">
+      <article className="panel"><PanelHead title="Marketplace Health" sub="Connection and latest synchronization state"/>{data?.marketplaces.length ? <div className="rows">{data.marketplaces.map(m => <div key={m.id}><b>{m.marketplace}</b><strong>{m.status}</strong><em>Last sync: {m.last_sync_at ? new Date(m.last_sync_at).toLocaleString('en-IN') : '—'}{m.last_error ? ` · ${m.last_error}` : ''}</em></div>)}</div> : <Empty text="No marketplace accounts" sub="Connect Amazon or Flipkart to activate marketplace signals."/>}</article>
+      <article className="panel"><PanelHead title="Listing & Vision Health" sub="Phase 67–69 quality signals"/><div className="rows"><div><b>Active listings</b><strong>{data?.catalog.active_listings ?? 0}</strong><em>of {data?.catalog.listings ?? 0}</em></div>{Object.entries(data?.listing_validation || {}).map(([status,count]) => <div key={status}><b>Validation · {status}</b><strong>{count}</strong><em>listing records</em></div>)}{Object.entries(data?.diagnostics || {}).map(([severity,count]) => <div key={severity}><b>Diagnostics · {severity}</b><strong>{count}</strong><em>open findings</em></div>)}</div></article>
+    </div>
+
+    <div className="grid module-grid">
+      <article className="panel"><PanelHead title="Operations Snapshot" sub="Live business counters"/><div className="rows"><div><b>Products</b><strong>{k?.products ?? 0}</strong><em>catalog</em></div><div><b>Returns</b><strong>{k?.returns ?? 0}</strong><em>requests</em></div><div><b>Tracked inventory</b><strong>{data?.inventory.total_items ?? 0}</strong><em>SKUs</em></div><div><b>Order statuses</b><strong>{Object.keys(data?.orders.by_status || {}).length}</strong><em>active status groups</em></div></div></article>
+      <article className="panel"><PanelHead title="Safety Gate" sub="Autonomy boundaries"/><Check text="Seller ownership is enforced on operations data"/><Check text="Low-risk actions remain controlled by existing action policies"/><Check text="Medium/high-risk changes require approval"/><Check text="Credentials remain server-side"/><Check text="Health snapshots and alerts are auditable"/></article>
+    </div>
+    <div className="operations-footer"><span>● Live operational aggregation</span><button onClick={load}>↻ Refresh</button></div>
   </section>;
 }
 
-function JobRows({ jobs, retry }: { jobs: Job[]; retry: (id: number) => void }) { return jobs.length ? <div className="rows">{jobs.map(job => <div key={job.id}><b>#{job.id} · {job.name}</b><strong>{job.status}</strong><em>{job.attempts}/{job.max_attempts} attempts · created {time(job.created_at)}{job.error ? ` · ${job.error}` : ''}</em>{job.status === 'failed' && <button onClick={() => retry(job.id)}>Retry</button>}</div>)}</div> : <Empty text="No jobs yet" sub="Background operations will appear here when work is queued."/>; }
-function Step({ n, title, text }: { n: string; title: string; text: string }) { return <div className="pipeline-step"><b>{n}</b><div><strong>{title}</strong><span>{text}</span></div></div>; }
-function Check({ text }: { text: string }) { return <div className="check"><b>✓</b><span>{text}</span></div>; }
+function Metric({ title, value, sub }: { title: string; value: React.ReactNode; sub: string }) { return <article className="card"><span>{title}</span><strong>{value}</strong><small>{sub}</small></article>; }
 function PanelHead({ title, sub }: { title: string; sub: string }) { return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>; }
+function Check({ text }: { text: string }) { return <div className="check"><b>✓</b><span>{text}</span></div>; }
 function Empty({ text, sub }: { text: string; sub?: string }) { return <div className="empty"><strong>{text}</strong>{sub && <small>{sub}</small>}</div>; }
