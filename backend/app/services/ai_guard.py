@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 from threading import Lock
+import re
 import time
 import unicodedata
 
@@ -41,6 +42,42 @@ CASUAL_MESSAGES = {
     "help": "Bilkul 😊 Main aapke Seller Hub mein products, listings, inventory, orders, pricing, sales aur advertising ke kaam mein help kar sakta hoon. Batao kya karna hai?",
     "help me": "Bilkul 😊 Batao Seller Hub mein kya problem ya kaam hai, main help karta hoon.",
 }
+
+CASUAL_VARIANTS = (
+    r"^(hi+|hii+|hello+|hey+|namaste|namaskar)[!. ]*(bhai|bro|dost)?[!. ]*$",
+    r"^(kaise|kese|kaisa|kesi) ho( bhai| bro| yaar| ji)?[!?., ]*$",
+    r"^(how are you)( bhai| bro)?[!?., ]*$",
+    r"^(good morning|good afternoon|good evening)( bhai| bro)?[!. ]*$",
+    r"^(bhai|bro|dost|yaar)[!. ]*$",
+    r"^(ok|okay|acha|achha|theek hai|thik hai|haan|han|yes|ji|hmm|hmmm|nice|great)[!. ]*$",
+    r"^(thanks|thank you|shukriya|dhanyavaad)( bhai| bro)?[!. ]*$",
+    r"^(bye|goodbye|see you|milte hain)( bhai| bro)?[!. ]*$",
+    r"^(help|help me|madad|madad karo)[!. ]*$",
+)
+
+CASUAL_REPLY_VARIANTS = (
+    "Haan bhai 😊 Main yahin hoon. Seller Hub mein kya karna hai?",
+    "Bilkul bhai 😊 Batao, Seller Hub ka kaunsa kaam dekhna hai?",
+    "Haan, bolo 😊 Products, listings, inventory ya orders—kis par kaam karein?",
+    "Main ready hoon bhai 😊 Jo Seller Hub ka kaam hai, batao.",
+)
+
+
+def is_casual_message(text: str) -> bool:
+    normalized = " ".join((text or "").casefold().split()).strip()
+    if normalized in CASUAL_MESSAGES:
+        return True
+    return any(re.fullmatch(pattern, normalized, flags=re.IGNORECASE) for pattern in CASUAL_VARIANTS)
+
+
+def casual_reply(text: str) -> str:
+    normalized = " ".join((text or "").casefold().split()).strip("!?., ")
+    if normalized in CASUAL_MESSAGES:
+        return CASUAL_MESSAGES[normalized]
+    if is_casual_message(normalized):
+        # Deterministic variation without calling an LLM.
+        return CASUAL_REPLY_VARIANTS[sum(ord(ch) for ch in normalized) % len(CASUAL_REPLY_VARIANTS)]
+    return ""
 
 
 @dataclass(frozen=True)
@@ -91,9 +128,9 @@ class AIScopeGuard:
         if len(text) > self.max_input_chars:
             return GuardDecision(False, "😊 Message thoda bada hai. Seller-related kaam ko chhote parts mein bhejiye, taaki main aapko fast aur accurately help kar sakun. ❤️")
 
-        # Normal greetings and basic help are part of a natural assistant conversation.
-        # They are handled locally by the UI when possible, so they do not need an LLM call.
-        if text in CASUAL_MESSAGES:
+        # Keep a small natural-conversation lane. These replies are local and never
+        # consume Gemini/OpenRouter tokens.
+        if is_casual_message(text):
             return GuardDecision(True)
 
         in_scope = any(term in text for term in SELLER_TERMS) or any(term in text for term in SELLER_ACTION_TERMS)
@@ -106,5 +143,5 @@ class AIScopeGuard:
         if not self._minute.allow(now, self.per_minute, 60):
             return GuardDecision(False, "😊 AI requests thodi der ke liye limit par pahunch gayi hain. Seller Hub ke normal operations chalte rahenge; please thodi der baad AI analysis dobara try karein. ❤️")
         if not self._hour.allow(now, self.per_hour, 3600):
-            return GuardDecision(False, "😊 Aaj ki tarah heavy AI usage ko control rakhne ke liye hourly AI limit temporarily reach ho gayi hai. Seller Hub ke orders, inventory aur baaki operations normal chalenge. ❤️")
+            return GuardDecision(False, "😊 Heavy AI usage ko control rakhne ke liye hourly AI limit temporarily reach ho gayi hai. Seller Hub ke orders, inventory aur baaki operations normal chalenge. ❤️")
         return GuardDecision(True)
