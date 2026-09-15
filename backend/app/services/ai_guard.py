@@ -27,6 +27,21 @@ OUT_OF_SCOPE_TERMS = (
     "love story", "romantic story", "poem", "poetry", "shayari", "joke", "movie", "song lyrics", "gaming", "game cheat", "homework", "exam", "essay", "relationship advice", "dating advice", "travel itinerary", "recipe", "cook", "weather", "politics", "news", "general knowledge", "kahani", "कहानी", "कविता", "शायरी", "चुटकुला", "फिल्म", "गाना", "मौसम", "राजनीति",
 )
 
+CASUAL_MESSAGES = {
+    "hi": "Namaste 😊 Main yahin hoon. Seller Hub mein kis kaam mein help chahiye?",
+    "hii": "Hii 😊 Main yahin hoon. Seller Hub mein kis kaam mein help chahiye?",
+    "hello": "Hello 😊 Batao, Seller Hub mein kya karna hai?",
+    "hey": "Hey 😊 Batao, Seller Hub mein kis kaam mein help chahiye?",
+    "kaise ho": "Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?",
+    "kese ho": "Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?",
+    "how are you": "I am doing great 😊 Batao, Seller Hub mein kya help chahiye?",
+    "good morning": "Good morning 😊 Seller Hub ke kaam ke liye ready hoon. Batao kya karna hai?",
+    "good afternoon": "Good afternoon 😊 Batao, Seller Hub mein kis kaam mein help chahiye?",
+    "good evening": "Good evening 😊 Batao, Seller Hub mein kis kaam mein help chahiye?",
+    "help": "Bilkul 😊 Main aapke Seller Hub mein products, listings, inventory, orders, pricing, sales aur advertising ke kaam mein help kar sakta hoon. Batao kya karna hai?",
+    "help me": "Bilkul 😊 Batao Seller Hub mein kya problem ya kaam hai, main help karta hoon.",
+}
+
 
 @dataclass(frozen=True)
 class GuardDecision:
@@ -65,8 +80,6 @@ class AIScopeGuard:
         normalized = unicodedata.normalize("NFKC", text or "")
         marker = "current user message:\n"
         if marker in normalized.casefold():
-            # The conversational agent embeds history before this marker. Scope
-            # decisions must use only the current user message, never old context.
             idx = normalized.casefold().rfind(marker)
             normalized = normalized[idx + len(marker):]
         return " ".join(normalized.casefold().split())
@@ -77,6 +90,12 @@ class AIScopeGuard:
             return GuardDecision(False, FRIENDLY_SCOPE_MESSAGE)
         if len(text) > self.max_input_chars:
             return GuardDecision(False, "😊 Message thoda bada hai. Seller-related kaam ko chhote parts mein bhejiye, taaki main aapko fast aur accurately help kar sakun. ❤️")
+
+        # Normal greetings and basic help are part of a natural assistant conversation.
+        # They are handled locally by the UI when possible, so they do not need an LLM call.
+        if text in CASUAL_MESSAGES:
+            return GuardDecision(True)
+
         in_scope = any(term in text for term in SELLER_TERMS) or any(term in text for term in SELLER_ACTION_TERMS)
         explicit_outside = any(term in text for term in OUT_OF_SCOPE_TERMS)
         if explicit_outside and not in_scope:
