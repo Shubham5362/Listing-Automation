@@ -1,15 +1,16 @@
 name: CI
 
+# Phase policy: one CI run per PR. CI is intentionally not triggered by every push.
+# Use workflow_dispatch for an explicit exceptional re-check.
 on:
-  push:
-    branches: [main, 'phase-*', 'fix-*']
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+    types: [opened]
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ci-pr-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
