@@ -42,6 +42,20 @@ services:
         value: "1.5"
       - key: LLM_PRIMARY_PROVIDER
         value: gemini
+      - key: AI_ENABLED
+        value: "true"
+      - key: AI_SCOPE_GUARD_ENABLED
+        value: "true"
+      - key: AI_REQUESTS_PER_MINUTE
+        value: "10"
+      - key: AI_REQUESTS_PER_HOUR
+        value: "50"
+      - key: AI_MAX_INPUT_CHARS
+        value: "4000"
+      - key: AI_MAX_TOOL_CALLS
+        value: "3"
+      - key: AI_MAX_WORKFLOW_STEPS
+        value: "5"
       - key: MARKETPLACE_SYNC_INTERVAL_MINUTES
         value: "30"
       - key: AMAZON_SELLER_ID
