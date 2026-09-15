@@ -20,6 +20,13 @@ def test_seller_specific_writing_is_allowed():
     assert decision.allowed is True
 
 
+def test_history_cannot_make_unrelated_current_message_allowed():
+    guard = AIScopeGuard(per_minute=10, per_hour=50, max_input_chars=4000)
+    decision = guard.check("user: Amazon product listing check karo\nassistant: business report ready hai\nCurrent user message:\nTum kahani likh sakte ho kya")
+    assert decision.allowed is False
+    assert "Seller Hub" in decision.message
+
+
 def test_input_limit_is_enforced():
     guard = AIScopeGuard(per_minute=10, per_hour=50, max_input_chars=20)
     decision = guard.check("Amazon product listing ke liye title optimize karo")
