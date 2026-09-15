@@ -4,6 +4,38 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const STORAGE_KEY = 'seller-hub-ai-agent-conversation-v3';
 const api = (path: string, init?: RequestInit) => fetch(`${API_BASE}/api/v1${path}`, { headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, ...init });
 
+const FRIENDLY_SCOPE_MESSAGE = '😊 Main aapke Seller Hub ka AI Seller Agent hoon, isliye mera focus aapke business aur selling operations ko manage karne mein help karna hai. Is wajah se main general entertainment ya unrelated kaam mein help nahi kar paunga. ❤️\n\nLekin main products, listings, pricing, orders, inventory, sales, advertising, returns, finance ya Amazon/Flipkart se related kaam mein turant help kar sakta hoon.';
+const SELLER_TERMS = [
+  'seller', 'selling', 'amazon', 'flipkart', 'marketplace', 'product', 'products', 'listing', 'listings', 'title', 'bullet',
+  'description', 'sku', 'asin', 'inventory', 'stock', 'reorder', 'order', 'orders', 'return', 'returns', 'refund', 'customer',
+  'sales', 'sale', 'revenue', 'profit', 'margin', 'pricing', 'price', 'reprice', 'buy box', 'buybox', 'advertising', 'ads',
+  'campaign', 'acos', 'roas', 'settlement', 'fee', 'fees', 'expense', 'gst', 'catalog', 'catalogue', 'business', 'dashboard',
+  'analytics', 'report', 'reports', 'performance', 'supplier', 'shipping', 'fulfilment', 'fulfillment', 'dispatch', 'cancel',
+  'cancellation', 'customer support', 'compliance', 'लिस्टिंग', 'प्रोडक्ट', 'उत्पाद', 'स्टॉक', 'इन्वेंटरी', 'ऑर्डर', 'रिटर्न',
+  'रिफंड', 'बिक्री', 'सेल्स', 'कमाई', 'राजस्व', 'मुनाफा', 'कीमत', 'प्राइस', 'विज्ञापन', 'कैंपेन', 'ग्राहक', 'कस्टमर',
+  'बिजनेस', 'व्यापार', 'अमेज़न', 'फ्लिपकार्ट'
+];
+const SELLER_ACTION_TERMS = [
+  'optimize', 'optimise', 'analyze', 'analyse', 'improve', 'create listing', 'write title', 'write description',
+  'rewrite listing', 'generate listing', 'reprice', 'forecast sales', 'find low stock', 'check orders', 'check inventory',
+  'check sales', 'check returns', 'listing optimize', 'listing optimisation', 'लिस्टिंग बनाओ', 'टाइटल बनाओ', 'डिस्क्रिप्शन बनाओ',
+  'प्रोडक्ट का', 'उत्पाद का', 'स्टॉक बताओ', 'ऑर्डर बताओ', 'बिक्री बताओ'
+];
+const OUT_OF_SCOPE_TERMS = [
+  'love story', 'romantic story', 'poem', 'poetry', 'shayari', 'joke', 'movie', 'song lyrics', 'gaming', 'game cheat',
+  'homework', 'exam', 'essay', 'relationship advice', 'dating advice', 'travel itinerary', 'recipe', 'cook', 'weather',
+  'politics', 'news', 'general knowledge', 'kahani', 'कहानी', 'कविता', 'शायरी', 'चुटकुला', 'फिल्म', 'गाना', 'मौसम', 'राजनीति'
+];
+const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+const isSellerScoped = (value: string) => {
+  const text = normalize(value);
+  return SELLER_TERMS.some(term => text.includes(normalize(term))) || SELLER_ACTION_TERMS.some(term => text.includes(normalize(term)));
+};
+const shouldBlockLocally = (value: string) => {
+  const text = normalize(value);
+  return !text || text.length > 4000 || (!isSellerScoped(text) && OUT_OF_SCOPE_TERMS.some(term => text.includes(normalize(term)))) || !isSellerScoped(text);
+};
+
 type ChatMessage = { role: 'user' | 'agent'; text: string; createdAt: string };
 type ConversationItem = { role: 'user' | 'assistant'; content: string };
 
@@ -36,6 +68,13 @@ export default function AISellerAgentWorkspace({ onClose }: Props) {
     setMessage('');
     setChatting(true);
     setError('');
+
+    if (shouldBlockLocally(text)) {
+      setMessages(prev => [...prev, { role: 'agent', text: FRIENDLY_SCOPE_MESSAGE, createdAt: new Date().toISOString() }]);
+      setChatting(false);
+      return;
+    }
+
     try {
       const r = await api('/personal/ai/seller-agent/chat', {
         method: 'POST',
