@@ -19,7 +19,7 @@ def test_compliance_blocks_unsupported_claim():
 def test_intelligent_generation_uses_catalog_knowledge(db_session):
     seller = SellerAccount(name="Test Seller")
     db_session.add(seller); db_session.flush()
-    account = MarketplaceAccount(seller_account_id=seller.id, marketplace="amazon", status="active")
+    account = MarketplaceAccount(seller_account_id=seller.id, marketplace="amazon", display_name="Amazon Test", is_connected=True)
     product = Product(seller_account_id=seller.id, sku="TS-BLK-M", title="Classic T Shirt", description="A cotton everyday t-shirt.", brand="Acme", category="T-Shirts", attributes_json=json.dumps({"COLOR": "Black", "SIZE": "M", "MATERIAL": "Cotton"}))
     db_session.add_all([account, product]); db_session.commit(); db_session.refresh(product); db_session.refresh(account)
     result = generate_intelligent_listing(db_session, product, account, "en", ListingGenerationMode.REVIEW.value)
