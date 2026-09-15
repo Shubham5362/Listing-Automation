@@ -11,6 +11,7 @@ from app.models.advertising import AdvertisingCampaign, AdvertisingPerformance
 from app.models.catalog import Listing, Product
 from app.models.core import AuditLog, MarketplaceAccount
 from app.models.inventory import InventoryItem, InventoryMovement
+from app.services.ai_guard import casual_reply, is_casual_message
 from app.services.llm_gateway import LLMGateway, LLMUnavailable
 from app.services.personal_marketplace import personal_seller_id
 
@@ -115,12 +116,23 @@ class PersonalAISellerAgentService:
 
     @staticmethod
     def _is_casual(message: str) -> bool:
-        normalized = " ".join(message.lower().split()).strip("?!.,")
-        return normalized in {"hi", "hello", "hey", "hii", "namaste", "kaise ho", "kese ho", "how are you", "good morning", "good afternoon", "good evening"}
+        return is_casual_message(message)
 
     def chat(self, message: str, create_plan: bool = False) -> dict[str, Any]:
         message = message.strip()
         if not message: raise ValueError("message cannot be empty")
+
+        # Greetings/acknowledgements are intentionally handled locally. This keeps
+        # the agent natural without turning every casual sentence into an LLM call.
+        if self._is_casual(message):
+            answer = casual_reply(message)
+            provider = "deterministic"
+            intent = "casual"
+            response = {"agent": "personal_ai_seller_agent", "message": message, "answer": answer, "intent": intent, "provider": provider, "model": None, "fallback_reason": None, "tool_calls": [], "plan_requested": create_plan, "created_actions": [], "approval_required": True, "execution": "No marketplace write is executed from chat; approved writes use the existing Action Control pipeline."}
+            self.db.add(AuditLog(action="ai_agent.chat", resource_type="ai_agent", resource_id=None, details=json.dumps({"provider": provider, "intent": intent, "tool_calls": [], "plan": create_plan, "fallback_reason": None}, separators=(",", ":"))))
+            self.db.commit()
+            return response
+
         gateway = LLMGateway()
         intent = self._infer_intent(message)
         answer = None; provider = "deterministic"; model = None; tool_calls: list[dict[str, Any]] = []; fallback_reason = None
@@ -137,7 +149,7 @@ class PersonalAISellerAgentService:
                 fallback_reason = str(exc)[:1200]
         if answer is None:
             if self._is_casual(message):
-                answer = "Main badhiya hoon 😊 Seller Hub ke liye ready hoon. Aap products, inventory, pricing, ads, orders ya listings ke baare mein pooch sakte ho."
+                answer = casual_reply(message)
             else:
                 if intent == "inventory": focus = self.inventory_issues(10)
                 elif intent == "advertising": focus = self.advertising_issues(10)
