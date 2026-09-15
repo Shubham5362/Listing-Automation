@@ -1,16 +1,16 @@
 name: Firebase Hosting
 
+# Deployment policy: Firebase is a phase-level release action, not a per-commit
+# workflow. Run it manually once after the phase is complete and CI is green.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: firebase-hosting-${{ github.ref }}
-  cancel-in-progress: true
+  group: firebase-hosting-release
+  cancel-in-progress: false
 
 jobs:
   deploy:
