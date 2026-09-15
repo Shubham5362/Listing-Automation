@@ -21,7 +21,9 @@ from app.services.listing_updates import execute_listing_update
 from app.services.marketplace_operations import execute_marketplace_operation
 from app.services.marketplace_scheduler import enqueue_due_marketplace_syncs
 from app.services.marketplace_sync import sync_marketplace_account
+from app.services.marketplace_change import scan_marketplace
 from app.services.scheduled_reports import dispatch_scheduled_reports
+from app.marketplaces.registry import list_marketplaces
 
 logger = logging.getLogger("seller_hub.worker")
 
@@ -90,6 +92,17 @@ class BackgroundWorker:
             request.completed_at = datetime.utcnow()
             request.result = json.dumps(result or {}, separators=(",", ":"))
 
+    @staticmethod
+    def _scan_marketplace_schemas(db) -> None:
+        for marketplace in list_marketplaces():
+            name = marketplace.get("marketplace") if isinstance(marketplace, dict) else None
+            if not name:
+                continue
+            try:
+                scan_marketplace(db, str(name))
+            except Exception:
+                logger.exception("Marketplace schema scan failed for %s", name)
+
     def run_once(self) -> int:
         db = SessionLocal()
         try:
@@ -97,6 +110,7 @@ class BackgroundWorker:
             enqueue_due_marketplace_syncs(db, self.settings)
             enqueue_due_scheduled_automations(db)
             dispatch_scheduled_reports(db)
+            self._scan_marketplace_schemas(db)
             processed = 0
             for _ in range(max(1, self.settings.worker_batch_size)):
                 job = claim_next_job(db, self.worker_id)
