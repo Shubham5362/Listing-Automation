@@ -1,15 +1,11 @@
 name: No-Card Worker Pulse
 
+# Operational worker heartbeat only. It is not part of phase CI and must not
+# run on every commit; the scheduled pulse remains the background-job runner.
 on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "backend/migrations/**"
-      - "backend/app/worker.py"
-      - ".github/workflows/no-card-worker.yml"
 
 permissions:
   contents: read
