@@ -31,6 +31,8 @@ const CASUAL_MESSAGES: Record<string, string> = {
   hii: 'Hii 😊 Main yahin hoon. Seller Hub mein kis kaam mein help chahiye?',
   hello: 'Hello 😊 Batao, Seller Hub mein kya karna hai?',
   hey: 'Hey 😊 Batao, Seller Hub mein kis kaam mein help chahiye?',
+  namaste: 'Namaste 😊 Batao, Seller Hub mein kya karna hai?',
+  namaskar: 'Namaskar 😊 Batao, Seller Hub mein kya karna hai?',
   'kaise ho': 'Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?',
   'kese ho': 'Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?',
   'how are you': 'I am doing great 😊 Batao, Seller Hub mein kya help chahiye?',
@@ -40,8 +42,32 @@ const CASUAL_MESSAGES: Record<string, string> = {
   help: 'Bilkul 😊 Main aapke Seller Hub mein products, listings, inventory, orders, pricing, sales aur advertising ke kaam mein help kar sakta hoon. Batao kya karna hai?',
   'help me': 'Bilkul 😊 Batao Seller Hub mein kya problem ya kaam hai, main help karta hoon.'
 };
+const CASUAL_PATTERNS = [
+  /^(hi+|hello+|hey+|namaste|namaskar)[!. ]*(bhai|bro|dost)?[!. ]*$/i,
+  /^(kaise|kese|kaisa|kesi) ho( bhai| bro| yaar| ji)?[!?., ]*$/i,
+  /^how are you( bhai| bro)?[!?., ]*$/i,
+  /^(good morning|good afternoon|good evening)( bhai| bro)?[!. ]*$/i,
+  /^(bhai|bro|dost|yaar)[!. ]*$/i,
+  /^(ok|okay|acha|achha|theek hai|thik hai|haan|han|yes|ji|hmm|hmmm|nice|great)[!. ]*$/i,
+  /^(thanks|thank you|shukriya|dhanyavaad)( bhai| bro)?[!. ]*$/i,
+  /^(bye|goodbye|see you|milte hain)( bhai| bro)?[!. ]*$/i,
+  /^(help|help me|madad|madad karo)[!. ]*$/i,
+];
 const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
-const casualReply = (value: string) => CASUAL_MESSAGES[normalize(value)] || null;
+const casualReply = (value: string) => {
+  const text = normalize(value);
+  if (CASUAL_MESSAGES[text]) return CASUAL_MESSAGES[text];
+  if (CASUAL_PATTERNS.some(pattern => pattern.test(text))) {
+    const replies = [
+      'Haan bhai 😊 Main yahin hoon. Seller Hub mein kya karna hai?',
+      'Bilkul bhai 😊 Batao, Seller Hub ka kaunsa kaam dekhna hai?',
+      'Haan, bolo 😊 Products, listings, inventory ya orders—kis par kaam karein?',
+      'Main ready hoon bhai 😊 Jo Seller Hub ka kaam hai, batao.'
+    ];
+    return replies[Array.from(text).reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % replies.length];
+  }
+  return null;
+};
 const isSellerScoped = (value: string) => {
   const text = normalize(value);
   return SELLER_TERMS.some(term => text.includes(normalize(term))) || SELLER_ACTION_TERMS.some(term => text.includes(normalize(term)));
