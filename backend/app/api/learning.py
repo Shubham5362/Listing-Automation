@@ -25,19 +25,21 @@ class OutcomeIn(BaseModel):
     outcome: str = Field(min_length=1, max_length=80)
     success: bool
 
+def pref_json(p):
+    return {"id":p.id,"key":p.key,"value":p.value,"scope":p.scope,"confidence":p.confidence,"evidence_count":p.evidence_count,"status":p.status,"enabled":p.enabled,"updated_at":p.updated_at.isoformat() if p.updated_at else None}
+
 @router.get("/overview")
 def overview(db: Session = Depends(get_db)):
     return LearningEngine(db, seller_id()).overview()
 
 @router.get("/preferences")
 def preferences(status: str | None = None, db: Session = Depends(get_db)):
-    return [p.__dict__ | {"_sa_instance_state": None} for p in LearningEngine(db, seller_id()).list_preferences(status)]
+    return [pref_json(p) for p in LearningEngine(db, seller_id()).list_preferences(status)]
 
 @router.post("/feedback")
 def feedback(payload: FeedbackIn, db: Session = Depends(get_db)):
     event = LearningEngine(db, seller_id()).record_feedback(**payload.model_dump())
-    db.commit()
-    return {"id": event.id, "status": "recorded"}
+    db.commit(); return {"id": event.id, "status": "recorded"}
 
 @router.post("/outcomes")
 def outcome(payload: OutcomeIn, db: Session = Depends(get_db)):
