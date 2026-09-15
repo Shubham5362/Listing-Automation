@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db.session import get_db
+from app.models.reliability import AutonomousKillSwitch
 from app.services.production_autonomy import health, policy_for, should_auto_execute, start_workflow, complete_workflow
 
 router = APIRouter(prefix="/production", tags=["production"])
@@ -50,8 +52,10 @@ def set_policy(payload: PolicyIn, db: Session = Depends(get_db)):
 @router.post("/decision")
 def decision(payload: DecisionIn, db: Session = Depends(get_db)):
     p = policy_for(db, seller_id())
-    allowed = should_auto_execute(mode=p.mode, risk=payload.risk, confidence=payload.confidence, financial_impact=payload.financial_impact, policy=p, daily_actions=payload.daily_actions)
-    return {"auto_execute": allowed, "approval_required": not allowed, "reason": "safe_policy_pass" if allowed else "approval_or_safety_gate"}
+    switch = db.scalar(select(AutonomousKillSwitch).where(AutonomousKillSwitch.seller_account_id == seller_id()))
+    paused = bool(switch and switch.enabled)
+    allowed = should_auto_execute(mode=p.mode, risk=payload.risk, confidence=payload.confidence, financial_impact=payload.financial_impact, policy=p, daily_actions=payload.daily_actions, execution_paused=paused)
+    return {"auto_execute": allowed, "approval_required": not allowed, "paused": paused, "reason": "kill_switch" if paused else ("safe_policy_pass" if allowed else "approval_or_safety_gate")}
 
 @router.post("/workflows")
 def create_workflow(payload: WorkflowIn, db: Session = Depends(get_db)):
