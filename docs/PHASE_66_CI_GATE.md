@@ -1,0 +1,1 @@
+Phase 66 CI gate: validate the complete mainline implementation before merge.
