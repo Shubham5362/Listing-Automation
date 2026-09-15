@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.base import Base
 from app.models import (  # noqa: F401
-    action_control, advertising, ai_command, ai_listing, automation, autonomous, catalog, catalog_intelligence, core, diagnostic, finance, inventory, inventory_intelligence, learning, listing_intelligence, marketplace_sync, media, notifications, operations, orders, pricing, product_knowledge, returns, vision_analysis, listing_validation,
+    action_control, advertising, ai_command, ai_listing, automation, autonomous, autonomous_execution, catalog, catalog_intelligence, core, diagnostic, finance, inventory, inventory_intelligence, learning, listing_intelligence, marketplace_sync, media, notifications, operations, orders, pricing, product_knowledge, returns, vision_analysis, listing_validation,
 )
 
 
