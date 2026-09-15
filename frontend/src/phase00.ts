@@ -9,13 +9,10 @@ export type SellerHubCapability = {
 };
 
 /**
- * Phase 00 is the canonical product contract for the UI. Individual workspaces
- * can consume this registry to keep navigation, labels and acceptance scope in
- * sync with the master Seller Hub plan.
+ * Seller Hub is the canonical product contract for the UI. Individual workspaces
+ * consume this registry to keep navigation, labels and acceptance scope in sync.
  */
-export const PHASE_00_NAME = 'Unified Seller Operations Foundation';
-
-export const phase00Capabilities: SellerHubCapability[] = [
+export const sellerHubCapabilities: SellerHubCapability[] = [
   { id: 'orders', label: 'Orders', group: 'SELL', icon: '▣', description: 'Unified order lifecycle and SLA operations', ai: true, capabilities: ['new', 'confirmed', 'processing', 'packed', 'shipped', 'delivered', 'cancelled', 'returns', 'refunds', 'SLA breach', 'search/filter', 'order detail', 'invoice', 'shipping label', 'tracking', 'bulk actions', 'export'] },
   { id: 'products', label: 'Products', group: 'SELL', icon: '◫', description: 'Master product catalog and enrichment', ai: true, capabilities: ['SKU', 'product ID', 'HSN', 'GST', 'brand', 'category', 'attributes', 'variants', 'media', 'description', 'bullets', 'keywords', 'dimensions', 'weight', 'manufacturer', 'country of origin', 'compliance', 'duplicate detection', 'bulk import/export'] },
   { id: 'listings', label: 'Listings', group: 'SELL', icon: '▤', description: 'Marketplace listing lifecycle and quality', ai: true, capabilities: ['active', 'inactive', 'draft', 'suppressed', 'blocked', 'failed', 'quality score', 'SEO score', 'marketplace mapping', 'SKU mapping', 'sync', 'bulk update', 'history'] },
@@ -36,4 +33,4 @@ export const phase00Capabilities: SellerHubCapability[] = [
   { id: 'settings', label: 'Settings', group: 'SYSTEM', icon: '⚙', description: 'Business, marketplace and Seller OS configuration', ai: false, capabilities: ['business profile', 'seller profile', 'marketplace accounts', 'warehouse', 'GST', 'shipping', 'notifications', 'AI settings', 'automation settings', 'appearance', 'data management', 'backup', 'system preferences'] },
 ];
 
-export const phase00GlobalUX = ['global search', 'AI search', 'command palette', 'date range', 'marketplace filter', 'warehouse filter', 'SKU filter', 'advanced filters', 'saved filters', 'export', 'refresh', 'bulk select/actions', 'pagination', 'sorting', 'column customization', 'detail drawer', 'confirmation modal', 'toasts', 'loading skeleton', 'empty state', 'error state', 'retry', 'keyboard shortcuts', 'dark mode', 'responsive layout', 'activity timeline', 'audit trail', 'contextual AI'];
+export const sellerHubGlobalUX = ['global search', 'AI search', 'command palette', 'date range', 'marketplace filter', 'warehouse filter', 'SKU filter', 'advanced filters', 'saved filters', 'export', 'refresh', 'bulk select/actions', 'pagination', 'sorting', 'column customization', 'detail drawer', 'confirmation modal', 'toasts', 'loading skeleton', 'empty state', 'error state', 'retry', 'keyboard shortcuts', 'dark mode', 'responsive layout', 'activity timeline', 'audit trail', 'contextual AI'];
