@@ -27,6 +27,14 @@ def test_history_cannot_make_unrelated_current_message_allowed():
     assert "Seller Hub" in decision.message
 
 
+def test_basic_greetings_and_help_are_allowed():
+    guard = AIScopeGuard(per_minute=10, per_hour=50, max_input_chars=4000)
+    assert guard.check("Hi").allowed is True
+    assert guard.check("Hello").allowed is True
+    assert guard.check("Kese ho").allowed is True
+    assert guard.check("Help").allowed is True
+
+
 def test_input_limit_is_enforced():
     guard = AIScopeGuard(per_minute=10, per_hour=50, max_input_chars=20)
     decision = guard.check("Amazon product listing ke liye title optimize karo")
