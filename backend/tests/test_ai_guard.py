@@ -1,4 +1,4 @@
-from app.services.ai_guard import AIScopeGuard, FRIENDLY_SCOPE_MESSAGE
+from app.services.ai_guard import AIScopeGuard, FRIENDLY_SCOPE_MESSAGE, casual_reply, is_casual_message
 
 
 def test_unrelated_request_is_blocked_without_llm_scope():
@@ -27,12 +27,18 @@ def test_history_cannot_make_unrelated_current_message_allowed():
     assert "Seller Hub" in decision.message
 
 
-def test_basic_greetings_and_help_are_allowed():
+def test_bounded_casual_conversation_is_allowed():
     guard = AIScopeGuard(per_minute=10, per_hour=50, max_input_chars=4000)
-    assert guard.check("Hi").allowed is True
-    assert guard.check("Hello").allowed is True
-    assert guard.check("Kese ho").allowed is True
-    assert guard.check("Help").allowed is True
+    for text in ("Hi", "Hello bhai", "Kese ho bhai", "Bhai", "Bro", "Theek hai", "Thanks bro", "Help"):
+        assert is_casual_message(text)
+        assert guard.check(text).allowed is True
+        assert casual_reply(text)
+
+
+def test_unbounded_general_chat_is_still_blocked():
+    guard = AIScopeGuard(per_minute=10, per_hour=50, max_input_chars=4000)
+    for text in ("Tell me a story", "What is the capital of France?", "Mujhe travel plan chahiye"):
+        assert guard.check(text).allowed is False
 
 
 def test_input_limit_is_enforced():
