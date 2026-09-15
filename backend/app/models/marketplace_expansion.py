@@ -23,7 +23,7 @@ class MarketplaceCapability(Base):
     marketplace: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
     capability: Mapped[str] = mapped_column(String(80), nullable=False)
     supported: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    extra_metadata: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
@@ -36,7 +36,7 @@ class MarketplaceIdentity(Base):
     entity_type: Mapped[str] = mapped_column(String(40), nullable=False)
     external_id: Mapped[str] = mapped_column(String(180), nullable=False)
     canonical_id: Mapped[str | None] = mapped_column(String(180), index=True)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    extra_metadata: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
