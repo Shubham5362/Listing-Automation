@@ -4,10 +4,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from app.models.autonomous import AutonomousAction
 from app.models.production import AutonomousSafetyPolicy, AutonomousWorkflowRun, SystemHealthSnapshot
+from app.models.reliability import AutonomousKillSwitch
 
 ALLOWED_MODES = {"observe", "recommend", "approval", "auto", "strict"}
 HIGH_RISK = {"high", "critical"}
-
 
 def policy_for(db: Session, seller_id: int) -> AutonomousSafetyPolicy:
     policy = db.scalar(select(AutonomousSafetyPolicy).where(AutonomousSafetyPolicy.seller_account_id == seller_id))
@@ -18,9 +18,8 @@ def policy_for(db: Session, seller_id: int) -> AutonomousSafetyPolicy:
     db.flush()
     return policy
 
-
-def should_auto_execute(*, mode: str, risk: str, confidence: float, financial_impact: float, policy: AutonomousSafetyPolicy, daily_actions: int) -> bool:
-    if mode not in ALLOWED_MODES or not policy.enabled or mode != "auto":
+def should_auto_execute(*, mode: str, risk: str, confidence: float, financial_impact: float, policy: AutonomousSafetyPolicy, daily_actions: int, execution_paused: bool = False) -> bool:
+    if execution_paused or mode not in ALLOWED_MODES or not policy.enabled or mode != "auto":
         return False
     if risk in HIGH_RISK or confidence < 0.85:
         return False
@@ -28,8 +27,10 @@ def should_auto_execute(*, mode: str, risk: str, confidence: float, financial_im
         return False
     return daily_actions < policy.max_auto_actions_per_day
 
-
 def start_workflow(db: Session, seller_id: int, workflow_key: str, idempotency_key: str) -> AutonomousWorkflowRun:
+    switch = db.scalar(select(AutonomousKillSwitch).where(AutonomousKillSwitch.seller_account_id == seller_id))
+    if switch and switch.enabled:
+        raise ValueError("autonomous execution is paused by safety kill switch")
     existing = db.scalar(select(AutonomousWorkflowRun).where(AutonomousWorkflowRun.idempotency_key == idempotency_key))
     if existing:
         if existing.seller_account_id != seller_id:
@@ -40,14 +41,12 @@ def start_workflow(db: Session, seller_id: int, workflow_key: str, idempotency_k
     db.flush()
     return run
 
-
 def complete_workflow(db: Session, run: AutonomousWorkflowRun, *, success: bool, error: str | None = None) -> AutonomousWorkflowRun:
     run.status = "completed" if success else "failed"
     run.error = error
     run.completed_at = datetime.utcnow()
     db.flush()
     return run
-
 
 def health(db: Session, seller_id: int) -> dict:
     actions = db.scalars(select(AutonomousAction).where(AutonomousAction.seller_account_id == seller_id)).all()
