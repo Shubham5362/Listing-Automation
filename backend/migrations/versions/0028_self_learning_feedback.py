@@ -1,10 +1,10 @@
 """add self learning feedback
 Revision ID: 0028_self_learning_feedback
-Revises: 0027_seller_operations
+Revises: 0027_seller_operations_center
 """
 from alembic import op
 import sqlalchemy as sa
-revision="0028_self_learning_feedback"; down_revision="0027_seller_operations"; branch_labels=None; depends_on=None
+revision="0028_self_learning_feedback"; down_revision="0027_seller_operations_center"; branch_labels=None; depends_on=None
 
 def upgrade():
     op.create_table("learning_events",sa.Column("id",sa.Integer(),primary_key=True),sa.Column("seller_account_id",sa.Integer(),sa.ForeignKey("seller_accounts.id"),nullable=False),sa.Column("source",sa.String(80),nullable=False),sa.Column("entity_type",sa.String(80),nullable=False),sa.Column("entity_id",sa.String(120)),sa.Column("action",sa.String(80),nullable=False),sa.Column("feedback",sa.String(40),nullable=False),sa.Column("confidence",sa.Float(),nullable=False,server_default="0.5"),sa.Column("correction_json",sa.Text()),sa.Column("metadata_json",sa.Text()),sa.Column("created_at",sa.DateTime(),nullable=False))
