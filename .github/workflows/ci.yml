@@ -1,11 +1,10 @@
 name: CI
 
-# Phase policy: one CI run per PR. CI is intentionally not triggered by every push.
-# Use workflow_dispatch for an explicit exceptional re-check.
+# Phase policy: CI runs only for the phase PR lifecycle, never for ordinary pushes to main.
 on:
   pull_request:
     branches: [main]
-    types: [opened]
+    types: [opened, synchronize]
   workflow_dispatch:
 
 concurrency:
@@ -91,6 +90,7 @@ jobs:
       - name: Setup Go
         if: steps.detect.outputs.go == 'true'
         uses: actions/setup-go@v5
+        if: steps.detect.outputs.go == 'true'
       - name: Go validation
         if: steps.detect.outputs.go == 'true'
         shell: bash
