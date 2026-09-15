@@ -9,6 +9,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from app.core.config import get_settings
+from app.services.ai_guard import AIScopeGuard, FRIENDLY_SCOPE_MESSAGE
 
 
 logger = logging.getLogger("seller_hub.llm")
@@ -27,10 +28,19 @@ class LLMUnavailable(RuntimeError):
 
 
 class LLMGateway:
-    """Provider-neutral cloud LLM gateway with Gemini primary and OpenRouter fallback."""
+    """Provider-neutral cloud LLM gateway with Gemini primary and OpenRouter fallback.
+
+    The scope/rate guard executes before any provider request so irrelevant requests
+    consume zero LLM/API calls. Seller Hub business operations are not rate-limited here.
+    """
 
     def __init__(self) -> None:
         self.settings = get_settings()
+        self.scope_guard = AIScopeGuard(
+            per_minute=self.settings.ai_requests_per_minute,
+            per_hour=self.settings.ai_requests_per_hour,
+            max_input_chars=self.settings.ai_max_input_chars,
+        )
 
     @property
     def configured(self) -> bool:
@@ -44,6 +54,24 @@ class LLMGateway:
         tools: list[dict[str, Any]],
         tool_executor: Callable[[str, dict[str, Any]], dict[str, Any]],
     ) -> LLMResult:
+        if not self.settings.ai_enabled:
+            return LLMResult(
+                text="😊 AI assistance abhi temporarily disabled hai. Aapka Seller Hub normal tarike se kaam karta rahega. ❤️",
+                provider="local",
+                model="guardrail",
+                tool_calls=[],
+            )
+
+        if self.settings.ai_scope_guard_enabled:
+            decision = self.scope_guard.check(user)
+            if not decision.allowed:
+                return LLMResult(
+                    text=decision.message or FRIENDLY_SCOPE_MESSAGE,
+                    provider="local",
+                    model="scope-guard",
+                    tool_calls=[],
+                )
+
         errors: list[str] = []
         providers = ["openrouter", "gemini"] if self.settings.llm_primary_provider == "openrouter" else ["gemini", "openrouter"]
         for provider in providers:
@@ -150,6 +178,8 @@ class LLMGateway:
         data = self._post_json_with_retry(endpoint, payload, timeout=self.settings.llm_timeout_seconds, headers=headers)
         parts = self._response_parts(data)
         calls = [p["functionCall"] for p in parts if isinstance(p.get("functionCall"), dict)]
+        if len(calls) > self.settings.ai_max_tool_calls:
+            raise LLMUnavailable(f"AI tool-call safety limit exceeded ({self.settings.ai_max_tool_calls})")
 
         if calls:
             tool_parts = []
@@ -218,6 +248,8 @@ class LLMGateway:
         data = self._post_json("https://openrouter.ai/api/v1/chat/completions", payload, timeout=self.settings.llm_timeout_seconds, headers=headers)
         msg = data.get("choices", [{}])[0].get("message", {})
         calls = msg.get("tool_calls") or []
+        if len(calls) > self.settings.ai_max_tool_calls:
+            raise LLMUnavailable(f"AI tool-call safety limit exceeded ({self.settings.ai_max_tool_calls})")
         if calls:
             messages.append(msg)
             for call in calls:
