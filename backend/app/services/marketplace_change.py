@@ -36,6 +36,14 @@ def _similar(a: str, b: str) -> float:
     return len(aw & bw) / len(aw | bw) if aw and bw else 0.0
 
 
+def _rename_confidence(old_name: str, old_field: dict[str, Any], new_name: str, new_field: dict[str, Any]) -> float:
+    old_canonical = old_field.get("canonical") or canonical_attribute(old_name)
+    new_canonical = new_field.get("canonical") or canonical_attribute(new_name)
+    if old_canonical and new_canonical and old_canonical == new_canonical:
+        return 0.99
+    return _similar(old_name, new_name)
+
+
 def _classify(old: dict[str, Any], new: dict[str, Any]) -> list[dict[str, Any]]:
     old_fields, new_fields = _fields(json.dumps(old)), _fields(json.dumps(new))
     changes: list[dict[str, Any]] = []
@@ -43,7 +51,7 @@ def _classify(old: dict[str, Any], new: dict[str, Any]) -> list[dict[str, Any]]:
     added = {name: field for name, field in new_fields.items() if name not in old_fields}
     paired_added: set[str] = set()
     for old_name, old_field in removed.items():
-        candidates = sorted(((new_name, _similar(old_name, new_name)) for new_name in added), key=lambda x: x[1], reverse=True)
+        candidates = sorted(((new_name, _rename_confidence(old_name, old_field, new_name, new_fields[new_name])) for new_name in added), key=lambda x: x[1], reverse=True)
         if candidates and candidates[0][1] >= 0.55 and candidates[0][0] not in paired_added:
             new_name, score = candidates[0]; paired_added.add(new_name)
             changes.append({"change_type":"FIELD_RENAMED","field_name":new_name,"old":old_field,"new":new_fields[new_name],"canonical":old_field.get("canonical") or canonical_attribute(old_name),"confidence":round(score*100),"reason":f"Field label changed from {old_name} to {new_name}"})
