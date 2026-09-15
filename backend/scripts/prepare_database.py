@@ -4,6 +4,11 @@ from sqlalchemy import create_engine, inspect, text
 
 
 url = os.getenv("DATABASE_URL", "sqlite:///./seller_hub.db")
+if url.startswith("postgresql://"):
+    url = "postgresql+psycopg://" + url[len("postgresql://") :]
+elif url.startswith("postgres://"):
+    url = "postgresql+psycopg://" + url[len("postgres://") :]
+
 engine = create_engine(url)
 try:
     inspector = inspect(engine)
