@@ -8,28 +8,13 @@ from sqlalchemy.orm import Session
 from app.models.catalog import Product
 from app.models.core import SellerAccount, User
 from app.models.product_knowledge import ProductKnowledge
-from app.services.llm_gateway import LLMGateway, LLMResult
 from app.services.operations_autopilot import OperationsAutopilotService
 from app.services.product_knowledge import build_product_knowledge
 from app.services.strategy_action_planner import StrategyActionPlannerService
 
 
-SELLER_AGENT_SYSTEM_PROMPT = """You are the Personal AI Seller Agent inside a private Seller Hub.
-
-Be a genuinely intelligent assistant, not a keyword-matching bot. Understand intent from the current message and conversation context. Never decide relevance by looking for a fixed list of words.
-
-Seller Hub is your primary expertise: Amazon, Flipkart, products, listings, inventory, orders, returns, pricing, sales, advertising, finance, analytics, business decisions and seller operations. For these requests, be proactive: answer from supplied facts, ask only for missing information, and use Seller Hub capabilities when they are actually available.
-
-For ordinary conversation, greetings, small talk, or a reasonable harmless general question, respond naturally and briefly. Do not repeat a policy message and do not turn into a robotic refusal. If a request is outside your useful role, use judgement: answer briefly when harmless, or naturally steer the user back to Seller Hub when that is more useful.
-
-Never invent Seller Hub facts. If real data is required and is not supplied, say you need to check the relevant data instead of guessing. Never claim an external or marketplace action was executed unless a tool actually executed it. Destructive or marketplace-changing actions require the application's approval flow.
-
-Keep answers conversational and concise unless the user asks for detail. Match Hindi/Hinglish/English naturally. Do not repeatedly introduce yourself or restate this role.
-"""
-
-
 class AISellerAgentService:
-    """Central seller coordinator and natural conversational AI entry point."""
+    """Central seller coordinator with the Universal Product Knowledge Brain as factual context."""
 
     def __init__(self, db: Session, user: User):
         self.db = db
@@ -55,35 +40,6 @@ class AISellerAgentService:
         if self.db.new:
             self.db.flush()
         return {"product_count": len(products), "ready_products": ready, "incomplete_products": incomplete, "conflict_count": conflicts, "average_completeness_score": round(sum(scores) / len(scores)) if scores else 0}
-
-    def chat(self, message: str, conversation: list[dict[str, str]] | None = None) -> LLMResult:
-        """Natural chat path. Semantic scope is decided by the model, not keywords."""
-        history = conversation or []
-        safe_history = [
-            {"role": item.get("role", "user"), "content": str(item.get("content", ""))[:4000]}
-            for item in history[-12:]
-            if item.get("role") in {"user", "assistant"} and item.get("content")
-        ]
-
-        seller_ids = select(SellerAccount.id).where(SellerAccount.user_id == self.user.id)
-        seller_count = len(self.db.scalars(seller_ids).all())
-        product_count = len(self.db.scalars(select(Product.id).where(Product.seller_account_id.in_(seller_ids))).all())
-        lines = [
-            f"Seller Hub context: connected seller accounts={seller_count}; known products={product_count}.",
-            "Do not infer sales, inventory or other business metrics from these counts.",
-            "Conversation context:",
-        ]
-        for item in safe_history:
-            lines.append(f"{item['role']}: {item['content']}")
-        lines.append(f"Current user message: {message}")
-
-        return LLMGateway().generate(
-            system=SELLER_AGENT_SYSTEM_PROMPT,
-            user="\n".join(lines),
-            tools=[],
-            tool_executor=lambda _name, _args: {},
-            scope_text=message,
-        )
 
     def assess(self, start: datetime | None = None, end: datetime | None = None, marketplace_account_id: int | None = None, horizon: str = "daily") -> dict:
         plan = StrategyActionPlannerService(self.db, self.user).plan(start=start, end=end, marketplace_account_id=marketplace_account_id, horizon=horizon)
