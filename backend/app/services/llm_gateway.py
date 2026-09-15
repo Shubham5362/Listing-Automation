@@ -53,6 +53,7 @@ class LLMGateway:
         user: str,
         tools: list[dict[str, Any]],
         tool_executor: Callable[[str, dict[str, Any]], dict[str, Any]],
+        scope_text: str | None = None,
     ) -> LLMResult:
         if not self.settings.ai_enabled:
             return LLMResult(
@@ -63,7 +64,10 @@ class LLMGateway:
             )
 
         if self.settings.ai_scope_guard_enabled:
-            decision = self.scope_guard.check(user)
+            # `user` may contain conversation history. For scope decisions we must
+            # inspect only the current user message, otherwise an old seller-related
+            # word in history could accidentally allow a new unrelated request.
+            decision = self.scope_guard.check(scope_text if scope_text is not None else user)
             if not decision.allowed:
                 return LLMResult(
                     text=decision.message or FRIENDLY_SCOPE_MESSAGE,
