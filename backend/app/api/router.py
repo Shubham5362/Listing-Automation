@@ -41,6 +41,7 @@ from app.api.strategy_action_planner import router as strategy_action_planner_ro
 from app.api.operations_autopilot import router as operations_autopilot_router
 from app.api.operations_workspace import router as operations_workspace_router
 from app.api.operations_control import router as operations_control_router
+from app.api.seller_operations import router as seller_operations_router
 from app.api.personal_marketplaces import router as personal_marketplaces_router
 from app.api.realtime import router as realtime_router
 from app.api.seller_intelligence import router as seller_intelligence_router
@@ -52,7 +53,7 @@ from app.api.vision import router as vision_router
 from app.api.listing_validation import router as listing_validation_router
 
 api_router = APIRouter(prefix="/api/v1")
-for router in [auth_router, accounts_router, jobs_router, actions_router, marketplaces_router, personal_marketplaces_router, personal_ai_seller_agent_router, personal_finance_router, personal_listing_automation_router, product_knowledge_router, marketplace_adapters_router, marketplace_changes_router, autofill_router, marketplace_operations_router, listing_operations_router, catalog_router, catalog_intelligence_router, media_router, ai_listing_router, listing_intelligence_router, diagnostics_router, vision_router, listing_validation_router, inventory_router, inventory_intelligence_router, orders_router, order_ops_router, pricing_router, returns_router, finance_router, finance_intelligence_router, advertising_router, advertising_ai_router, seller_intelligence_router, dashboard_router, advanced_analytics_router, business_intelligence_router, growth_opportunities_router, strategy_action_planner_router, operations_autopilot_router, operations_workspace_router, operations_control_router, ai_seller_agent_router, agents_router, automation_router, notifications_router, monitoring_router, ai_command_router, realtime_router, ui_compat_router]:
+for router in [auth_router, accounts_router, jobs_router, actions_router, marketplaces_router, personal_marketplaces_router, personal_ai_seller_agent_router, personal_finance_router, personal_listing_automation_router, product_knowledge_router, marketplace_adapters_router, marketplace_changes_router, autofill_router, marketplace_operations_router, listing_operations_router, catalog_router, catalog_intelligence_router, media_router, ai_listing_router, listing_intelligence_router, diagnostics_router, vision_router, listing_validation_router, inventory_router, inventory_intelligence_router, orders_router, order_ops_router, pricing_router, returns_router, finance_router, finance_intelligence_router, advertising_router, advertising_ai_router, seller_intelligence_router, dashboard_router, advanced_analytics_router, business_intelligence_router, growth_opportunities_router, strategy_action_planner_router, operations_autopilot_router, operations_workspace_router, operations_control_router, seller_operations_router, ai_seller_agent_router, agents_router, automation_router, notifications_router, monitoring_router, ai_command_router, realtime_router, ui_compat_router]:
     api_router.include_router(router)
 
 @api_router.get("/status", tags=["system"])
