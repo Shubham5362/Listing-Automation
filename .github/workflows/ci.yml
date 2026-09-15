@@ -90,7 +90,6 @@ jobs:
       - name: Setup Go
         if: steps.detect.outputs.go == 'true'
         uses: actions/setup-go@v5
-        if: steps.detect.outputs.go == 'true'
       - name: Go validation
         if: steps.detect.outputs.go == 'true'
         shell: bash
