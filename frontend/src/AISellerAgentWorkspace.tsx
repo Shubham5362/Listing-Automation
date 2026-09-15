@@ -26,14 +26,31 @@ const OUT_OF_SCOPE_TERMS = [
   'homework', 'exam', 'essay', 'relationship advice', 'dating advice', 'travel itinerary', 'recipe', 'cook', 'weather',
   'politics', 'news', 'general knowledge', 'kahani', 'कहानी', 'कविता', 'शायरी', 'चुटकुला', 'फिल्म', 'गाना', 'मौसम', 'राजनीति'
 ];
+const CASUAL_MESSAGES: Record<string, string> = {
+  hi: 'Namaste 😊 Main yahin hoon. Seller Hub mein kis kaam mein help chahiye?',
+  hii: 'Hii 😊 Main yahin hoon. Seller Hub mein kis kaam mein help chahiye?',
+  hello: 'Hello 😊 Batao, Seller Hub mein kya karna hai?',
+  hey: 'Hey 😊 Batao, Seller Hub mein kis kaam mein help chahiye?',
+  'kaise ho': 'Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?',
+  'kese ho': 'Main badhiya hoon 😊 Aap batao, Seller Hub mein kis kaam mein help chahiye?',
+  'how are you': 'I am doing great 😊 Batao, Seller Hub mein kya help chahiye?',
+  'good morning': 'Good morning 😊 Seller Hub ke kaam ke liye ready hoon. Batao kya karna hai?',
+  'good afternoon': 'Good afternoon 😊 Batao, Seller Hub mein kis kaam mein help chahiye?',
+  'good evening': 'Good evening 😊 Batao, Seller Hub mein kis kaam mein help chahiye?',
+  help: 'Bilkul 😊 Main aapke Seller Hub mein products, listings, inventory, orders, pricing, sales aur advertising ke kaam mein help kar sakta hoon. Batao kya karna hai?',
+  'help me': 'Bilkul 😊 Batao Seller Hub mein kya problem ya kaam hai, main help karta hoon.'
+};
 const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+const casualReply = (value: string) => CASUAL_MESSAGES[normalize(value)] || null;
 const isSellerScoped = (value: string) => {
   const text = normalize(value);
   return SELLER_TERMS.some(term => text.includes(normalize(term))) || SELLER_ACTION_TERMS.some(term => text.includes(normalize(term)));
 };
 const shouldBlockLocally = (value: string) => {
   const text = normalize(value);
-  return !text || text.length > 4000 || (!isSellerScoped(text) && OUT_OF_SCOPE_TERMS.some(term => text.includes(normalize(term)))) || !isSellerScoped(text);
+  if (!text || text.length > 4000) return true;
+  if (casualReply(text)) return false;
+  return (!isSellerScoped(text) && OUT_OF_SCOPE_TERMS.some(term => text.includes(normalize(term)))) || !isSellerScoped(text);
 };
 
 type ChatMessage = { role: 'user' | 'agent'; text: string; createdAt: string };
@@ -68,6 +85,13 @@ export default function AISellerAgentWorkspace({ onClose }: Props) {
     setMessage('');
     setChatting(true);
     setError('');
+
+    const localCasual = casualReply(text);
+    if (localCasual) {
+      setMessages(prev => [...prev, { role: 'agent', text: localCasual, createdAt: new Date().toISOString() }]);
+      setChatting(false);
+      return;
+    }
 
     if (shouldBlockLocally(text)) {
       setMessages(prev => [...prev, { role: 'agent', text: FRIENDLY_SCOPE_MESSAGE, createdAt: new Date().toISOString() }]);
