@@ -34,3 +34,6 @@ export const sellerHubCapabilities: SellerHubCapability[] = [
 ];
 
 export const sellerHubGlobalUX = ['global search', 'AI search', 'command palette', 'date range', 'marketplace filter', 'warehouse filter', 'SKU filter', 'advanced filters', 'saved filters', 'export', 'refresh', 'bulk select/actions', 'pagination', 'sorting', 'column customization', 'detail drawer', 'confirmation modal', 'toasts', 'loading skeleton', 'empty state', 'error state', 'retry', 'keyboard shortcuts', 'dark mode', 'responsive layout', 'activity timeline', 'audit trail', 'contextual AI'];
+
+// Backward-compatible internal alias for the current implementation; no product-facing Phase 00 naming.
+export const phase00Capabilities = sellerHubCapabilities;
