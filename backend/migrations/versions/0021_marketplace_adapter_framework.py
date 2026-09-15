@@ -1,12 +1,12 @@
 """add marketplace adapter registry and schema snapshots
 
-Revision ID: 0021_marketplace_adapter_framework
+Revision ID: 0021_marketplace_adapter
 Revises: 0020_merge_product_knowledge
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0021_marketplace_adapter_framework"
+revision = "0021_marketplace_adapter"
 down_revision = "0020_merge_product_knowledge"
 branch_labels = None
 depends_on = None
