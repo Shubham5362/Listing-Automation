@@ -44,6 +44,15 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.2
     llm_max_output_tokens: int = 1200
 
+    # AI Seller Agent guardrails. These limit paid LLM usage, not Seller Hub operations.
+    ai_enabled: bool = True
+    ai_scope_guard_enabled: bool = True
+    ai_requests_per_minute: int = 10
+    ai_requests_per_hour: int = 50
+    ai_max_input_chars: int = 4000
+    ai_max_tool_calls: int = 3
+    ai_max_workflow_steps: int = 5
+
     amazon_sp_api_base_url: str = "https://sellingpartnerapi-eu.amazon.com"
     amazon_sp_api_region: str = "eu-west-1"
     amazon_sp_api_marketplace_id: str = "A21TJRUUN4KGV"
