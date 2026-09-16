@@ -104,7 +104,10 @@ class AIScopeGuard:
     def __init__(self, *, per_minute: int = 10, per_hour: int = 50, max_input_chars: int = 4000) -> None:
         self.per_minute = max(1, per_minute)
         self.per_hour = max(self.per_minute, per_hour)
-        self.max_input_chars = max(256, max_input_chars)
+        # Respect the caller's configured limit, including small values used by
+        # tests and policy-specific deployments. The previous 256-char floor
+        # silently defeated the input-size guard for limits below 256.
+        self.max_input_chars = max(1, max_input_chars)
         self._minute = _RateWindow()
         self._hour = _RateWindow()
 
