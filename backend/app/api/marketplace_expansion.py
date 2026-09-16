@@ -11,6 +11,7 @@ from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.core import SellerAccount, User
 from app.models.marketplace_expansion import MarketplaceConflict, MarketplaceExecution
+from app.marketplaces.catalog import list_channel_catalog
 from app.services.marketplace_expansion import capability_map, create_conflict, execution_guard, register_capabilities, suggest_mapping
 
 router = APIRouter(prefix="/marketplace-expansion", tags=["marketplace-expansion"])
@@ -39,6 +40,12 @@ class GuardRequest(BaseModel):
     risk: str = "low"
     confidence: float = Field(ge=0, le=1)
     autopilot_mode: str = "approval"
+
+
+@router.get("/catalog")
+def channel_catalog() -> list[dict[str, object]]:
+    """Return the channels SellerHub can model without implying a live adapter exists."""
+    return list_channel_catalog()
 
 
 @router.post("/capabilities/{marketplace}")
