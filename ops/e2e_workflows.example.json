@@ -1,0 +1,10 @@
+{
+  "description": "Optional authenticated endpoint checks for a production-like E2E environment. Do not put credentials or customer data in this file.",
+  "checks": [
+    {"name": "marketplace onboarding", "method": "GET", "path": "/api/marketplace/onboarding", "expected": [200, 401, 403, 404]},
+    {"name": "catalog", "method": "GET", "path": "/api/catalog", "expected": [200, 401, 403]},
+    {"name": "inventory", "method": "GET", "path": "/api/inventory", "expected": [200, 401, 403]},
+    {"name": "orders", "method": "GET", "path": "/api/orders", "expected": [200, 401, 403]},
+    {"name": "pricing", "method": "GET", "path": "/api/pricing", "expected": [200, 401, 403]}
+  ]
+}
