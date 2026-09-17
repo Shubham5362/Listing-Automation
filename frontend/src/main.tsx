@@ -1,11 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import './styles.css';
-import './ai-chat-fullscreen.css';
-import SellerHubApp from './SellerHubApp';
+import './index.css';
+import DashboardApp from './DashboardApp';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <SellerHubApp />
+    <DashboardApp />
   </React.StrictMode>,
 );
