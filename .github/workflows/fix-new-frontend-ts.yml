@@ -1,0 +1,38 @@
+name: Fix new frontend TypeScript errors
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-new-frontend-ts.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply targeted TypeScript fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          inventory = Path('frontend/src/components/InventoryWorkspace.tsx')
+          text = inventory.read_text()
+          text = text.replace("import React, { useState, useMemo } from 'react';", "import React, { useState, useMemo, useEffect } from 'react';", 1)
+          text = text.replace("ref={(el) => el && (el.indeterminate = someSelected)}", "ref={(el) => { if (el) el.indeterminate = someSelected; }}")
+          inventory.write_text(text)
+
+          orders = Path('frontend/src/components/OrdersWorkspace.tsx')
+          text = orders.read_text()
+          text = text.replace("ref={el => el && (el.indeterminate = isIndeterminate)}", "ref={el => { if (el) el.indeterminate = isIndeterminate; }}")
+          orders.write_text(text)
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/components/InventoryWorkspace.tsx frontend/src/components/OrdersWorkspace.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: resolve new frontend TypeScript ref errors"
+          git push
