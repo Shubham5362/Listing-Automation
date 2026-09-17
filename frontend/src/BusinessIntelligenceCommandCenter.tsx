@@ -1,0 +1,25 @@
+import React from 'react';
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const api = (path: string, options?: RequestInit) => fetch(`${API_BASE}/api/v1${path}`, { ...options, headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options?.headers || {}) } });
+
+type Data = { business_health_score: number; executive_summary: string; kpis: { revenue: number; expenses: number; net_profit: number; margin_percent: number; orders: number; units: number; returns: number; inventory_units: number }; forecasts: { inventory_days?: number; next_7_day_revenue?: number; next_30_days?: { revenue: number; profit: number; confidence: number }; next_90_days?: { revenue: number; profit: number; confidence: number } }; advertising: { spend: number; sales: number; acos_percent: number; roas: number }; sku_economics: { sku: string; title: string; revenue: number; units: number; margin_percent: number; estimated_contribution: number; profitability_score: number }[]; opportunities: { type: string; sku?: string; score: number; action: string }[]; risks: { type: string; sku?: string; score: number; action: string }[] };
+const money = (v: number | undefined) => `₹${(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
+export default function BusinessIntelligenceCommandCenter() {
+  const [data, setData] = React.useState<Data | null>(null); const [loading, setLoading] = React.useState(true); const [error, setError] = React.useState('');
+  const load = React.useCallback(async () => { setLoading(true); try { const r = await api('/bi/overview'); if (!r.ok) throw new Error(`Business Intelligence API returned ${r.status}`); setData(await r.json()); setError(''); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load business intelligence'); } finally { setLoading(false); } }, []);
+  React.useEffect(() => { load(); }, [load]);
+  return <section className="module-page">
+    <div className="module-hero ai"><div className="module-mark">◈</div><div><p className="eyebrow">BUSINESS INTELLIGENCE · PHASE 77</p><h2>Profit Intelligence</h2><p>Revenue, contribution margin, forecasts, opportunities and risks in one seller-scoped view.</p></div><span className="connection">● {loading ? 'Refreshing' : 'Live'}</span></div>
+    {error && <div className="errorbar" role="alert">{error}<button onClick={load}>Retry</button></div>}
+    <div className="cards"><Metric title="Revenue" value={money(data?.kpis.revenue)} sub="Recorded sales"/><Metric title="Net Profit" value={money(data?.kpis.net_profit)} sub={`${data?.kpis.margin_percent ?? 0}% margin`}/><Metric title="Business Score" value={data?.business_health_score ?? '—'} sub="Explainable 0–100"/><Metric title="Ad ROAS" value={data?.advertising.roas ?? '—'} sub={`${data?.advertising.acos_percent ?? 0}% ACOS`}/><Metric title="Inventory" value={data?.forecasts.inventory_days ? `${data.forecasts.inventory_days}d` : '—'} sub="Observed coverage"/></div>
+    <div className="grid module-grid"><Panel title="Executive View" text={data?.executive_summary || 'Calculating business signals…'}/><Panel title="Forecast" text={data?.forecasts.next_30_days ? `30d: ${money(data.forecasts.next_30_days.revenue)} revenue · ${money(data.forecasts.next_30_days.profit)} profit · ${Math.round(data.forecasts.next_30_days.confidence * 100)}% confidence.` : 'No forecast data yet.'}/></div>
+    <div className="grid module-grid"><List title="Growth Opportunities" rows={data?.opportunities || []}/><List title="Business Risks" rows={data?.risks || []}/></div>
+    <article className="panel"><div className="panelhead"><div><h2>SKU Economics</h2><p>Contribution-focused ranking, not revenue-only ranking.</p></div></div><div className="rows">{(data?.sku_economics || []).slice(0,10).map(p => <div key={p.sku}><b>{p.sku} · {p.title}</b><strong>{money(p.estimated_contribution)}</strong><em>{p.margin_percent}% margin · {p.units} units · score {p.profitability_score}</em></div>)}</div></article>
+    <div className="operations-footer"><span>● Advisory intelligence · no marketplace mutation</span><button onClick={load}>↻ Refresh</button></div>
+  </section>;
+}
+function Metric({ title, value, sub }: { title: string; value: React.ReactNode; sub: string }) { return <article className="card"><span>{title}</span><strong>{value}</strong><small>{sub}</small></article>; }
+function Panel({ title, text }: { title: string; text: string }) { return <article className="panel"><div className="panelhead"><div><h2>{title}</h2></div></div><p>{text}</p></article>; }
+function List({ title, rows }: { title: string; rows: { type: string; sku?: string; score: number; action: string }[] }) { return <article className="panel"><div className="panelhead"><div><h2>{title}</h2></div></div>{rows.length ? <div className="rows">{rows.slice(0,6).map((r,i) => <div key={`${r.type}-${r.sku || i}`}><b>{r.sku || r.type.replaceAll('_',' ')}</b><strong>{r.score}</strong><em>{r.action}</em></div>)}</div> : <p>No material signals detected.</p>}</article>; }
