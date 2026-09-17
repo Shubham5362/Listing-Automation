@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   ChevronDown,
@@ -881,7 +881,7 @@ export default function InventoryWorkspace({
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  ref={(el) => el && (el.indeterminate = someSelected)}
+                  ref={(el) => { if (el) el.indeterminate = someSelected; }}
                   onChange={handleToggleSelectAll}
                   className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
                 />
@@ -968,7 +968,7 @@ export default function InventoryWorkspace({
                       <input
                         type="checkbox"
                         checked={allSelected}
-                        ref={(el) => el && (el.indeterminate = someSelected)}
+                        ref={(el) => { if (el) el.indeterminate = someSelected; }}
                         onChange={handleToggleSelectAll}
                         className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
                       />

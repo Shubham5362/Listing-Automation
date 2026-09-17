@@ -945,7 +945,7 @@ export default function OrdersWorkspace({
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  ref={el => el && (el.indeterminate = isIndeterminate)}
+                  ref={el => { if (el) el.indeterminate = isIndeterminate; }}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                   className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
                 />
@@ -1055,7 +1055,7 @@ export default function OrdersWorkspace({
                       <input
                         type="checkbox"
                         checked={allSelected}
-                        ref={el => el && (el.indeterminate = isIndeterminate)}
+                        ref={el => { if (el) el.indeterminate = isIndeterminate; }}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
                       />
