@@ -385,9 +385,7 @@ export default function App() {
 
       {/* Main Container Area */}
       <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${
-          'lg:pl-[240px]'
-        } ${activeTab !== 'Orders' && activeTab !== 'Products' && isAiDrawerOpen ? 'xl:pr-[360px]' : ''}`}
+        className="flex-1 flex flex-col min-w-0 transition-all duration-200 lg:pl-[240px]"
       >
         {/* Top Header */}
         <TopHeader
