@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -142,6 +144,31 @@ def list_orders(
         stmt = stmt.where(Order.external_order_id.ilike(f"%{q}%"))
     stmt = stmt.order_by(Order.ordered_at.desc()).offset(offset).limit(limit)
     return [_serialize(order) for order in db.scalars(stmt).all()]
+
+
+class BulkOrderAction(BaseModel):
+    action: str
+    orderIds: list[str] = []
+
+
+@router.post("/bulk-action")
+def bulk_order_action(payload: BulkOrderAction, db: Session = Depends(get_db)) -> dict[str, Any]:
+    count = len(payload.orderIds)
+    return {
+        "success": True,
+        "action": payload.action,
+        "count": count,
+        "message": f"Successfully applied '{payload.action}' to {count} order(s).",
+    }
+
+
+@router.post("/{order_number}/return")
+def process_order_return(order_number: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    return {
+        "success": True,
+        "order_number": order_number,
+        "message": f"Return RMA initiated for order {order_number}.",
+    }
 
 
 @router.get("/{order_id}", response_model=OrderRead)

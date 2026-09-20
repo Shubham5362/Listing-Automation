@@ -1,0 +1,8 @@
+{
+  "name": "SellerHub",
+  "description": "Autonomous multi-marketplace operations platform for Amazon and Flipkart sellers with AI copilot, real-time analytics, inventory management, and automated listing optimization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

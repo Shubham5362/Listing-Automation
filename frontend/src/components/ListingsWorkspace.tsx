@@ -288,7 +288,7 @@ export default function ListingsWorkspace({
 }: ListingsWorkspaceProps) {
   const [listings, setListings] = useState<ListingItem[]>(initialListingsData);
   const [selectedListingId, setSelectedListingId] = useState<string | number>(1);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'All' | 'Active' | 'Inactive' | 'Suppressed' | 'NeedsFix' | 'Drafts'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [marketplaceFilter, setMarketplaceFilter] = useState('all');

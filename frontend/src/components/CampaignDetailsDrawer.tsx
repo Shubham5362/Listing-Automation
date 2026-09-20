@@ -106,7 +106,7 @@ export default function CampaignDetailsDrawer({
   };
 
   return (
-    <div className="w-[370px] sm:w-[410px] xl:w-[430px] shrink-0 border-l border-slate-200/90 bg-white flex flex-col h-full overflow-hidden shadow-sm z-20">
+    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] lg:w-[410px] xl:w-[430px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="bg-slate-900 text-white text-xs font-medium px-4 py-2 flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
@@ -595,6 +595,6 @@ export default function CampaignDetailsDrawer({
           </div>
         )}
       </div>
-    </div>
+    </aside>
   );
 }

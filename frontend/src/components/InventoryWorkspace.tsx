@@ -299,8 +299,8 @@ export default function InventoryWorkspace({
   onSelectMarketplaceFilter,
 }: InventoryWorkspaceProps) {
   const [items, setItems] = useState<InventoryItem[]>(initialInventoryData);
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(initialInventoryData[0]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Tab & Filters
   const [activeTab, setActiveTab] = useState<'All SKUs' | 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Reserved' | 'Incoming' | 'Outgoing'>('All SKUs');

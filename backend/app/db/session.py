@@ -6,6 +6,10 @@ from app.core.config import get_settings
 settings = get_settings()
 database_url = settings.database_url
 
+# Fallback to local SQLite if DATABASE_URL contains placeholder markers
+if any(marker in database_url for marker in ["@HOST", "USER:PASSWORD", "DBNAME", "YOUR_"]):
+    database_url = "sqlite:///./seller_hub.db"
+
 # The project uses psycopg (v3). SQLAlchemy otherwise defaults a plain
 # PostgreSQL URL to the psycopg2 driver, which is not installed in the image.
 if database_url.startswith("postgresql://"):

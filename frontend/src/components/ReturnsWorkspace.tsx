@@ -294,7 +294,7 @@ export default function ReturnsWorkspace({
   onSelectMarketplaceFilter,
 }: ReturnsWorkspaceProps) {
   const [returnsList, setReturnsList] = useState<ReturnRecord[]>(initialReturnsData);
-  const [selectedReturn, setSelectedReturn] = useState<ReturnRecord | null>(initialReturnsData[0]);
+  const [selectedReturn, setSelectedReturn] = useState<ReturnRecord | null>(null);
   const [statusTab, setStatusTab] = useState<string>('All Returns');
   const [searchQuery, setSearchQuery] = useState('');
   const [marketplaceFilter, setMarketplaceFilter] = useState<string>(
@@ -346,9 +346,6 @@ export default function ReturnsWorkspace({
               };
             });
             setReturnsList(mapped);
-            if (mapped.length > 0) {
-              setSelectedReturn(mapped[0]);
-            }
           }
         }
       } catch (e) {

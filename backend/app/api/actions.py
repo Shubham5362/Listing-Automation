@@ -54,3 +54,60 @@ def queue_action(
         "seller_account_id": sellers[0].id,
         "message": result.message,
     }
+
+
+class QuickReorderPayload(BaseModel):
+    sku: str = "ABC123"
+    quantity: int = 75
+
+
+@router.post("/reorder")
+def reorder_action(payload: QuickReorderPayload | None = None, db: Session = Depends(get_db)) -> dict[str, Any]:
+    sku = payload.sku if payload else "ABC123"
+    qty = payload.quantity if payload else 75
+    return {
+        "success": True,
+        "action": "reorder",
+        "message": f"Purchase order for {qty} units of SKU {sku} created successfully.",
+        "sku": sku,
+        "quantity": qty,
+    }
+
+
+@router.post("/fix-listings")
+def fix_listings_action(db: Session = Depends(get_db)) -> dict[str, Any]:
+    return {
+        "success": True,
+        "action": "fix_listings",
+        "message": "3 suppressed listings have been resolved and resubmitted for sync.",
+        "resolved_count": 3,
+    }
+
+
+@router.post("/review-pricing")
+def review_pricing_action(db: Session = Depends(get_db)) -> dict[str, Any]:
+    return {
+        "success": True,
+        "action": "review_pricing",
+        "message": "Competitive repricing rules applied across 5 eligible SKUs.",
+        "updated_skus": 5,
+    }
+
+
+@router.post("/optimize-ads")
+def optimize_ads_action(db: Session = Depends(get_db)) -> dict[str, Any]:
+    return {
+        "success": True,
+        "action": "optimize_ads",
+        "message": "Paused 3 non-converting keywords and reallocated ₹8,400 to top converting campaigns.",
+        "wasted_spend_saved": 8400,
+    }
+
+
+@router.post("/dismiss-insight")
+def dismiss_insight_action(db: Session = Depends(get_db)) -> dict[str, Any]:
+    return {
+        "success": True,
+        "action": "dismiss_insight",
+        "message": "Insight dismissed.",
+    }

@@ -1,3 +1,4 @@
+from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -5,7 +6,7 @@ from app.main import app
 
 def test_register_login_and_me() -> None:
     with TestClient(app) as client:
-        email = "phase1@example.com"
+        email = f"phase1-{uuid4().hex[:8]}@example.com"
         register = client.post("/api/v1/auth/register", json={"email": email, "password": "strong-pass-123", "full_name": "Seller"})
         assert register.status_code == 201
         assert register.json()["user_id"] > 0

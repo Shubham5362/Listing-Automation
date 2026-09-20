@@ -368,8 +368,8 @@ export default function AdvertisingWorkspace({
 }: AdvertisingWorkspaceProps) {
   // Campaigns list state
   const [campaigns, setCampaigns] = useState<CampaignRecord[]>(initialCampaigns);
-  // Pinned active campaign for the right-side drawer (defaults to campaign 1 matching the reference image)
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignRecord | null>(initialCampaigns[0]);
+  // Active campaign for the right-side drawer (null by default until user clicks a campaign)
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignRecord | null>(null);
 
   // Tab filter: 'All Campaigns' (48) | 'Sponsored Products' (28) | 'Sponsored Brands' (12) | 'Sponsored Display' (8)
   const [activeTab, setActiveTab] = useState<'All Campaigns' | 'Sponsored Products' | 'Sponsored Brands' | 'Sponsored Display'>('All Campaigns');
@@ -439,9 +439,6 @@ export default function AdvertisingWorkspace({
               };
             });
             setCampaigns(mapped);
-            if (mapped.length > 0) {
-              setSelectedCampaign(mapped[0]);
-            }
           }
         }
       } catch (err) {

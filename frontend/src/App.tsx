@@ -244,7 +244,7 @@ const initialDashboardState: DashboardResponse = {
 
 export default function App() {
   const [data, setData] = useState<DashboardResponse>(initialDashboardState);
-  const [activeTab, setActiveTab] = useState('Finance');
+  const [activeTab, setActiveTab] = useState('Dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

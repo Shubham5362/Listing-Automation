@@ -313,7 +313,7 @@ export default function PricingWorkspace({
   const [priceStatusFilter, setPriceStatusFilter] = useState('All');
   const [marketplaceFilter, setMarketplaceFilter] = useState('All');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<PricingRecord | null>(initialPricingData[0]);
+  const [selectedProduct, setSelectedProduct] = useState<PricingRecord | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
@@ -363,9 +363,6 @@ export default function PricingWorkspace({
               };
             });
             setPricingItems(mapped);
-            if (mapped.length > 0) {
-              setSelectedProduct(mapped[0]);
-            }
           }
         }
       } catch (err) {

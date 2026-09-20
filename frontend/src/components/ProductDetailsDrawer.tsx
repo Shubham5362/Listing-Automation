@@ -85,7 +85,7 @@ export default function ProductDetailsDrawer({
 
   return (
     <aside
-      className="w-full xl:w-[380px] bg-white border-l border-slate-200 flex flex-col h-full shrink-0 shadow-sm transition-all duration-200 z-20"
+      className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] lg:w-[400px] xl:w-[420px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all"
       id="product-details-drawer"
     >
       {/* Drawer Top Bar */}

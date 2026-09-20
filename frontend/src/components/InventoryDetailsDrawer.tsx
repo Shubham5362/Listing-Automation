@@ -103,7 +103,7 @@ export default function InventoryDetailsDrawer({
   };
 
   return (
-    <aside className="w-full xl:w-[390px] shrink-0 bg-white border-l border-slate-200 flex flex-col h-full overflow-y-auto text-slate-800 shadow-lg xl:shadow-none z-30">
+    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] lg:w-[400px] xl:w-[420px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
       {/* Drawer Header */}
       <div className="p-4 border-b border-slate-200">
         <div className="flex items-start justify-between gap-2">

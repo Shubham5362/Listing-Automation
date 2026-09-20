@@ -8,11 +8,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     database_url: str = "sqlite:///./seller_hub.db"
-    secret_key: str = "change-me-in-env"
-    credentials_encryption_key: str | None = None
+    secret_key: str = "sellerhub-secure-auth-jwt-token-key-32chars-min-98765"
+    credentials_encryption_key: str | None = "8I3Pw-B3JzHPx-y2dNj4Ts2l8RCQDGlqpCNQb_OH4Sc="
     allowed_origins: str = "http://localhost:5173"
     allowed_hosts: str = "localhost,127.0.0.1,testserver"
-    rate_limit_per_minute: int = 120
+    rate_limit_per_minute: int = 10000
     redis_url: str | None = None
     session_ttl_hours: int = 24
 

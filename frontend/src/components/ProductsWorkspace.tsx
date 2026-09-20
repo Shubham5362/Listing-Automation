@@ -369,7 +369,7 @@ export default function ProductsWorkspace({
   // State management
   const [products, setProducts] = useState<ProductCatalogItem[]>(defaultProductCatalog);
   const [selectedProductId, setSelectedProductId] = useState<string | number>(1);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'All' | 'Active' | 'OutOfStock' | 'LowStock' | 'Suppressed' | 'Archived'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');

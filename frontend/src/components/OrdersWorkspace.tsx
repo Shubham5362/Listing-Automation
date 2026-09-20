@@ -331,9 +331,9 @@ export default function OrdersWorkspace({
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedDateRange, setSelectedDateRange] = useState<string>('Last 7 Days');
   
-  // Right-side Drawer state: open by default with the first order (#ORD-40291) matching reference image!
-  const [drawerOrder, setDrawerOrder] = useState<OrderRecord | null>(INITIAL_ORDERS[0]);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  // Right-side Drawer state: closed by default, opens only when user clicks an order
+  const [drawerOrder, setDrawerOrder] = useState<OrderRecord | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Syncing indicator
   const [isSyncing, setIsSyncing] = useState(false);
@@ -360,9 +360,6 @@ export default function OrdersWorkspace({
           const data = await res.json();
           if (data.items && data.items.length > 0) {
             setOrders(data.items);
-            if (!drawerOrder) {
-              setDrawerOrder(data.items[0]);
-            }
           }
         }
       } catch (err) {
@@ -584,7 +581,7 @@ export default function OrdersWorkspace({
   return (
     <div className="relative min-h-[calc(100vh-64px)] flex">
       {/* Main Table and Page Content */}
-      <div className={`flex-1 min-w-0 transition-all ${isDrawerOpen ? 'lg:pr-[360px]' : ''}`}>
+      <div className="flex-1 min-w-0">
         <div className="p-4 sm:p-6 lg:p-7 space-y-6">
           {/* 1. Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
