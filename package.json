@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "bash -c 'PYTHONPATH=/app/applet/backend python3 -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001 & cd frontend && npx vite --port 3000 --host 0.0.0.0'",
+    "dev": "bash -c 'PYTHONPATH=\"$(pwd)/backend:${PYTHONPATH:-}\" python3 -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001 & cd frontend && ./node_modules/.bin/vite --port 3000 --host 0.0.0.0'",
     "build": "cd frontend && npm run build && rm -rf ../dist && cp -r dist ../dist",
     "lint": "cd frontend && npx tsc -b --noEmit"
   }
