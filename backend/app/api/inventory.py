@@ -15,13 +15,24 @@ from app.schemas.inventory import InventoryAdjustmentRequest, InventoryMovementR
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
 
-def _read(item: InventoryItem) -> InventoryRead:
+def _read(item: InventoryItem, product: Product | None = None) -> InventoryRead:
     available = max(item.quantity - item.reserved_quantity, 0)
     return InventoryRead(
-        id=item.id, seller_account_id=item.seller_account_id, product_id=item.product_id,
-        warehouse=item.warehouse, quantity=item.quantity, reserved_quantity=item.reserved_quantity,
-        available_quantity=available, reorder_level=item.reorder_level,
-        low_stock=available <= item.reorder_level, updated_at=item.updated_at,
+        id=item.id,
+        seller_account_id=item.seller_account_id,
+        product_id=item.product_id,
+        warehouse=item.warehouse,
+        quantity=item.quantity,
+        reserved_quantity=item.reserved_quantity,
+        available_quantity=available,
+        reorder_level=item.reorder_level,
+        low_stock=available <= item.reorder_level,
+        updated_at=item.updated_at,
+        sku=product.sku if product else None,
+        title=product.title if product else None,
+        category=product.category if product else None,
+        cost_price=float(product.cost_price) if product and product.cost_price is not None else None,
+        mrp=float(product.mrp) if product and product.mrp is not None else None,
     )
 
 
@@ -35,16 +46,24 @@ def _owned(db: Session, user: User, seller_id: int, product_id: int) -> Product:
 
 @router.get("", response_model=list[InventoryRead])
 def list_inventory(
-    seller_account_id: int | None = None, product_id: int | None = None,
-    low_stock: bool | None = None, _: User = Depends(get_current_user), db: Session = Depends(get_db),
+    seller_account_id: int | None = None,
+    product_id: int | None = None,
+    low_stock: bool | None = None,
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[InventoryRead]:
-    stmt = select(InventoryItem).join(SellerAccount, SellerAccount.id == InventoryItem.seller_account_id).where(SellerAccount.user_id == _.id)
+    stmt = (
+        select(InventoryItem, Product)
+        .join(SellerAccount, SellerAccount.id == InventoryItem.seller_account_id)
+        .outerjoin(Product, Product.id == InventoryItem.product_id)
+        .where(SellerAccount.user_id == _.id)
+    )
     if seller_account_id:
         stmt = stmt.where(InventoryItem.seller_account_id == seller_account_id)
     if product_id:
         stmt = stmt.where(InventoryItem.product_id == product_id)
-    items = db.scalars(stmt.order_by(InventoryItem.updated_at.desc())).all()
-    result = [_read(item) for item in items]
+    rows = db.execute(stmt.order_by(InventoryItem.updated_at.desc())).all()
+    result = [_read(item, prod) for item, prod in rows]
     return [item for item in result if low_stock is None or item.low_stock == low_stock]
 
 

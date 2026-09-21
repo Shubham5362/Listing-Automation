@@ -30,6 +30,11 @@ class InventoryRead(BaseModel):
     reorder_level: int
     low_stock: bool
     updated_at: datetime
+    sku: str | None = None
+    title: str | None = None
+    category: str | None = None
+    cost_price: float | None = None
+    mrp: float | None = None
 
 
 class InventoryMovementRead(BaseModel):

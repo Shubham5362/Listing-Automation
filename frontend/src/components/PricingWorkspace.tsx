@@ -327,39 +327,40 @@ export default function PricingWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: PricingRecord[] = json.items.map((p: any, idx: number) => {
-              const current = p.current_price || p.mrp || 499;
-              const cost = p.cost_price || 280;
-              const suggested = p.suggested_price || Math.round(current * 0.94);
-              const minP = p.min_price || Math.round(cost * 1.15);
-              const maxP = p.max_price || Math.round(current * 1.4);
-              const margin = Math.round(((current - cost) / current) * 100);
-              const marginAmt = current - cost;
+              const current = p.currentPrice !== undefined ? p.currentPrice : (p.current_price || p.mrp || 499);
+              const cost = p.costPrice !== undefined ? p.costPrice : (p.cost_price || 280);
+              const suggested = p.suggestedPrice !== undefined ? p.suggestedPrice : (p.suggested_price || Math.round(current * 0.94));
+              const minP = p.minPrice !== undefined ? p.minPrice : (p.min_price || Math.round(cost * 1.15));
+              const maxP = p.maxPrice !== undefined ? p.maxPrice : (p.max_price || Math.round(current * 1.4));
+              const margin = p.marginPercent !== undefined ? p.marginPercent : Math.round(((current - cost) / current) * 100);
+              const marginAmt = p.marginAmount !== undefined ? p.marginAmount : (current - cost);
+              const sku = p.sku || `SKU-00${idx + 1}`;
 
               return {
                 id: p.id || idx + 1,
-                name: p.title || `Product #${p.id || idx + 1}`,
+                name: p.name || p.title || `Product #${p.id || idx + 1}`,
                 category: p.category || 'Home & Kitchen',
-                sku: p.sku || `SKU-00${idx + 1}`,
-                asin: `B0${p.id || idx + 1}A8Y7Z`,
-                marketplaces: ['amazon', 'flipkart'],
+                sku: sku,
+                asin: p.asin || `B0${p.id || idx + 1}A8Y7Z`,
+                marketplaces: p.marketplaces || ['amazon', 'flipkart'],
                 currentPrice: current,
                 suggestedPrice: suggested,
-                hasAiSuggested: true,
-                priceStatus: (p.price_status || (current > suggested ? 'Reprice' : 'Optimal')) as any,
-                buyBox: p.buy_box_won ? '94%' : 'No',
-                buyBoxWon: !!p.buy_box_won,
-                estProfitLift: 12,
+                hasAiSuggested: p.hasAiSuggested !== undefined ? p.hasAiSuggested : true,
+                priceStatus: (p.priceStatus || p.price_status || (current > suggested ? 'Reprice' : 'Optimal')) as any,
+                buyBox: p.buyBox || (p.buyBoxWon || p.buy_box_won ? '94%' : 'No'),
+                buyBoxWon: p.buyBoxWon !== undefined ? p.buyBoxWon : !!p.buy_box_won,
+                estProfitLift: p.estProfitLift || 12,
                 minPrice: minP,
                 maxPrice: maxP,
                 costPrice: cost,
                 marginPercent: margin,
                 marginAmount: marginAmt,
-                marketPriceAvg: Math.round(current * 0.96),
-                priceRank: '2 of 6',
-                lowestCompetitorPrice: suggested,
-                totalCompetitors: 6,
-                aiInsightText: `Repricing to ₹${suggested} optimizes margin and Buy Box velocity across Amazon & Flipkart.`,
-                imageType: p.sku?.includes('TUM') ? 'tumbler' : p.sku?.includes('MUG') ? 'mug' : 'bottle-black',
+                marketPriceAvg: p.marketPriceAvg || Math.round(current * 0.96),
+                priceRank: p.priceRank || '2 of 6',
+                lowestCompetitorPrice: p.lowestCompetitorPrice || suggested,
+                totalCompetitors: p.totalCompetitors || 6,
+                aiInsightText: p.aiInsightText || `Repricing to ₹${suggested} optimizes margin and Buy Box velocity across Amazon & Flipkart.`,
+                imageType: p.imageType || (sku.toLowerCase().includes('tum') ? 'tumbler' : sku.toLowerCase().includes('mug') ? 'mug' : 'bottle-black'),
               };
             });
             setPricingItems(mapped);

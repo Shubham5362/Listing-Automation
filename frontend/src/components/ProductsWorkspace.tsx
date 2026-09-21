@@ -406,38 +406,48 @@ export default function ProductsWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: ProductCatalogItem[] = json.items.map((item: any) => {
-              const stock = item.stock_qty !== undefined ? item.stock_qty : 50;
-              const price = item.mrp || 499;
+              const stock = item.stock !== undefined ? item.stock : (item.stock_qty !== undefined ? item.stock_qty : 50);
+              const price = item.price || item.mrp || 499;
               const cost = item.cost_price || 250;
-              const margin = Math.round(((price - cost) / price) * 100);
+              const margin = item.margin !== undefined ? item.margin : Math.round(((price - cost) / price) * 100);
               const isStockOut = stock === 0;
               const isLow = stock > 0 && stock <= (item.reorder_level || 15);
+              const sku = item.sku || '';
+
+              const imgType = item.imageType || (
+                sku.toLowerCase().includes('tum') || sku.toLowerCase().includes('shk') ? 'tumbler' :
+                sku.toLowerCase().includes('mug') ? 'mug' :
+                sku.toLowerCase().includes('gla') ? 'bottle-glass' :
+                sku.toLowerCase().includes('cop') ? 'bottle-copper' :
+                sku.toLowerCase().includes('flk') || sku.toLowerCase().includes('flask') ? 'flask-silver' :
+                sku.toLowerCase().includes('sip') ? 'sipper-pink' : 'bottle-black'
+              );
 
               return {
                 id: item.id,
-                name: item.title,
+                name: item.name || item.title || 'Stainless Steel Water Bottle 1L',
                 category: item.category || 'Home & Kitchen',
                 brand: item.brand || 'AquaPure',
-                sku: item.sku,
-                hsnCode: item.hsn_code || '7323',
-                weight: '350 g',
-                dimensions: '28 x 7 x 7 cm',
-                createdOn: item.created_at ? item.created_at.split(' ')[0] : 'Aug 12, 2024',
-                lastUpdated: item.updated_at ? item.updated_at.split(' ')[0] : 'Dec 15, 2024',
-                imageType: item.sku?.includes('TUM') ? 'tumbler' : item.sku?.includes('MUG') ? 'mug' : 'bottle-black',
-                marketplaces: ['amazon', 'flipkart'],
+                sku: sku,
+                hsnCode: item.hsnCode || item.hsn_code || '7323',
+                weight: item.weight || '350 g',
+                dimensions: item.dimensions || '28 x 7 x 7 cm',
+                createdOn: item.createdOn || (item.created_at ? item.created_at.split(' ')[0] : 'Aug 12, 2024'),
+                lastUpdated: item.lastUpdated || (item.updated_at ? item.updated_at.split(' ')[0] : 'Dec 15, 2024'),
+                imageType: imgType,
+                marketplaces: item.marketplaces || ['amazon', 'flipkart'],
                 stock: stock,
-                availableStock: stock,
-                reservedStock: item.reserved_quantity || 0,
-                inboundStock: 25,
-                stockStatus: isStockOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock',
+                availableStock: item.availableStock !== undefined ? item.availableStock : stock,
+                reservedStock: item.reservedStock !== undefined ? item.reservedStock : (item.reserved_quantity || 0),
+                inboundStock: item.inboundStock || 25,
+                stockStatus: item.stockStatus || (isStockOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'),
                 price: price,
-                revenue30d: Math.round(price * 98),
+                revenue30d: item.revenue30d || Math.round(price * Math.max(stock, 10)),
                 margin: margin,
-                listingStatus: item.is_active ? 'Active' : 'Archived',
-                asin: `B0${item.id}A8Y7Z`,
-                flipkartFsn: `BOT${item.id}99XYZ`,
-                growthMetrics: {
+                listingStatus: item.listingStatus || (item.is_active ? 'Active' : 'Archived'),
+                asin: item.asin || `B0${item.id}A8Y7Z`,
+                flipkartFsn: item.flipkartFsn || `BOT${item.id}99XYZ`,
+                growthMetrics: item.growthMetrics || {
                   revenueGrowth: 14.2,
                   unitsSold: 98,
                   unitsSoldGrowth: 12.8,

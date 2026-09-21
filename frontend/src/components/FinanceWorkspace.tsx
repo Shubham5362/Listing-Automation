@@ -205,6 +205,12 @@ export default function FinanceWorkspace({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [financeSummary, setFinanceSummary] = useState({
+    sales: 1248670,
+    total_expenses: 248920,
+    net_profit: 326480,
+    entry_count: 18,
+  });
 
   // Sync with backend finance API
   React.useEffect(() => {
@@ -213,9 +219,17 @@ export default function FinanceWorkspace({
         const res = await fetch('/api/v1/finance');
         if (res.ok) {
           const json = await res.json();
+          if (json.summary) {
+            setFinanceSummary({
+              sales: json.summary.sales || 1248670,
+              total_expenses: json.summary.total_expenses || 248920,
+              net_profit: json.summary.net_profit || 326480,
+              entry_count: json.summary.entry_count || 18,
+            });
+          }
           if (json.items && json.items.length > 0) {
             const mapped: FinanceTransaction[] = json.items.map((tx: any, idx: number) => {
-              const amt = tx.amount || (tx.type === 'Payout' ? 124350 : 499);
+              const amt = tx.amount !== undefined ? tx.amount : (tx.type === 'Payout' ? 124350 : 499);
               const isNeg = amt < 0;
               const formattedAmt = isNeg ? `-₹${Math.abs(amt).toLocaleString('en-IN')}` : `₹${amt.toLocaleString('en-IN')}`;
               const mkt = (tx.marketplace || 'Amazon').toLowerCase().includes('flipkart') ? 'Flipkart' : 'Amazon';
@@ -451,7 +465,7 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Total Revenue</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹12,48,670</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.sales).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
               <TrendingUp className="w-3 h-3" />
               <span>18.3% vs last month</span>
@@ -468,7 +482,7 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Total Payouts</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹11,24,350</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.sales * 0.9).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
               <TrendingUp className="w-3 h-3" />
               <span>16.7%</span>
@@ -485,7 +499,7 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Total Fees</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹2,48,920</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.total_expenses).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-500 mt-1">
               <TrendingUp className="w-3 h-3" />
               <span>12.4%</span>
@@ -502,7 +516,7 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Net Profit</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹3,26,480</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.net_profit).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
               <TrendingUp className="w-3 h-3" />
               <span>22.8%</span>

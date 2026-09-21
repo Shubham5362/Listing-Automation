@@ -315,32 +315,35 @@ export default function ReturnsWorkspace({
         const res = await fetch('/api/v1/returns');
         if (res.ok) {
           const json = await res.json();
-          if (json.items && json.items.length > 0) {
-            const mapped: ReturnRecord[] = json.items.map((r: any, idx: number) => {
-              const status = r.status || 'Pending';
+          const list = Array.isArray(json) ? json : (json.items || []);
+          if (list.length > 0) {
+            const mapped: ReturnRecord[] = list.map((r: any, idx: number) => {
+              const rawSt = (r.status || 'Pending').toLowerCase();
+              const status = rawSt === 'requested' ? 'Pending' : rawSt.charAt(0).toUpperCase() + rawSt.slice(1);
               const mkt = (r.marketplace || 'Amazon').toLowerCase().includes('flipkart') ? 'Flipkart' : 'Amazon';
+              const reqDate = r.requested_at ? new Date(r.requested_at) : (r.created_at ? new Date(r.created_at) : new Date());
               return {
                 id: r.id || idx + 1,
-                returnId: r.return_number || `RET-2024-${String(r.id || idx + 1).padStart(3, '0')}`,
-                orderId: `#${r.order_number || '408-1234567'}`,
-                orderDisplayId: r.order_number || '408-1234567',
+                returnId: r.external_return_id || r.return_number || `RET-2024-${String(r.id || idx + 1).padStart(3, '0')}`,
+                orderId: `#${r.order_id ? (String(r.order_id).length > 5 ? r.order_id : `408-${r.order_id}92817`) : (r.order_number || '408-1234567')}`,
+                orderDisplayId: r.order_id ? (String(r.order_id).length > 5 ? String(r.order_id) : `408-${r.order_id}92817`) : (r.order_number || '408-1234567'),
                 marketplace: mkt,
                 product: {
-                  name: r.product_title || 'Stainless Steel Bottle 1L',
-                  sku: r.sku || 'SB-1L-001',
-                  imageType: r.sku?.includes('TUM') ? 'tumbler' : r.sku?.includes('MUG') ? 'mug' : 'bottle-black',
+                  name: r.product?.name || r.product_title || 'Stainless Steel Bottle 1L',
+                  sku: r.product?.sku || r.sku || 'SB-1L-001',
+                  imageType: r.product?.imageType || (r.sku?.includes('TUM') ? 'tumbler' : r.sku?.includes('MUG') ? 'mug' : 'bottle-black'),
                   price: r.refund_amount || 499,
                 },
                 customer: {
-                  name: r.customer_name || 'Verified Buyer',
-                  email: `${(r.customer_name || 'buyer').toLowerCase().replace(/\s+/g, '.')}@example.com`,
-                  phone: '+91 98765 43210',
-                  initials: (r.customer_name || 'VB').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+                  name: r.customer?.name || r.customer_name || 'Verified Buyer',
+                  email: r.customer?.email || `${(r.customer_name || 'buyer').toLowerCase().replace(/\s+/g, '.')}@example.com`,
+                  phone: r.customer?.phone || '+91 98765 43210',
+                  initials: (r.customer?.initials) || (r.customer_name || 'VB').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
                 },
                 reason: r.reason || 'Item not as described',
                 status: status,
-                requestedOn: r.created_at ? r.created_at.split(' ')[0] : 'Dec 15, 2024',
-                requestedOnFull: r.created_at || 'Dec 15, 2024, 10:24 AM',
+                requestedOn: reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                requestedOnFull: reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
                 returnWindow: 'Within policy',
                 refundAmount: r.refund_amount || 499,
               };

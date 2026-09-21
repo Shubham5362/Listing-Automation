@@ -11,6 +11,9 @@ class ListingStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
     INACTIVE = "inactive"
+    SUPPRESSED = "suppressed"
+    PENDING = "pending"
+    OUT_OF_STOCK = "out_of_stock"
     ERROR = "error"
 
 

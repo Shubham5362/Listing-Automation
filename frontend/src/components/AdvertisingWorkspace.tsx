@@ -400,38 +400,38 @@ export default function AdvertisingWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: CampaignRecord[] = json.items.map((c: any, idx: number) => {
-              const spend = c.spend || 12450;
-              const sales = c.sales || Math.round(spend * 4.8);
-              const acos = spend > 0 && sales > 0 ? parseFloat(((spend / sales) * 100).toFixed(1)) : 19.8;
-              const roas = spend > 0 && sales > 0 ? parseFloat((sales / spend).toFixed(2)) : 5.06;
+              const spend = c.spend !== undefined ? c.spend : (c.ad_spend !== undefined ? c.ad_spend : 12450);
+              const sales = c.sales !== undefined ? c.sales : (c.sales_ad !== undefined ? c.sales_ad : Math.round(spend * 4.8));
+              const acos = c.acos !== undefined ? c.acos : (spend > 0 && sales > 0 ? parseFloat(((spend / sales) * 100).toFixed(1)) : 19.8);
+              const roas = c.roas !== undefined ? c.roas : (spend > 0 && sales > 0 ? parseFloat((sales / spend).toFixed(2)) : 5.06);
 
               return {
                 id: c.id || idx + 1,
-                campaignName: c.name || `Campaign-${c.id || idx + 1}`,
+                campaignName: c.campaign_name || c.name || `Campaign-${c.id || idx + 1}`,
                 productName: c.product_name || 'Stainless Steel Bottle 1L',
-                type: (c.campaign_type || 'Sponsored Products') as any,
+                type: (c.campaign_type || c.type || 'Sponsored Products') as any,
                 marketplace: (c.marketplace || 'amazon').toLowerCase().includes('flipkart') ? 'flipkart' : 'amazon',
                 status: (c.status || 'Active') as any,
-                dailyBudget: c.daily_budget || 1000,
+                dailyBudget: c.daily_budget || c.dailyBudget || 1000,
                 adSpend: spend,
                 salesAd: sales,
                 acos,
                 roas,
                 imageType: c.sku?.includes('TUM') ? 'tumbler' : c.sku?.includes('MUG') ? 'mug' : 'bottle-black',
-                startDate: c.created_at ? c.created_at.split(' ')[0] : 'Nov 1, 2024',
-                endDate: 'No end date',
-                clicks: Math.round(spend / 10),
+                startDate: c.created_at ? c.created_at.split(' ')[0] : (c.start_date || 'Nov 1, 2024'),
+                endDate: c.end_date || 'No end date',
+                clicks: c.clicks || Math.round(spend / 10),
                 clicksGrowth: '12.3%',
-                impressions: Math.round((spend / 10) * 24),
+                impressions: c.impressions || Math.round((spend / 10) * 24),
                 impressionsGrowth: '8.7%',
-                ctr: 4.2,
+                ctr: c.ctr || 4.2,
                 ctrGrowth: '3.1%',
-                cpc: 9.9,
+                cpc: c.cpc || 9.9,
                 cpcGrowth: '-5.2%',
-                ordersAd: Math.round(sales / 500),
+                ordersAd: c.orders || c.orders_ad || Math.round(sales / 500),
                 ordersAdGrowth: '18.6%',
                 salesAdGrowth: '18.3%',
-                topKeywords: [
+                topKeywords: c.top_keywords || [
                   { keyword: 'water bottle', clicks: 650, acos: 18.2 },
                   { keyword: 'steel bottle', clicks: 420, acos: 16.5 },
                   { keyword: 'gym bottle', clicks: 380, acos: 20.1 },

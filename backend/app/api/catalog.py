@@ -7,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.catalog import Listing, Product
 from app.models.core import MarketplaceAccount, SellerAccount, User
@@ -15,15 +16,6 @@ from app.services.auth import get_user_by_token
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 bearer = HTTPBearer(auto_error=False)
-
-
-def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer), db: Session = Depends(get_db)) -> User:
-    if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
-    user = get_user_by_token(db, credentials.credentials)
-    if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session")
-    return user
 
 
 def _seller(db: Session, user: User, seller_account_id: int) -> SellerAccount:
