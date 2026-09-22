@@ -38,7 +38,7 @@ class MarketplaceAccount(Base):
     __tablename__ = "marketplace_accounts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     seller_account_id: Mapped[int] = mapped_column(ForeignKey("seller_accounts.id"), index=True)
-    marketplace: Mapped[str] = mapped_column(String(30), index=True)
+    marketplace: Mapped[str] = mapped_column(String(80), index=True)
     display_name: Mapped[str] = mapped_column(String(200))
     external_account_id: Mapped[str | None] = mapped_column(String(200), index=True)
     credentials_ref: Mapped[str | None] = mapped_column(Text)
