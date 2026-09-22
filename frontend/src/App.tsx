@@ -157,13 +157,13 @@ export default function App() {
         const res = await fetch('/api/v1/actions/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sku: 'ABC123', quantity: 75 }),
+          body: JSON.stringify({ sku: item.data?.sku, quantity: item.data?.quantity }),
         });
         const resJson = await res.json();
-        showToast(resJson.message || 'Purchase order for 75 units of SKU ABC123 created!');
+        showToast(resJson.message || 'Purchase order created successfully.');
         fetchDashboardData();
       } catch {
-        showToast('Purchase order created for 75 units of SKU ABC123');
+        showToast('Unable to create purchase order.');
       }
     } else if (actionType === 'fix_listings') {
       try {
@@ -172,7 +172,7 @@ export default function App() {
         showToast(resJson.message || 'Suppressed listings resolved.');
         fetchDashboardData();
       } catch {
-        showToast('Amazon suppressed listings updated with compliant attributes');
+        showToast('Unable to update suppressed listings.');
       }
     } else if (actionType === 'review_pricing') {
       try {
@@ -181,7 +181,7 @@ export default function App() {
         showToast(resJson.message || 'Dynamic pricing updated.');
         fetchDashboardData();
       } catch {
-        showToast('Dynamic pricing rule applied to 5 items (+4.2% margin)');
+        showToast('Unable to update pricing.');
       }
     } else if (actionType === 'optimize_ads') {
       try {
@@ -190,7 +190,7 @@ export default function App() {
         showToast(resJson.message || 'Advertising campaigns optimized.');
         fetchDashboardData();
       } catch {
-        showToast('Negative keywords added successfully.');
+        showToast('Unable to optimize advertising.');
       }
     }
   };
@@ -205,13 +205,13 @@ export default function App() {
       const res = await fetch('/api/v1/actions/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: 'ABC123', quantity: 75 }),
+        body: JSON.stringify({}),
       });
       const json = await res.json();
-      showToast(json.message || 'Purchase order for 75 units created successfully!');
+      showToast(json.message || 'Purchase order created successfully.');
       fetchDashboardData();
     } catch {
-      showToast('Purchase order for 75 units created!');
+      showToast('Unable to create purchase order.');
     }
   };
 
