@@ -12,6 +12,7 @@ from app.integrations.factory import build_marketplace_client
 from app.models.ai_listing import ListingDraft, ListingDraftStatus
 from app.models.catalog import Listing, ListingStatus, Product
 from app.models.core import Job, Marketplace, MarketplaceAccount
+from app.marketplaces.catalog import get_channel_catalog_item
 from app.services.jobs import enqueue_job
 
 
@@ -27,6 +28,14 @@ def _draft(db: Session, draft_id: int, seller_account_id: int) -> tuple[ListingD
     return row
 
 
+def _assert_live_adapter(account: MarketplaceAccount) -> None:
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise ValueError("Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise ValueError("No live adapter is registered for this marketplace")
+
+
 def _client(account: MarketplaceAccount):
     credentials = decrypt_credentials(account.credentials_ref) if account.credentials_ref else None
     return build_marketplace_client(Marketplace(account.marketplace), credentials=credentials)
@@ -40,6 +49,7 @@ def enqueue_listing_publish(db: Session, *, seller_account_id: int, draft_id: in
         raise ValueError("Product SKU is required")
     if not product_type.strip():
         raise ValueError("product_type is required")
+    _assert_live_adapter(account)
 
     duplicate = db.scalar(
         select(Job).where(
@@ -59,6 +69,7 @@ def execute_listing_publish(db: Session, *, seller_account_id: int, draft_id: in
     draft, product, account = _draft(db, draft_id, seller_account_id)
     if ListingDraftStatus(draft.status) != ListingDraftStatus.APPROVED:
         raise ValueError("Only approved listing drafts can be published")
+    _assert_live_adapter(account)
 
     attributes = json.loads(draft.attributes_json or "{}")
     if not isinstance(attributes, dict):
