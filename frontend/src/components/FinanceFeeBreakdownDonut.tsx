@@ -8,15 +8,47 @@ interface FeeSegment {
   hoverColor: string;
 }
 
-const feeSegments: FeeSegment[] = [
-  { name: 'Referral Fees', percentage: 42.5, amount: '₹1,05,820', color: '#2563eb', hoverColor: '#1d4ed8' },
-  { name: 'FBA Fees', percentage: 28.3, amount: '₹70,450', color: '#10b981', hoverColor: '#059669' },
-  { name: 'Payment Fees', percentage: 12.6, amount: '₹31,420', color: '#f97316', hoverColor: '#ea580c' },
-  { name: 'Advertising', percentage: 8.4, amount: '₹20,890', color: '#0ea5e9', hoverColor: '#0284c7' },
-  { name: 'Other Fees', percentage: 8.2, amount: '₹20,340', color: '#8b5cf6', hoverColor: '#7c3aed' },
-];
-
 export default function FinanceFeeBreakdownDonut() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [feeSegments, setFeeSegments] = useState<FeeSegment[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/finance/reports/summary')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const rows = [
+          ['Marketplace Fees', Number(data.marketplace_fees || 0)],
+          ['Shipping', Number(data.shipping || 0)],
+          ['Advertising', Number(data.advertising || 0)],
+          ['GST', Number(data.gst || 0)],
+          ['Refunds', Number(data.refunds || 0)],
+          ['Other Expenses', Number(data.other_expenses || 0)],
+        ];
+        const total = rows.reduce((sum, [, value]) => sum + value, 0);
+        setFeeSegments(rows.filter(([, value]) => value > 0).map(([name, value], index) => ({
+          name: String(name),
+          percentage: total > 0 ? (Number(value) / total) * 100 : 0,
+          amount: `₹${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`,
+          color: ['#2563eb','#10b981','#f97316','#0ea5e9','#8b5cf6','#64748b'][index % 6],
+          hoverColor: ['#1d4ed8','#059669','#ea580c','#0284c7','#7c3aed','#475569'][index % 6],
+        })));
+      })
+      .catch(() => setFeeSegments([]));
+  }, []);
+
+  const radius = 68;
+  const strokeWidth = 24;
+  const circumference = 2 * Math.PI * radius;
+
+  let accumulatedPercent = 0;
+  const slices = feeSegments.map((seg, idx) => {
+    const strokeDash = (seg.percentage / 100) * circumference;
+    const offset = -(accumulatedPercent / 100) * circumference;
+    accumulatedPercent += seg.percentage;
+    return { ...seg, strokeDash, offset, index: idx };
+  });
+
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const radius = 68;
