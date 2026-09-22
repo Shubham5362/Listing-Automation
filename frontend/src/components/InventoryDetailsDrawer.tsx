@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Copy,
@@ -46,12 +46,21 @@ export default function InventoryDetailsDrawer({
   onUpdatePrice,
   onQuickAction,
 }: InventoryDetailsDrawerProps) {
+  const [movements, setMovements] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'Overview' | 'Stock' | 'Suppliers' | 'Movements' | 'Forecast'>('Overview');
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Quick edit modal states
   const [editingField, setEditingField] = useState<'stock' | 'reorder' | 'maxStock' | 'price' | null>(null);
   const [editInputValue, setEditInputValue] = useState('');
+
+  useEffect(() => {
+    if (!isOpen || !item?.id) return;
+    fetch(`/api/v1/inventory/${item.id}/movements`)
+      .then((res) => res.ok ? res.json() : [])
+      .then((data) => setMovements(Array.isArray(data) ? data : []))
+      .catch(() => setMovements([]));
+  }, [isOpen, item?.id]);
 
   if (!isOpen || !item) return null;
 
@@ -400,7 +409,7 @@ export default function InventoryDetailsDrawer({
               <h3 className="font-bold text-slate-900 text-xs">Warehouse Distribution</h3>
               <div className="space-y-2 pt-1">
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-600">Amazon FBA (BOM1 - Bhiwandi)</span>
+                  <span className="text-slate-600">{item.warehouse || 'Warehouse not specified'}</span>
                   <span className="font-bold text-slate-900">{Math.round(item.currentStock * 0.65)} units</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
@@ -510,7 +519,7 @@ export default function InventoryDetailsDrawer({
               <div className="pt-2 border-t border-indigo-200/60 flex items-center justify-between">
                 <span className="text-indigo-900 font-semibold">Recommended Reorder Date:</span>
                 <span className="font-bold text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200">
-                  Dec 20, 2024
+                  {item.updatedAt || 'Date not available'}
                 </span>
               </div>
             </div>
