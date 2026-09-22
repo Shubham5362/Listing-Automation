@@ -134,7 +134,7 @@ export default function AiSellerCopilotWorkspace({
   const [affectedProducts, setAffectedProducts] = useState<AffectedProduct[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/personal/products')
+    fetch(`${API_BASE}/api/v1/personal/products`, { headers: { Accept: 'application/json' } })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data && data.products) {
