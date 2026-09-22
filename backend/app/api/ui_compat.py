@@ -470,10 +470,7 @@ def automations_workspace(user: User = Depends(get_current_user), db: Session = 
             "batchSize": 0,
             "selectedProductsCount": 0,
             "aiPrompt": "Continuously optimize catalog metadata, inventory triggers, and pricing dynamically based on live market conditions.",
-            "recentLogs": [
-                ,
-                {"time": "10:01:42 AM", "message": f"Verified status: {'active' if r.enabled else 'paused'}", "type": "success" if r.enabled else "warning"},
-            ]
+            "recentLogs": [],
         })
 
     return {"items": items, "count": len(items)}
