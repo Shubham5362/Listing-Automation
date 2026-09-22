@@ -47,6 +47,7 @@ import ControlCenterWorkspace from './components/ControlCenterWorkspace';
 import DiagnosticsWorkspace from './components/DiagnosticsWorkspace';
 import ReportsWorkspace from './components/ReportsWorkspace';
 import SettingsWorkspace from './components/SettingsWorkspace';
+import FinalSellerOSWorkspace from './FinalSellerOSWorkspace';
 import { DashboardResponse, AttentionItem } from './types';
 
 const emptyDashboardState: DashboardResponse = {
@@ -363,6 +364,10 @@ export default function App() {
               selectedMarketplaceFilter={selectedMarketplace}
               onSelectMarketplaceFilter={(m) => setSelectedMarketplace(m)}
             />
+          </div>
+        ) : activeTab === 'AI Seller OS' ? (
+          <div className="flex-1 min-w-0">
+            <FinalSellerOSWorkspace />
           </div>
         ) : activeTab === 'AI Seller Copilot' ? (
           <div className="flex-1 min-w-0">
