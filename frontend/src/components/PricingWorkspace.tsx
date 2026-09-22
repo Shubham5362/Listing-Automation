@@ -184,8 +184,8 @@ export default function PricingWorkspace({
               ...item,
               currentPrice: price,
               priceStatus: 'Optimal',
-              buyBoxWon: true,
-              buyBox: '94%',
+              buyBoxWon: item.buyBoxWon,
+              buyBox: item.buyBox,
             }
           : item
       )

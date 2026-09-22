@@ -408,39 +408,17 @@ export default function InventoryDetailsDrawer({
             <div className="bg-slate-50 rounded-xl border border-slate-200/80 p-3 space-y-2">
               <h3 className="font-bold text-slate-900 text-xs">Warehouse Distribution</h3>
               <div className="space-y-2 pt-1">
-                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-600">{(item as any).warehouse || 'Warehouse not specified'}</span>
-                  <span className="font-bold text-slate-900">{Math.round(item.currentStock * 0.65)} units</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-600">Flipkart FBF (DEL2 - Gurgaon)</span>
-                  <span className="font-bold text-slate-900">{Math.round(item.currentStock * 0.25)} units</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-600">Self-Fulfill Hub (Mumbai)</span>
-                  <span className="font-bold text-slate-900">
-                    {item.currentStock - Math.round(item.currentStock * 0.65) - Math.round(item.currentStock * 0.25)} units
-                  </span>
-                </div>
+                {(item as any).warehouse_breakdown?.length ? (item as any).warehouse_breakdown.map((location: any) => (
+                  <div key={location.id || location.name} className="flex justify-between items-center py-1 border-b border-slate-200/60 last:border-0">
+                    <span className="text-slate-600">{location.name || 'Warehouse'}</span>
+                    <span className="font-bold text-slate-900">{Number(location.quantity ?? 0)} units</span>
+                  </div>
+                )) : <div className="py-2 text-slate-400 text-center">Warehouse-level stock data not available.</div>}
               </div>
             </div>
-
             <div className="bg-white rounded-xl border border-slate-200 p-3 space-y-2">
               <h3 className="font-bold text-slate-900 text-xs">Stock Ageing Analysis</h3>
-              <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200/60">
-                  <div className="text-[10px] text-slate-500 font-medium">0 - 30 days</div>
-                  <div className="text-xs font-bold text-slate-900 mt-0.5">85%</div>
-                </div>
-                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200/60">
-                  <div className="text-[10px] text-slate-500 font-medium">31 - 60 days</div>
-                  <div className="text-xs font-bold text-slate-900 mt-0.5">12%</div>
-                </div>
-                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200/60">
-                  <div className="text-[10px] text-slate-500 font-medium">60+ days</div>
-                  <div className="text-xs font-bold text-emerald-600 mt-0.5">3%</div>
-                </div>
-              </div>
+              <div className="py-2 text-slate-400 text-center">Stock-ageing distribution is not available from the inventory API.</div>
             </div>
           </div>
         )}

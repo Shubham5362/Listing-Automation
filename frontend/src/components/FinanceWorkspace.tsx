@@ -1044,10 +1044,10 @@ export default function FinanceWorkspace({
               </div>
               <div className="space-y-1 min-w-0">
                 <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                  Your net profit is up 22.8% this month!
+                  Financial performance insight
                 </h4>
                 <p className="text-[11px] text-slate-600 leading-normal">
-                  Keep optimizing your ad spend to improve margins further.
+                  Current-period financial metrics are calculated from the loaded finance data.
                 </p>
               </div>
             </div>

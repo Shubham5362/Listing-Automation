@@ -126,7 +126,7 @@ export default function AnalyticsWorkspace({
                 id: String(p.product_id || idx + 1),
                 name: p.title || '',
                 sku: sku,
-                marketplace: idx % 2 === 0 ? 'amazon' : 'flipkart',
+                marketplace: p.marketplace || p.marketplace_key || 'unknown',
                 unitsSold: units,
                 sales: rev,
                 salesDisplay: `₹${Math.round(rev).toLocaleString('en-IN')}`,

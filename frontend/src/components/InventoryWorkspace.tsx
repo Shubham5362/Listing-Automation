@@ -256,14 +256,13 @@ export default function InventoryWorkspace({
       });
     }
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetItem.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newStock })
-      });
-      showToast(`Stock for ${targetItem.sku} updated to ${newStock} units in database`);
+      }); if (!res.ok) throw new Error(`Inventory update failed (${res.status})`); showToast(`Stock for ${targetItem.sku} updated to ${newStock} units`);
     } catch (e) {
-      showToast(`Stock for ${targetItem.sku} updated to ${newStock} units`);
+      showToast(e instanceof Error ? e.message : 'Inventory update failed');
     }
   };
 
@@ -281,14 +280,13 @@ export default function InventoryWorkspace({
       setSelectedItem({ ...targetItem, reorderPoint: newPoint, status: newStatus });
     }
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetItem.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reorder_level: newPoint })
-      });
-      showToast(`Reorder point for ${targetItem.sku} set to ${newPoint} units in database`);
+      }); if (!res.ok) throw new Error(`Reorder point update failed (${res.status})`); showToast(`Reorder point for ${targetItem.sku} set to ${newPoint} units`);
     } catch (e) {
-      showToast(`Reorder point for ${targetItem.sku} set to ${newPoint} units`);
+      showToast(e instanceof Error ? e.message : 'Reorder point update failed');
     }
   };
 
@@ -314,14 +312,13 @@ export default function InventoryWorkspace({
       });
     }
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetItem.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mrp: newPrice })
-      });
-      showToast(`Price for ${targetItem.sku} updated to ₹${newPrice} across marketplaces`);
+      }); if (!res.ok) throw new Error(`Catalog price update failed (${res.status})`); showToast(`Price for ${targetItem.sku} updated to ₹${newPrice}`);
     } catch (e) {
-      showToast(`Price for ${targetItem.sku} updated to ₹${newPrice}`);
+      showToast(e instanceof Error ? e.message : 'Catalog price update failed');
     }
   };
 
@@ -949,7 +946,7 @@ export default function InventoryWorkspace({
             showToast(`${action} initiated for ${it.sku}...`);
             try {
               if (action.toLowerCase().includes('reorder') || action.toLowerCase().includes('po')) {
-                await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
+                const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ sku: it.sku, quantity: Math.max(it.reorderPoint - it.availableStock, 1) })
@@ -1036,7 +1033,7 @@ export default function InventoryWorkspace({
                         setModalAction(null);
                         showToast('Generating reorder plan...');
                         try {
-                          await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
+                          const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })
@@ -1061,7 +1058,7 @@ export default function InventoryWorkspace({
                         setModalAction(null);
                         showToast('Generating reorder plan...');
                         try {
-                          await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
+                          const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })
