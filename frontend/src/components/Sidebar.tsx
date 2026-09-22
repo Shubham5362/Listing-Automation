@@ -30,7 +30,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
   ordersBadge?: number;
   notificationsBadge?: number;
-  marketplaceHealth?: Array<{ name?: string; connected?: boolean; last_sync?: string | null }>;
+  marketplaceHealth?: Array<{ marketplace?: string; connected?: boolean; last_sync?: string | null }>;
 }
 
 export const AmazonLogo = ({ className = 'w-4 h-4' }: { className?: string }) => (
@@ -69,8 +69,8 @@ export default function Sidebar({
   notificationsBadge = 0,
   marketplaceHealth = [],
 }: SidebarProps) {
-  const amazon = marketplaceHealth.find((m) => (m.name || '').toLowerCase().includes('amazon'));
-  const flipkart = marketplaceHealth.find((m) => (m.name || '').toLowerCase().includes('flipkart'));
+  const amazon = marketplaceHealth.find((m) => (m.marketplace || '').toLowerCase().includes('amazon'));
+  const flipkart = marketplaceHealth.find((m) => (m.marketplace || '').toLowerCase().includes('flipkart'));
   const marketplaceStatus = (m?: { connected?: boolean }) => m?.connected ? 'Connected' : 'Setup Required';
   const navSections = [
     {
