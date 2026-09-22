@@ -12,6 +12,7 @@ from app.models.catalog import Listing, Product
 from app.models.core import AuditLog, MarketplaceAccount
 from app.models.inventory import InventoryItem, InventoryMovement
 from app.services.ai_guard import casual_reply, is_casual_message
+from app.services.action_control import create_personal_action
 from app.services.llm_gateway import LLMGateway, LLMUnavailable
 from app.services.personal_marketplace import personal_seller_id
 
@@ -95,6 +96,7 @@ class PersonalAISellerAgentService:
             {"name": "analyze_advertising", "description": "Analyze recent advertising spend, sales, ACOS and ROAS issues.", "parameters": {"type": "object", "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 20}}}},
             {"name": "analyze_pricing", "description": "Find current low-margin pricing opportunities from live listings and product costs.", "parameters": {"type": "object", "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 20}}}},
             {"name": "get_recommendations", "description": "Get prioritized business recommendations from verified live data.", "parameters": {"type": "object", "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 20}}}},
+            {"name": "request_marketplace_action", "description": "Create a backend-enforced marketplace action request. Never claim completion.", "parameters": {"type": "object", "required": ["action", "payload"], "properties": {"action": {"type": "string", "enum": ["marketplace_sync", "marketplace_operation", "listing_update", "listing_publish", "automation_run"]}, "payload": {"type": "object"}, "reason": {"type": "string"}}}},
         ]
 
     def _execute_tool(self, name: str, args: dict[str, Any]) -> dict[str, Any]:
@@ -104,14 +106,18 @@ class PersonalAISellerAgentService:
         if name == "analyze_advertising": return {"campaigns": self.advertising_issues(limit)}
         if name == "analyze_pricing": return {"opportunities": self.pricing_opportunities(limit)}
         if name == "get_recommendations": return {"recommendations": self.recommendations(limit)}
+        if name == "request_marketplace_action":
+            action = str(args.get("action") or "").strip().lower()
+            payload = args.get("payload") if isinstance(args.get("payload"), dict) else {}
+            reason = str(args.get("reason") or "Requested by Seller Hub AI agent")[:1000]
+            request = create_personal_action(self.db, action=action, payload=payload, reason=reason)
+            return {"action_request_id": request.id, "action": request.action, "risk": request.risk, "status": request.status, "job_id": request.job_id, "approval_required": request.status == "pending", "message": "Action request created; no marketplace completion is claimed."}
         raise ValueError(f"Unknown or unauthorized AI tool: {name}")
 
     @staticmethod
     def _infer_intent(message: str) -> str:
-        text = message.lower()
-        if any(w in text for w in ("stock", "inventory", "out of stock", "replenish")): return "inventory"
-        if any(w in text for w in ("ad", "advertising", "campaign", "acos", "roas")): return "advertising"
-        if any(w in text for w in ("price", "pricing", "margin", "competitor")): return "pricing"
+        # LLM/tool planning handles semantic intent. This is only the conservative
+        # no-LLM fallback and never routes configured-LLM tool calls.
         return "business_health"
 
     @staticmethod
