@@ -216,27 +216,18 @@ export default function ReturnsWorkspace({
   const handleBulkStatusChange = async (newStatus: ReturnRecord['status']) => {
     if (selectedRowIds.size === 0) return;
     const idsToUpdate = Array.from(selectedRowIds);
-    setReturnsList((prev) =>
-      prev.map((r) => (selectedRowIds.has(r.id) ? { ...r, status: newStatus } : r))
-    );
-    if (selectedReturn && selectedRowIds.has(selectedReturn.id)) {
-      setSelectedReturn((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-    showNotification(`${selectedRowIds.size} return(s) updated to "${newStatus}".`);
-    setSelectedRowIds(new Set());
-
     try {
-      await Promise.all(
-        idsToUpdate.map((id) =>
-          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-          })
-        )
-      );
+      const responses = await Promise.all(idsToUpdate.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus })
+      })));
+      const failed = responses.find((res) => !res.ok);
+      if (failed) throw new Error(`Return bulk update failed (${failed.status})`);
+      setReturnsList((prev) => prev.map((r) => selectedRowIds.has(r.id) ? { ...r, status: newStatus } : r));
+      setSelectedReturn((prev) => prev && selectedRowIds.has(prev.id) ? { ...prev, status: newStatus } : prev);
+      showNotification(`${idsToUpdate.length} return(s) updated to "${newStatus}".`);
+      setSelectedRowIds(new Set());
     } catch (e) {
-      console.warn(e);
+      showNotification(e instanceof Error ? e.message : 'Return bulk update failed');
     }
   };
 

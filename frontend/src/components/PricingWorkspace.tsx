@@ -177,113 +177,74 @@ export default function PricingWorkspace({
 
   // Pricing actions
   const handleApplySuggestedPrice = async (id: number, price: number) => {
-    setPricingItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              currentPrice: price,
-              priceStatus: 'Optimal',
-              buyBoxWon: item.buyBoxWon,
-              buyBox: item.buyBox,
-            }
-          : item
-      )
-    );
-    if (selectedProduct?.id === id) {
-      setSelectedProduct((prev) =>
-        prev
-          ? {
-              ...prev,
-              currentPrice: price,
-              priceStatus: 'Optimal',
-              buyBoxWon: true,
-              buyBox: '94%',
-            }
-          : null
-      );
-    }
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price })
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price })
       });
-      showToast(`Updated price to ₹${price} across marketplaces`);
-    } catch (e) {
+      if (!res.ok) throw new Error(`Pricing update failed (${res.status})`);
+      const payload = await res.json().catch(() => null);
+      const updated = payload?.item || payload || {};
+      setPricingItems((prev) => prev.map((item) => item.id === id ? {
+        ...item, currentPrice: updated.currentPrice ?? updated.current_price ?? price,
+        priceStatus: updated.priceStatus ?? updated.price_status ?? item.priceStatus,
+        buyBoxWon: updated.buyBoxWon ?? updated.buy_box_won ?? item.buyBoxWon,
+        buyBox: updated.buyBox ?? item.buyBox,
+      } : item));
+      setSelectedProduct((prev) => prev?.id === id ? {
+        ...prev, currentPrice: updated.currentPrice ?? updated.current_price ?? price,
+        priceStatus: updated.priceStatus ?? updated.price_status ?? prev.priceStatus,
+        buyBoxWon: updated.buyBoxWon ?? updated.buy_box_won ?? prev.buyBoxWon,
+        buyBox: updated.buyBox ?? prev.buyBox,
+      } : prev);
       showToast(`Updated price to ₹${price}`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Price update failed');
     }
   };
 
   const handleUpdatePrice = async (id: number, price: number) => {
-    setPricingItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, currentPrice: price } : item))
-    );
-    if (selectedProduct?.id === id) {
-      setSelectedProduct((prev) => (prev ? { ...prev, currentPrice: price } : null));
-    }
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price })
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price })
       });
+      if (!res.ok) throw new Error(`Pricing update failed (${res.status})`);
+      const payload = await res.json().catch(() => null);
+      const updated = payload?.item || payload || {};
+      setPricingItems((prev) => prev.map((item) => item.id === id ? {
+        ...item, currentPrice: updated.currentPrice ?? updated.current_price ?? price,
+        priceStatus: updated.priceStatus ?? updated.price_status ?? item.priceStatus,
+        buyBoxWon: updated.buyBoxWon ?? updated.buy_box_won ?? item.buyBoxWon,
+        buyBox: updated.buyBox ?? item.buyBox,
+      } : item));
+      setSelectedProduct((prev) => prev?.id === id ? {
+        ...prev, currentPrice: updated.currentPrice ?? updated.current_price ?? price,
+        priceStatus: updated.priceStatus ?? updated.price_status ?? prev.priceStatus,
+        buyBoxWon: updated.buyBoxWon ?? updated.buy_box_won ?? prev.buyBoxWon,
+        buyBox: updated.buyBox ?? prev.buyBox,
+      } : prev);
       showToast(`Saved price as ₹${price} in database`);
     } catch (e) {
-      showToast(`Saved price as ₹${price}`);
+      showToast(e instanceof Error ? e.message : 'Price update failed');
     }
   };
 
   const handleBulkApplyAiPricing = async () => {
-    if (selectedIds.length === 0) {
-      // apply to all shown that need repricing
-      setPricingItems((prev) =>
-        prev.map((item) => ({
-          ...item,
-          currentPrice: item.suggestedPrice,
-          priceStatus: 'Optimal',
-          buyBoxWon: true,
-        }))
-      );
-      showToast('Applying AI Suggested Pricing across catalog...');
-      try {
-        await Promise.all(
-          pricingItems.map((item) =>
-            fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${item.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ price: item.suggestedPrice })
-            })
-          )
-        );
-        showToast('Applied AI Suggested Pricing across all catalog items');
-      } catch (e) {
-        showToast('Applied AI Suggested Pricing across catalog');
-      }
-    } else {
-      setPricingItems((prev) =>
-        prev.map((item) =>
-          selectedIds.includes(item.id)
-            ? { ...item, currentPrice: item.suggestedPrice, priceStatus: 'Optimal', buyBoxWon: true }
-            : item
-        )
-      );
-      showToast(`Applying AI Pricing to ${selectedIds.length} selected items...`);
-      try {
-        await Promise.all(
-          selectedIds.map((id) => {
-            const it = pricingItems.find((p) => p.id === id);
-            return fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ price: it?.suggestedPrice ?? 0 })
-            });
-          })
-        );
-        showToast(`Applied AI Pricing to ${selectedIds.length} items in database`);
-      } catch (e) {
-        showToast(`Applied AI Pricing to ${selectedIds.length} selected items`);
-      }
+    const targets = selectedIds.length ? pricingItems.filter((item) => selectedIds.includes(item.id)) : pricingItems;
+    if (!targets.length) {
+      showToast('No pricing records available');
+      return;
+    }
+    showToast(`Applying AI pricing to ${targets.length} item(s)...`);
+    try {
+      const responses = await Promise.all(targets.map((item) => fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${item.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: item.suggestedPrice })
+      })));
+      const failed = responses.find((res) => !res.ok);
+      if (failed) throw new Error(`AI pricing update failed (${failed.status})`);
+      setPricingItems((prev) => prev.map((item) => targets.some((target) => target.id === item.id) ? { ...item, currentPrice: item.suggestedPrice } : item));
+      showToast(`Applied AI pricing to ${targets.length} item(s)`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'AI pricing update failed');
     }
   };
 
