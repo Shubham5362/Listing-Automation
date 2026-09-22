@@ -111,18 +111,18 @@ export default function AiSellerCopilotWorkspace({
 
   // Current active plan state
   const [activePlan, setActivePlan] = useState<PlanData>({
-    id: 'plan-101',
+    id: '',
     title: 'Plan: Catalog Marketplace Sync & Optimization',
     status: 'Ready for Approval',
-    totalProducts: 10,
+    totalProducts: 0,
     marketplaces: ['Amazon', 'Flipkart'],
-    dailyLimit: '20 products per marketplace',
-    estimatedDuration: '1 day',
+    dailyLimit: 'Not configured',
+    estimatedDuration: 'Not available',
     productSelection: 'Active catalog products',
     keywordStrategy: 'Niche-based variation (AI keyword optimization)',
     content: 'AI optimized titles, bullets, description, attributes',
     images: 'Use existing product images (auto-enhance if needed)',
-    schedule: 'Daily at 10:00 AM',
+    schedule: 'Not configured',
     automation: 'Will create and activate automation after your approval',
     nextStep:
       'Please review the plan and confirm to proceed.'
@@ -243,7 +243,7 @@ export default function AiSellerCopilotWorkspace({
           templateId: 'ai-copilot-bulk-listing',
           marketplaces: activePlan.marketplaces,
           totalProducts: activePlan.totalProducts,
-          dailyLimit: 20
+          dailyLimit: activePlan.dailyLimit
         })
       });
     } catch {
