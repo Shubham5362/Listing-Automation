@@ -470,7 +470,7 @@ export default function AiListingStudioWorkspace({
                           type="text"
                           value={productName}
                           onChange={e => setProductName(e.target.value)}
-                          placeholder="e.g. Stainless Steel Water Bottle"
+                          placeholder="Product name"
                           className="w-full px-3 py-2 border border-slate-200/90 rounded-lg text-xs text-slate-800 font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 shadow-2xs"
                         />
                       </div>
@@ -481,7 +481,7 @@ export default function AiListingStudioWorkspace({
                           type="text"
                           value={brand}
                           onChange={e => setBrand(e.target.value)}
-                          placeholder="e.g. HydroMate"
+                          placeholder="Brand name"
                           className="w-full px-3 py-2 border border-slate-200/90 rounded-lg text-xs text-slate-800 font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 shadow-2xs"
                         />
                       </div>
