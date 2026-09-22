@@ -5,7 +5,7 @@ type Report = { seller_account_id: number; generated_at: string; health_score: n
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
-export default function PredictiveBusinessCenter({ sellerAccountId = 1 }: { sellerAccountId?: number }) {
+export default function PredictiveBusinessCenter({ sellerAccountId }: { sellerAccountId: number }) {
   const [report, setReport] = React.useState<Report | null>(null);
   const [mode, setMode] = React.useState('recommend');
   const [message, setMessage] = React.useState('');
