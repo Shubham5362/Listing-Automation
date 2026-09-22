@@ -62,3 +62,11 @@ def test_worker_listing_publish_is_seller_scoped(db_session, monkeypatch):
     with pytest.raises(ValueError, match="not found for seller"):
         BackgroundWorker(worker_id="test-worker").execute_job(db_session, job)
     assert fake.calls == []
+
+
+def test_publish_rejects_catalog_only_marketplace(db_session):
+    seller, _, product, account, draft = _fixture(db_session)
+    account.marketplace = "meesho"
+    db_session.commit()
+    with pytest.raises(ValueError, match="No live adapter"):
+        enqueue_listing_publish(db_session, seller_account_id=seller.id, draft_id=draft.id, product_type="PRODUCT")

@@ -12,6 +12,7 @@ from app.integrations.base import MarketplaceAccountContext
 from app.integrations.factory import build_marketplace_client
 from app.models.catalog import Listing
 from app.models.core import Marketplace, MarketplaceAccount
+from app.marketplaces.catalog import get_channel_catalog_item
 from app.models.listing_update import ListingUpdate, ListingUpdateStatus
 from app.services.jobs import enqueue_job
 
@@ -24,6 +25,14 @@ def _owned_listing(db: Session, listing_id: int, seller_account_id: int) -> tupl
     row = db.execute(select(Listing, MarketplaceAccount).join(MarketplaceAccount, MarketplaceAccount.id == Listing.marketplace_account_id).where(Listing.id == listing_id, MarketplaceAccount.seller_account_id == seller_account_id)).first()
     if row is None: raise ValueError("Listing not found for seller")
     return row
+
+
+def _assert_live_adapter(account: MarketplaceAccount) -> None:
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise ValueError("Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise ValueError("No live adapter is registered for this marketplace")
 
 
 def _json(value: Any) -> str:
@@ -60,7 +69,9 @@ def validate_changes(changes: dict[str, Any]) -> dict[str, Any]:
 
 
 def create_listing_update(db: Session, *, seller_account_id: int, listing_id: int, changes: dict[str, Any], reason: str | None = None) -> ListingUpdate:
-    listing, account = _owned_listing(db, listing_id, seller_account_id); normalized = validate_changes(changes)
+    listing, account = _owned_listing(db, listing_id, seller_account_id)
+    _assert_live_adapter(account)
+    normalized = validate_changes(changes)
     active = db.scalar(select(ListingUpdate).where(ListingUpdate.listing_id == listing.id, ListingUpdate.seller_account_id == seller_account_id, ListingUpdate.status.in_([ListingUpdateStatus.PENDING.value, ListingUpdateStatus.APPROVED.value, ListingUpdateStatus.QUEUED.value])))
     if active: raise ValueError("A listing update is already awaiting approval or execution")
     update = ListingUpdate(listing_id=listing.id, seller_account_id=seller_account_id, marketplace_account_id=account.id, status=ListingUpdateStatus.PENDING.value, reason=(reason or "").strip()[:500] or None, proposed_changes_json=_json(normalized), previous_state_json=_json(snapshot_listing(listing)))
@@ -72,6 +83,7 @@ def approve_listing_update(db: Session, *, seller_account_id: int, update_id: in
     if update is None: raise ValueError("Listing update not found")
     if update.status != ListingUpdateStatus.PENDING.value: raise ValueError("Only pending listing updates can be approved")
     _, account = _owned_listing(db, update.listing_id, seller_account_id)
+    _assert_live_adapter(account)
     job = enqueue_job(db, "listing_update", {"listing_update_id": update.id, "listing_id": update.listing_id, "marketplace_account_id": account.id}, seller_account_id=seller_account_id)
     update.status = ListingUpdateStatus.QUEUED.value; update.approved_at = datetime.utcnow(); update.job_id = job.id
     db.commit(); db.refresh(update); return update
@@ -88,7 +100,9 @@ def execute_listing_update(db: Session, *, seller_account_id: int, update_id: in
     update = db.scalar(select(ListingUpdate).where(ListingUpdate.id == update_id, ListingUpdate.seller_account_id == seller_account_id))
     if update is None: raise ValueError("Listing update not found")
     if update.status not in {ListingUpdateStatus.QUEUED.value, ListingUpdateStatus.APPROVED.value}: raise ValueError("Listing update is not approved for execution")
-    listing, account = _owned_listing(db, update.listing_id, seller_account_id); changes = validate_changes(json.loads(update.proposed_changes_json))
+    listing, account = _owned_listing(db, update.listing_id, seller_account_id)
+    _assert_live_adapter(account)
+    changes = validate_changes(json.loads(update.proposed_changes_json))
     credentials = decrypt_credentials(account.credentials_ref) if account.credentials_ref else None
     client = build_marketplace_client(Marketplace(account.marketplace), credentials=credentials)
     result = client.update_listing(MarketplaceAccountContext(account_id=account.id, marketplace=Marketplace(account.marketplace), external_account_id=account.external_account_id), sku=listing.sku, changes=changes)

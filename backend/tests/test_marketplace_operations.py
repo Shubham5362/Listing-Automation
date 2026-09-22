@@ -68,3 +68,17 @@ def test_marketplace_operation_worker_completes_job(db_session, monkeypatch):
     assert result["verification"]["verified"] is True
     assert fake.calls[0][0:3] == ("price", account.id, "SKU-1")
     assert fake.calls[0][3] == Decimal("299.00")
+
+
+def test_marketplace_operation_rejects_catalog_only_account(db_session):
+    seller = SellerAccount(name="Seller")
+    db_session.add(seller)
+    db_session.flush()
+    account = MarketplaceAccount(seller_account_id=seller.id, marketplace="meesho", display_name="Meesho", external_account_id="SELLER")
+    db_session.add(account)
+    db_session.commit()
+    try:
+        execute_marketplace_operation(db_session, seller_account_id=seller.id, marketplace_account_id=account.id, operation="inventory_push", payload={"sku": "SKU-1", "quantity": 1})
+        assert False, "catalog-only marketplace should not execute live operations"
+    except ValueError as exc:
+        assert str(exc) == "No live adapter is registered for this marketplace"
