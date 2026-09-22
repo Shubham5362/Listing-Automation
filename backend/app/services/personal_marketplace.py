@@ -43,6 +43,9 @@ def _specs(settings: Settings) -> list[MarketplaceBootstrapSpec]:
 def ensure_personal_marketplaces(db: Session, settings: Settings | None = None) -> list[MarketplaceAccount]:
     """Create/update the single personal seller workspace from server-side environment configuration."""
     settings = settings or get_settings()
+    specs = _specs(settings)
+    if not specs:
+        return []
     seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id.is_(None)).order_by(SellerAccount.id.asc()))
     if not seller:
         seller = SellerAccount(name=settings.personal_seller_name, user_id=None, is_active=True)
@@ -52,7 +55,7 @@ def ensure_personal_marketplaces(db: Session, settings: Settings | None = None) 
         seller.name = settings.personal_seller_name
 
     accounts: list[MarketplaceAccount] = []
-    for spec in _specs(settings):
+    for spec in specs:
         account = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.seller_account_id == seller.id, MarketplaceAccount.marketplace == spec.marketplace.value))
         if not account:
             account = MarketplaceAccount(
