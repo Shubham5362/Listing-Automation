@@ -364,18 +364,18 @@ export default function OrderDetailsDrawer({
               <div className="relative">
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
                 <div className="font-bold text-slate-900 text-xs">Package Delivered</div>
-                <div className="text-[11px] text-slate-500">{order.tracking.deliveredOn || 'Dec 17, 2024, 02:18 PM'}</div>
-                <div className="text-[11px] text-slate-600 mt-0.5">Handed directly to resident. Verified OTP.</div>
+                <div className="text-[11px] text-slate-500">{order.tracking.deliveredOn || 'Delivery time not available'}</div>
+                <div className="text-[11px] text-slate-600 mt-0.5">{order.tracking.deliveryNote || 'Delivery confirmation details not available.'}</div>
               </div>
               <div className="relative">
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-blue-500" />
                 <div className="font-bold text-slate-900 text-xs">Out for Delivery</div>
-                <div className="text-[11px] text-slate-500">Dec 17, 2024, 09:30 AM</div>
+                <div className="text-[11px] text-slate-500">{order.tracking.shippedOn || 'Shipment time not available'}</div>
               </div>
               <div className="relative">
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-slate-300" />
                 <div className="font-bold text-slate-900 text-xs">Dispatched from Delhi Hub</div>
-                <div className="text-[11px] text-slate-500">Dec 16, 2024, 04:00 PM</div>
+                <div className="text-[11px] text-slate-500">{order.tracking.pickedUpOn || 'Pickup time not available'}</div>
               </div>
             </div>
           </div>
