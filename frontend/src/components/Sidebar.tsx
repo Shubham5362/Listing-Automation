@@ -30,6 +30,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
   ordersBadge?: number;
   notificationsBadge?: number;
+  marketplaceHealth?: Array<{ name?: string; connected?: boolean; last_sync?: string | null }>;
 }
 
 export const AmazonLogo = ({ className = 'w-4 h-4' }: { className?: string }) => (
@@ -65,8 +66,12 @@ export default function Sidebar({
   mobileOpen = false,
   onCloseMobile,
   ordersBadge = 12,
-  notificationsBadge = 3,
+  notificationsBadge = 0,
+  marketplaceHealth = [],
 }: SidebarProps) {
+  const amazon = marketplaceHealth.find((m) => (m.name || '').toLowerCase().includes('amazon'));
+  const flipkart = marketplaceHealth.find((m) => (m.name || '').toLowerCase().includes('flipkart'));
+  const marketplaceStatus = (m?: { connected?: boolean }) => m?.connected ? 'Connected' : 'Setup Required';
   const navSections = [
     {
       group: 'SELL',
@@ -222,7 +227,7 @@ export default function Sidebar({
                 </div>
                 <div className="flex items-center gap-1 text-emerald-600 font-medium text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Connected
+                  {marketplaceStatus(amazon)}
                 </div>
               </div>
 
@@ -233,14 +238,14 @@ export default function Sidebar({
                 </div>
                 <div className="flex items-center gap-1 text-emerald-600 font-medium text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Connected
+                  {marketplaceStatus(flipkart)}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-1 text-[11px] text-slate-400 pt-1 border-t border-slate-200/50">
               <Clock className="w-3 h-3 text-slate-400" />
-              <span>Last sync: 2 min ago</span>
+              <span>{amazon?.last_sync ? `Last sync: ${new Date(amazon.last_sync).toLocaleString()}` : 'No marketplace sync yet'}</span>
             </div>
           </div>
         </div>
