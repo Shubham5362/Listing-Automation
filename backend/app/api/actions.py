@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
@@ -88,7 +88,7 @@ def reorder_action(payload: QuickReorderPayload, user: User = Depends(get_curren
 def fix_listings_action(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, Any]:
     seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == user.id, SellerAccount.is_active.is_(True)).order_by(SellerAccount.id.asc()))
     if not seller: raise HTTPException(status_code=404, detail="Seller account not found")
-    count = db.scalar(select(__import__('sqlalchemy', fromlist=['func']).func.count(Listing.id)).where(Listing.seller_account_id == seller.id, Listing.status == "suppressed")) or 0
+    count = db.scalar(select(func.count(Listing.id)).where(Listing.seller_account_id == seller.id, Listing.status == "suppressed")) or 0
     return {"success": True, "action": "fix_listings", "message": f"{count} suppressed listings currently require attention.", "resolved_count": 0, "pending_count": int(count)}
 
 
@@ -96,7 +96,7 @@ def fix_listings_action(user: User = Depends(get_current_user), db: Session = De
 def review_pricing_action(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, Any]:
     seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == user.id, SellerAccount.is_active.is_(True)).order_by(SellerAccount.id.asc()))
     if not seller: raise HTTPException(status_code=404, detail="Seller account not found")
-    count = db.scalar(select(__import__('sqlalchemy', fromlist=['func']).func.count(PriceHistory.id)).join(Listing, Listing.id == PriceHistory.listing_id).where(Listing.seller_account_id == seller.id)) or 0
+    count = db.scalar(select(func.count(PriceHistory.id)).join(Listing, Listing.id == PriceHistory.listing_id).where(Listing.seller_account_id == seller.id)) or 0
     return {"success": True, "action": "review_pricing", "message": f"{count} pricing history records are available for review.", "updated_skus": 0, "eligible_records": int(count)}
 
 
@@ -104,7 +104,7 @@ def review_pricing_action(user: User = Depends(get_current_user), db: Session = 
 def optimize_ads_action(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, Any]:
     seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == user.id, SellerAccount.is_active.is_(True)).order_by(SellerAccount.id.asc()))
     if not seller: raise HTTPException(status_code=404, detail="Seller account not found")
-    count = db.scalar(select(__import__('sqlalchemy', fromlist=['func']).func.count(AdvertisingCampaign.id)).where(AdvertisingCampaign.seller_account_id == seller.id)) or 0
+    count = db.scalar(select(func.count(AdvertisingCampaign.id)).where(AdvertisingCampaign.seller_account_id == seller.id)) or 0
     return {"success": True, "action": "optimize_ads", "message": f"{count} advertising campaigns are available for optimization.", "wasted_spend_saved": 0, "campaign_count": int(count)}
 
 
