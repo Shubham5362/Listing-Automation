@@ -402,7 +402,7 @@ export default function ProductDetailsDrawer({
               <div className="text-xs text-slate-500 space-y-1">
                 <div>ASIN: <span className="font-mono text-slate-800">{product.asin || '—'}</span></div>
                 <div>Listed Price: <span className="font-semibold text-slate-900">₹{product.price}</span></div>
-                <div>Buy Box Share: <span className="font-semibold text-emerald-600">94%</span></div>
+                <div>Buy Box Share: <span className="font-semibold text-emerald-600">{(product as any).buyBoxShare != null ? String((product as any).buyBoxShare) + '%' : 'Not available'}</span></div>
               </div>
             </div>
 
