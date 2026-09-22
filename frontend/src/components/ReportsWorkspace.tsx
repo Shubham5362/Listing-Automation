@@ -1247,7 +1247,7 @@ export default function ReportsWorkspace({
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-slate-800">Sales opportunity</div>
                   <div className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                    Home & Kitchen category is growing 28%. Consider adding more products.
+                    No category growth data available yet.
                   </div>
                 </div>
               </div>
