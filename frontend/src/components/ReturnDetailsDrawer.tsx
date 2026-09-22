@@ -43,14 +43,7 @@ export default function ReturnDetailsDrawer({
   const [copiedReturnId, setCopiedReturnId] = useState(false);
   const [copiedOrderId, setCopiedOrderId] = useState(false);
   const [isLabelGenerated, setIsLabelGenerated] = useState(false);
-  const [notesList, setNotesList] = useState<Array<{ id: string; author: string; date: string; text: string }>>([
-    {
-      id: 'n-1',
-      author: 'Shubham',
-      date: 'Dec 15, 2024, 11:15 AM',
-      text: 'Customer uploaded photos showing dent on bottle cap. Courier partner assigned for reverse pickup.',
-    },
-  ]);
+  const [notesList, setNotesList] = useState<any[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
 
