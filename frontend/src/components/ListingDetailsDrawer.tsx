@@ -273,12 +273,12 @@ export default function ListingDetailsDrawer({
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Created On</span>
-                  <span className="font-medium text-slate-700">{listing.createdOn || 'Aug 12, 2024'}</span>
+                  <span className="font-medium text-slate-700">{listing.createdOn || '—'}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Last Updated</span>
-                  <span className="font-medium text-slate-700">{listing.lastUpdated || 'Dec 15, 2024'}</span>
+                  <span className="font-medium text-slate-700">{listing.lastUpdated || '—'}</span>
                 </div>
               </div>
             </div>
@@ -627,7 +627,7 @@ export default function ListingDetailsDrawer({
                 <div>Latest listing data available from the connected source.</div>
               </div>
               <div className="border-l-2 border-slate-200 pl-3 py-1">
-                <div className="font-semibold text-slate-800">Dec 10, 2024 • 09:10</div>
+                <div className="font-semibold text-slate-800">—</div>
                 <div>Keywords and backend search terms refreshed by AI Listing Studio</div>
               </div>
             </div>
