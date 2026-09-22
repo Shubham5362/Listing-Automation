@@ -546,12 +546,7 @@ export default function PricingDetailsDrawer({
               </div>
 
               <div className="space-y-2.5">
-                {[
-                  { date: 'Today, 04:30 AM', event: 'AI Auto-Repriced', oldPrice: 519, newPrice: 499, reason: 'Matched Buy Box winner' },
-                  { date: 'Dec 12, 2024', event: 'Manual Price Update', oldPrice: 549, newPrice: 519, reason: 'Festive promotion' },
-                  { date: 'Nov 28, 2024', event: 'Competitor Undercut', oldPrice: 499, newPrice: 549, reason: 'Stock running low protection' },
-                  { date: 'Nov 15, 2024', event: 'Price Rule Triggered', oldPrice: 479, newPrice: 499, reason: 'Margin threshold floor' },
-                ].map((log, idx) => (
+                {(((item as any).priceHistory || []) as any[]).map((log: any, idx: number) => (
                   <div key={idx} className="p-2.5 rounded-lg border border-slate-200 bg-white space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-900">{log.event}</span>
