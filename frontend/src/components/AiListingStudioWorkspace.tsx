@@ -1404,15 +1404,15 @@ export default function AiListingStudioWorkspace({
             <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
               <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
                 <strong className="text-indigo-900 block mb-1">1. High Conversion Titles:</strong>
-                Combine Brand + Product Line + Primary Differentiator (1000ml / Double Wall) + Target Use Case. Keep within 150-180 characters.
+                Combine the product name, key differentiator, target use case, and relevant search terms. Keep the title within the marketplace character limit.
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 <strong className="text-slate-900 block mb-1">2. 5 Bullet Feature Pillars:</strong>
-                1. Material Grade (304 Steel) • 2. Thermal Performance (12H Hot / 24H Cold) • 3. Leak-proof Seal • 4. Ergonomics • 5. Warranty & Food Safety.
+                1. Product materials • 2. Core performance • 3. Key features • 4. Usability • 5. Compliance and warranty details.
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 <strong className="text-slate-900 block mb-1">3. Automated Channel Synchronization:</strong>
-                Publishing to Amazon India automatically triggers listing feeds to Flipkart, Meesho, and Myntra with channel-specific pricing rules.
+                Publishing sends the generated listing to the marketplaces connected to the seller account, subject to their configured channel rules.
               </div>
             </div>
 
@@ -1448,7 +1448,7 @@ export default function AiListingStudioWorkspace({
                   <Sparkles className="w-6 h-6 fill-white text-white" />
                 </div>
                 <div className="text-xs text-slate-300 font-medium mt-3">
-                  Watch: Creating 95+ Score Product Listings in 60 Seconds
+                  Walkthrough: Creating and publishing a product listing
                 </div>
               </div>
               <p className="text-xs text-slate-500">
@@ -1469,7 +1469,7 @@ export default function AiListingStudioWorkspace({
 }
 
 // -------------------------------------------------------------
-// Helper Graphical Illustrations for Stainless Steel Bottle
+// Helper Graphical Illustrations
 // -------------------------------------------------------------
 function BottleIllustration({ className = "w-24 h-44", color = "Silver" }: { className?: string; color?: string }) {
   const capId = useId();
