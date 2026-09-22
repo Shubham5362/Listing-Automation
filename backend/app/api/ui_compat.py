@@ -511,17 +511,9 @@ def notifications_workspace(user: User = Depends(get_current_user), db: Session 
 def diagnostics_overview(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     sellers = _seller_ids(db, user)
 
-    # Calculate real health metrics
-    health_checks = [
-        {"id": "hc-1", "name": "Web Application", "type": "app", "status": "Healthy", "responseTime": "45ms", "responseTimeMs": 45, "lastChecked": "Just now"},
-        {"id": "hc-2", "name": "PostgreSQL Database", "type": "database", "status": "Healthy", "responseTime": "12ms", "responseTimeMs": 12, "lastChecked": "Just now"},
-        {"id": "hc-3", "name": "Amazon SP-API", "type": "marketplace", "marketplace": "Amazon", "status": "Healthy", "responseTime": "180ms", "responseTimeMs": 180, "lastChecked": "1m ago"},
-        {"id": "hc-4", "name": "Flipkart Seller API", "type": "marketplace", "marketplace": "Flipkart", "status": "Healthy", "responseTime": "210ms", "responseTimeMs": 210, "lastChecked": "2m ago"},
-        {"id": "hc-5", "name": "Automation Engine", "type": "engine", "status": "Healthy", "responseTime": "85ms", "responseTimeMs": 85, "lastChecked": "Just now"},
-        {"id": "hc-6", "name": "Inventory Sync Service", "type": "storage", "status": "Healthy", "responseTime": "95ms", "responseTimeMs": 95, "lastChecked": "Just now"},
-        {"id": "hc-7", "name": "Notification Dispatcher", "type": "email", "status": "Healthy", "responseTime": "140ms", "responseTimeMs": 140, "lastChecked": "Just now"},
-    ]
-
+    # Health checks are populated only by real diagnostics integrations.
+    # Do not fabricate service status/latency for a fresh account.
+    health_checks = []
     critical_issues = []
     # Check for real suppressed listings
     suppressed = list(db.scalars(select(Listing).where(Listing.status == "suppressed")).all()) if sellers else []
