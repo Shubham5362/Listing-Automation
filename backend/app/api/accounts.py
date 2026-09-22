@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.security import CredentialEncryptionError, encrypt_credentials
 from app.db.session import get_db
-from app.models.core import MarketplaceAccount, SellerAccount, User\nfrom app.marketplaces.catalog import get_channel_catalog_item
+from app.models.core import MarketplaceAccount, SellerAccount, User
+from app.marketplaces.catalog import get_channel_catalog_item
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
