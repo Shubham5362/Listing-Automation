@@ -367,8 +367,8 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
     setFullName(user?.name || '');
     setEmail(user?.email || '');
     setPhoneNumber(data.profile?.phone || data.business?.phone || '');
-    setRole('Seller Pro');
-    setBusinessName('Shubham Retail Private Limited');
+    setRole('');
+    setBusinessName('');
     setBusinessType('Private Limited');
     setGstNumber('');
     setPanNumber('');
