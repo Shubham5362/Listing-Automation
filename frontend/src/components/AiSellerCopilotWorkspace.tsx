@@ -39,6 +39,8 @@ import {
 } from 'lucide-react';
 import { AmazonBadgeIcon, FlipkartBadgeIcon } from './AutomationsWorkspace';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
 interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -186,15 +188,27 @@ export default function AiSellerCopilotWorkspace({
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/v1/personal/ai/seller-agent/chat', {
+      const response = await fetch(`${API_BASE}/api/v1/personal/ai/seller-agent/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           message: textToSend,
-          conversation: messages.slice(-5)
+          conversation: messages.slice(-5).map(message => ({
+            role: message.sender === 'assistant' ? 'assistant' : 'user',
+            content: message.text
+          }))
         })
       });
-      const data = await response.json();
+      const raw = await response.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(`AI endpoint returned a non-JSON response (HTTP ${response.status}). Check VITE_API_BASE_URL.`);
+      }
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || `AI request failed (HTTP ${response.status})`);
+      }
 
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now() + 1}`,
@@ -208,7 +222,9 @@ export default function AiSellerCopilotWorkspace({
         id: `msg-${Date.now() + 1}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: 'Seller Hub agent is temporarily unavailable. No action was executed.'
+        text: error instanceof Error
+          ? `Seller Hub agent unavailable: ${error.message}. No action was executed.`
+          : 'Seller Hub agent is temporarily unavailable. No action was executed.'
       };
       setMessages(prev => [...prev, fallbackMessage]);
       console.error('Seller agent request failed:', error);
@@ -396,7 +412,6 @@ export default function AiSellerCopilotWorkspace({
               </div>
 
               <div className="flex items-end gap-2 pb-3">
-                <button type="button" onClick={() => setIsUploadModalOpen(true)} title="Attach" className="w-10 h-10 shrink-0 rounded-full text-slate-500 hover:bg-slate-100 flex items-center justify-center"><Paperclip className="w-5 h-5" /></button>
                 <div className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 flex items-end gap-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
                   <textarea
                     value={inputText}
