@@ -51,14 +51,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cd frontend 2>/dev/null || true
-          if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+          if [[ -f "$GITHUB_WORKSPACE/frontend/package-lock.json" ]]; then
+            cd "$GITHUB_WORKSPACE/frontend"
+            npm install --no-audit --no-fund
+          elif [[ -f "$GITHUB_WORKSPACE/package-lock.json" ]]; then
+            cd "$GITHUB_WORKSPACE"
+            npm install --no-audit --no-fund
+          else
+            echo "No package-lock.json found for the detected Node project." >&2
+            exit 1
+          fi
       - name: Node validation
         if: steps.detect.outputs.node == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          cd frontend 2>/dev/null || true
+          if [[ -f "$GITHUB_WORKSPACE/frontend/package.json" ]]; then
+            cd "$GITHUB_WORKSPACE/frontend"
+          else
+            cd "$GITHUB_WORKSPACE"
+          fi
           if node -e "const p=require('./package.json'); process.exit(p.scripts?.lint ? 0 : 1)"; then npm run lint; fi
           if node -e "const p=require('./package.json'); process.exit(p.scripts?.test ? 0 : 1)"; then npm run test --if-present; fi
           if node -e "const p=require('./package.json'); process.exit(p.scripts?.build ? 0 : 1)"; then npm run build; fi

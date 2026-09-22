@@ -71,46 +71,46 @@ def pricing_workspace(user: User = Depends(get_current_user), db: Session = Depe
         prod = db.scalar(select(Product).where(Product.id == l.product_id))
         rule = db.scalar(select(PricingRule).where(PricingRule.listing_id == l.id))
         mkt_acc = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == l.marketplace_account_id))
-        mkt = (mkt_acc.marketplace if mkt_acc else "amazon").lower()
+        mkt = (mkt_acc.marketplace if mkt_acc else "").lower()
 
         bb = db.scalar(select(BuyBoxSnapshot).where(BuyBoxSnapshot.listing_id == l.id).order_by(BuyBoxSnapshot.id.desc()))
         bb_won = bb.won if bb else (l.status == "active")
 
-        current_price = float(l.price) if l.price else (float(prod.mrp) if prod and prod.mrp else 499.0)
-        cost_price = float(prod.cost_price) if prod and prod.cost_price else 250.0
-        min_p = float(rule.min_price) if rule and rule.min_price else round(cost_price * 1.15)
-        max_p = float(rule.max_price) if rule and rule.max_price else round(current_price * 1.4)
+        current_price = float(l.price) if l.price is not None else (float(prod.mrp) if prod and prod.mrp is not None else 0.0)
+        cost_price = float(prod.cost_price) if prod and prod.cost_price is not None else 0.0
+        min_p = float(rule.min_price) if rule and rule.min_price is not None else 0.0
+        max_p = float(rule.max_price) if rule and rule.max_price is not None else 0.0
         suggested = round(current_price * 0.94) if not bb_won else current_price
-        margin_pct = round(((current_price - cost_price) / current_price) * 100) if current_price > 0 else 25
+        margin_pct = round(((current_price - cost_price) / current_price) * 100) if current_price > 0 else 0
         margin_amt = round(current_price - cost_price)
 
-        sku = l.sku or (prod.sku if prod else f"SKU-{l.id}")
+        sku = l.sku or (prod.sku if prod else "")
         img_type = _sku_image_type(sku)
 
         items.append({
             "id": l.id,
-            "name": l.title or (prod.title if prod else f"Product {l.id}"),
-            "category": prod.category if prod else "Home & Kitchen",
+            "name": l.title or (prod.title if prod else ""),
+            "category": prod.category if prod else "",
             "sku": sku,
-            "asin": l.external_listing_id or (prod.attributes_json.get("asin") if prod and prod.attributes_json else f"B0{l.id}A8Y7Z"),
-            "marketplaces": [mkt, "flipkart" if mkt == "amazon" else "amazon"],
+            "asin": l.external_listing_id or (prod.attributes_json.get("asin") if prod and prod.attributes_json else ""),
+            "marketplaces": [mkt] if mkt else [],
             "currentPrice": current_price,
             "suggestedPrice": suggested,
             "hasAiSuggested": not bb_won,
             "priceStatus": "Optimal" if bb_won else "Reprice",
-            "buyBox": "92%" if bb_won else "No",
+            "buyBox": "" if bb_won else "No",
             "buyBoxWon": bb_won,
-            "estProfitLift": 12 if not bb_won else 8,
+            "estProfitLift": 0,
             "minPrice": min_p,
             "maxPrice": max_p,
             "costPrice": cost_price,
             "marginPercent": margin_pct,
             "marginAmount": margin_amt,
-            "marketPriceAvg": round(current_price * 0.96),
-            "priceRank": "1 of 8" if bb_won else "3 of 6",
-            "lowestCompetitorPrice": round(current_price * 0.93),
-            "totalCompetitors": 6,
-            "aiInsightText": f"Currently winning Buy Box at ₹{current_price}." if bb_won else f"Lost Buy Box. Repricing to ₹{suggested} will reclaim Buy Box within 4 hours.",
+            "marketPriceAvg": 0,
+            "priceRank": "",
+            "lowestCompetitorPrice": 0,
+            "totalCompetitors": 0,
+            "aiInsightText": "",
             "imageType": img_type,
         })
 
@@ -129,25 +129,25 @@ def advertising_workspace(user: User = Depends(get_current_user), db: Session = 
     items = []
     for c in campaigns:
         mkt_acc = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == c.marketplace_account_id))
-        mkt = (mkt_acc.marketplace if mkt_acc else "amazon").lower()
+        mkt = (mkt_acc.marketplace if mkt_acc else "").lower()
         perf = db.scalar(select(AdvertisingPerformance).where(AdvertisingPerformance.campaign_id == c.id).order_by(AdvertisingPerformance.id.desc()))
 
-        budget = float(c.daily_budget) if c.daily_budget else 1500.0
-        spend = float(perf.spend) if perf and perf.spend else round(budget * 0.85)
-        sales = float(perf.sales) if perf and perf.sales else round(spend * 5.2)
-        clicks = perf.clicks if perf and perf.clicks else max(int(spend / 12), 1)
-        impr = perf.impressions if perf and perf.impressions else clicks * 25
-        orders = perf.orders if perf and perf.orders else max(int(clicks * 0.08), 1)
-        acos = round((spend / sales) * 100, 1) if sales > 0 else 18.2
-        roas = round(sales / spend, 2) if spend > 0 else 5.5
-        ctr = round((clicks / impr) * 100, 2) if impr > 0 else 4.2
-        cpc = round(spend / clicks, 2) if clicks > 0 else 9.9
+        budget = float(c.daily_budget) if c.daily_budget is not None else 0.0
+        spend = float(perf.spend) if perf and perf.spend is not None else 0.0
+        sales = float(perf.sales) if perf and perf.sales is not None else 0.0
+        clicks = perf.clicks if perf and perf.clicks is not None else 0
+        impr = perf.impressions if perf and perf.impressions is not None else 0
+        orders = perf.orders if perf and perf.orders is not None else 0
+        acos = round((spend / sales) * 100, 1) if sales > 0 else 0
+        roas = round(sales / spend, 2) if spend > 0 else 0
+        ctr = round((clicks / impr) * 100, 2) if impr > 0 else 0
+        cpc = round(spend / clicks, 2) if clicks > 0 else 0
 
         items.append({
             "id": c.id,
             "campaignName": c.name,
-            "productName": "Stainless Steel Bottle 1L" if "Water" in c.name or "Steel" in c.name else "AquaPure Hydration Range",
-            "type": "Sponsored Products" if "Brand" not in c.name else "Sponsored Brands",
+            "productName": "",
+            "type": "",
             "marketplace": mkt,
             "status": c.status.capitalize(),
             "dailyBudget": budget,
@@ -161,10 +161,7 @@ def advertising_workspace(user: User = Depends(get_current_user), db: Session = 
             "cpc": cpc,
             "ordersAd": orders,
             "imageType": "bottle-black",
-            "topKeywords": [
-                {"keyword": "water bottle 1l", "clicks": int(clicks * 0.4), "acos": acos},
-                {"keyword": "insulated bottle", "clicks": int(clicks * 0.3), "acos": max(acos - 2.1, 10.0)},
-            ]
+            "topKeywords": []
         })
 
     return {"items": items, "count": len(items)}
@@ -189,20 +186,20 @@ def listings_workspace(user: User = Depends(get_current_user), db: Session = Dep
         stock = inv.quantity if inv else l.inventory_quantity
         stock_status = "Out of Stock" if stock == 0 else ("Low Stock" if stock <= 15 else "In Stock")
         mkt_acc = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == l.marketplace_account_id))
-        mkt = (mkt_acc.marketplace if mkt_acc else "amazon").lower()
-        price = float(l.price) if l.price else 499.0
-        mrp = float(prod.mrp) if prod and prod.mrp else 799.0
+        mkt = (mkt_acc.marketplace if mkt_acc else "").lower()
+        price = float(l.price) if l.price is not None else 0.0
+        mrp = float(prod.mrp) if prod and prod.mrp is not None else 0.0
         status_str = "Active" if l.status == "active" else ("Suppressed" if l.status == "suppressed" else "Inactive")
 
-        sku = l.sku or (prod.sku if prod else f"SKU-{l.id}")
+        sku = l.sku or (prod.sku if prod else "")
         img_type = _sku_image_type(sku)
 
         items.append({
             "id": l.id,
-            "name": l.title or (prod.title if prod else f"Product Listing #{l.id}"),
-            "category": prod.category if prod else "Home & Kitchen",
+            "name": l.title or (prod.title if prod else ""),
+            "category": prod.category if prod else "",
             "sku": sku,
-            "asin": l.external_listing_id or f"B0{l.id}A8Y7Z",
+            "asin": l.external_listing_id or "",
             "marketplace": mkt,
             "price": price,
             "mrp": mrp,
@@ -210,13 +207,13 @@ def listings_workspace(user: User = Depends(get_current_user), db: Session = Dep
             "stock": stock,
             "stockStatus": stock_status,
             "status": status_str,
-            "issuesCount": 2 if l.status == "suppressed" else 0,
-            "listingQuality": 68 if l.status == "suppressed" else 94,
+            "issuesCount": 0,
+            "listingQuality": 0,
             "buyBoxWon": l.status == "active",
-            "buyBoxRate": 92 if l.status == "active" else 0,
-            "lastUpdated": l.updated_at.strftime("%b %d, %Y") if l.updated_at else "Dec 15, 2024",
+            "buyBoxRate": 0,
+            "lastUpdated": l.updated_at.strftime("%b %d, %Y") if l.updated_at else "",
             "imageType": img_type,
-            "fulfilledBy": "Amazon (FBA)" if mkt == "amazon" else "Flipkart (FBF)"
+            "fulfilledBy": ""
         })
 
     return {"items": items, "count": len(items)}
@@ -237,47 +234,47 @@ def catalog_workspace(user: User = Depends(get_current_user), db: Session = Depe
     items = []
     for p in products:
         inv = db.scalar(select(InventoryItem).where(InventoryItem.product_id == p.id, InventoryItem.seller_account_id.in_(sellers)))
-        stock = inv.quantity if inv else 50
+        stock = inv.quantity if inv else 0
         resv = inv.reserved_quantity if inv else 0
         avail = max(stock - resv, 0)
-        price = float(p.mrp) if p.mrp else 499.0
-        cost = float(p.cost_price) if p.cost_price else 250.0
-        margin = round(((price - cost) / price) * 100) if price > 0 else 25
+        price = float(p.mrp) if p.mrp is not None else 0.0
+        cost = float(p.cost_price) if p.cost_price is not None else 0.0
+        margin = round(((price - cost) / price) * 100) if price > 0 else 0
         stock_status = "Out of Stock" if stock == 0 else ("Low Stock" if stock <= 15 else "In Stock")
 
-        sku = p.sku or f"PRD-{p.id}"
+        sku = p.sku or ""
         img_type = _sku_image_type(sku)
 
         items.append({
             "id": p.id,
             "name": p.title,
-            "category": p.category or "Home & Kitchen",
-            "brand": p.brand or "AquaPure",
+            "category": p.category or "",
+            "brand": p.brand or "",
             "sku": sku,
-            "hsnCode": p.hsn_code or "7323",
-            "weight": "350 g",
-            "dimensions": "28 x 7 x 7 cm",
-            "createdOn": p.created_at.strftime("%b %d, %Y") if p.created_at else "Aug 12, 2024",
-            "lastUpdated": p.updated_at.strftime("%b %d, %Y") if p.updated_at else "Dec 15, 2024",
+            "hsnCode": p.hsn_code or "",
+            "weight": "",
+            "dimensions": "",
+            "createdOn": p.created_at.strftime("%b %d, %Y") if p.created_at else "",
+            "lastUpdated": p.updated_at.strftime("%b %d, %Y") if p.updated_at else "",
             "imageType": img_type,
-            "marketplaces": ["amazon", "flipkart"],
+            "marketplaces": [],
             "stock": stock,
             "availableStock": avail,
             "reservedStock": resv,
-            "inboundStock": 50,
+            "inboundStock": 0,
             "stockStatus": stock_status,
             "price": price,
-            "revenue30d": round(price * max(stock, 10)),
+            "revenue30d": 0,
             "margin": margin,
             "listingStatus": "Active" if p.is_active else "Inactive",
-            "asin": f"B0{p.id}X8Y7Z",
-            "flipkartFsn": f"FSN{p.id}99XYZ",
+            "asin": "",
+            "flipkartFsn": "",
             "growthMetrics": {
-                "revenueGrowth": 14.2,
-                "unitsSold": max(stock, 10),
-                "unitsSoldGrowth": 12.8,
+                "revenueGrowth": 0,
+                "unitsSold": 0,
+                "unitsSoldGrowth": 0,
                 "averagePrice": price,
-                "marginGrowth": 2.1
+                "marginGrowth": 0
             }
         })
 
@@ -326,7 +323,7 @@ def finance_workspace(user: User = Depends(get_current_user), db: Session = Depe
             "occurred_at": r.occurred_at.isoformat() if r.occurred_at else None,
             "created_at": r.occurred_at.strftime("%b %d, %Y, %I:%M %p") if r.occurred_at else None,
             "description": r.description or f"Marketplace {tx_type}",
-            "marketplace": "Flipkart" if "flipkart" in (r.description or "").lower() else "Amazon",
+            "marketplace": "Flipkart" if "flipkart" in (r.description or "").lower() else "",
             "order_number": r.description.split("#")[-1].strip() if r.description and "#" in r.description else "408-1234567",
         })
 
@@ -359,7 +356,7 @@ def returns_workspace(user: User = Depends(get_current_user), db: Session = Depe
         order_item = db.scalar(select(OrderItem).where(OrderItem.order_id == r.order_id))
         prod = db.scalar(select(Product).where(Product.id == order_item.product_id)) if order_item else None
         mkt_acc = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == order.marketplace_account_id)) if order else None
-        mkt = (mkt_acc.marketplace if mkt_acc else "Amazon").capitalize()
+        mkt = (mkt_acc.marketplace if mkt_acc else "").capitalize()
 
         sku = prod.sku if prod else "SB-1L-001"
         img_type = _sku_image_type(sku)
@@ -371,23 +368,23 @@ def returns_workspace(user: User = Depends(get_current_user), db: Session = Depe
             "orderDisplayId": order.external_order_id if order else "408-1234567",
             "marketplace": mkt,
             "product": {
-                "name": prod.title if prod else (order_item.title if order_item else "Stainless Steel Bottle 1L"),
+                "name": prod.title if prod else (order_item.title if order_item else ""),
                 "sku": sku,
                 "imageType": img_type,
-                "price": float(r.refund_amount) if r.refund_amount else 499.0
+                "price": float(r.refund_amount) if r.refund_amount is not None else 0.0
             },
             "customer": {
-                "name": order.customer_name if order and order.customer_name else "Verified Buyer",
-                "email": order.customer_email if order and order.customer_email else "buyer@example.com",
-                "phone": order.customer_phone if order and order.customer_phone else "+91 98765 43210",
-                "initials": "".join([n[0] for n in ((order.customer_name if order and order.customer_name else "Verified Buyer")).split()[:2]])
+                "name": order.customer_name if order and order.customer_name else "",
+                "email": order.customer_email if order and order.customer_email else "",
+                "phone": order.customer_phone if order and order.customer_phone else "",
+                "initials": "".join([n[0] for n in order.customer_name.split()[:2]]) if order and order.customer_name else ""
             },
-            "reason": r.reason or "Item not as described",
-            "status": r.status.capitalize() if r.status else "Pending",
-            "requestedOn": r.requested_at.strftime("%b %d, %Y") if r.requested_at else "Dec 15, 2024",
-            "requestedOnFull": r.requested_at.strftime("%b %d, %Y, %I:%M %p") if r.requested_at else "Dec 15, 2024, 10:24 AM",
+            "reason": r.reason or "",
+            "status": r.status.capitalize() if r.status else "",
+            "requestedOn": r.requested_at.strftime("%b %d, %Y") if r.requested_at else "",
+            "requestedOnFull": r.requested_at.strftime("%b %d, %Y, %I:%M %p") if r.requested_at else "",
             "returnWindow": "Within policy",
-            "refundAmount": float(r.refund_amount) if r.refund_amount else 499.0
+            "refundAmount": float(r.refund_amount) if r.refund_amount is not None else 0.0
         })
 
     return {"items": items, "count": len(items)}
@@ -456,16 +453,16 @@ def automations_workspace(user: User = Depends(get_current_user), db: Session = 
             "name": r.name,
             "description": r.description or f"Automated {r.name.lower()}",
             "type": "Product Listing" if "Listing" in r.name else ("Price Update" if "Price" in r.name or "Buy Box" in r.name else ("Alert" if "Stock" in r.name or "Sentinel" in r.name else "Workflow")),
-            "marketplaces": ["amazon", "flipkart"],
+            "marketplaces": [],
             "additionalMarketplacesCount": 0,
             "scheduleType": "Daily" if trigger_type == "Schedule" else "Real-time",
             "scheduleText": schedule_text,
             "scheduleSubText": sub_text,
             "progress": {"current": 25, "total": 50, "percent": 50} if r.enabled else None,
             "status": status_str,
-            "lastRunDate": r.last_run_at.strftime("%b %d, %Y") if r.last_run_at else "Today",
-            "lastRunTime": r.last_run_at.strftime("%I:%M %p") if r.last_run_at else "10:00 AM",
-            "nextRunDate": "Tomorrow" if r.enabled else "-",
+            "lastRunDate": r.last_run_at.strftime("%b %d, %Y") if r.last_run_at else "",
+            "lastRunTime": r.last_run_at.strftime("%I:%M %p") if r.last_run_at else "",
+            "nextRunDate": "" if not r.enabled else "",
             "nextRunTime": "10:00 AM" if r.enabled else "-",
             "createdBy": user.name or "Shubham",
             "enabled": r.enabled,
@@ -579,22 +576,22 @@ def list_products(user: User = Depends(get_current_user), db: Session = Depends(
     items = []
     for p in products:
         inv = db.scalar(select(InventoryItem).where(InventoryItem.product_id == p.id, InventoryItem.seller_account_id.in_(sellers)))
-        stock = inv.quantity if inv else 50
+        stock = inv.quantity if inv else 0
         items.append({
             "id": p.id,
             "sku": p.sku,
             "title": p.title,
             "name": p.title,
-            "brand": p.brand or "AquaPure",
-            "category": p.category or "General",
-            "price": float(p.mrp) if p.mrp else 499.0,
-            "mrp": float(p.mrp) if p.mrp else 499.0,
-            "cost_price": float(p.cost_price) if p.cost_price else 250.0,
+            "brand": p.brand or "",
+            "category": p.category or "",
+            "price": float(p.mrp) if p.mrp is not None else 0.0,
+            "mrp": float(p.mrp) if p.mrp is not None else 0.0,
+            "cost_price": float(p.cost_price) if p.cost_price is not None else 0.0,
             "stock": stock,
             "quantity": stock,
             "is_active": p.is_active,
             "description": p.description or "",
-            "hsn_code": p.hsn_code or "7323",
+            "hsn_code": p.hsn_code or "",
             "created_at": p.created_at.isoformat() if p.created_at else None
         })
     return items
@@ -615,7 +612,7 @@ def get_current_account(user: User = Depends(get_current_user), db: Session = De
         "role": getattr(user, "role", "seller"),
         "seller_account": {
             "id": seller.id if seller else 1,
-            "name": seller.name if seller else "Shubham Enterprises",
+            "name": seller.name if seller else "",
             "is_active": seller.is_active if seller else True,
         },
         "marketplaces": [
@@ -641,16 +638,16 @@ def get_personal_products(user: User = Depends(get_current_user), db: Session = 
     items = []
     for p in products:
         inv = db.scalar(select(InventoryItem).where(InventoryItem.product_id == p.id, InventoryItem.seller_account_id.in_(sellers)))
-        stock = inv.quantity if inv else 50
+        stock = inv.quantity if inv else 0
         items.append({
             "id": p.id,
             "sku": p.sku,
             "title": p.title,
             "name": p.title,
-            "brand": p.brand or "AquaPure",
-            "category": p.category or "General",
-            "price": float(p.mrp) if p.mrp else 499.0,
-            "mrp": float(p.mrp) if p.mrp else 499.0,
+            "brand": p.brand or "",
+            "category": p.category or "",
+            "price": float(p.mrp) if p.mrp is not None else 0.0,
+            "mrp": float(p.mrp) if p.mrp is not None else 0.0,
             "stock": stock,
             "quantity": stock,
             "description": p.description or ""
@@ -685,7 +682,7 @@ async def create_catalog_product(request: Request, user: User = Depends(get_curr
     data = await request.json()
     sku = data.get("sku") or f"SKU-{int(datetime.utcnow().timestamp())}"
     title = data.get("name") or data.get("title") or "New Product"
-    price = float(data.get("price") or data.get("mrp") or 499.0)
+    price = float(data.get("price") or data.get("mrp") or 0.0)
     cost = float(data.get("costPrice") or data.get("cost_price") or price * 0.5)
     stock = int(data.get("stock") or data.get("initialStock") or 50)
 
@@ -693,13 +690,13 @@ async def create_catalog_product(request: Request, user: User = Depends(get_curr
         seller_account_id=seller_id,
         sku=sku,
         title=title,
-        brand=data.get("brand") or "AquaPure",
-        category=data.get("category") or "Home & Kitchen",
-        hsn_code=data.get("hsnCode") or "7323",
-        gst_rate=float(data.get("gstRate") or 18.0),
+        brand=data.get("brand") or "",
+        category=data.get("category") or "",
+        hsn_code=data.get("hsnCode") or "",
+        gst_rate=float(data.get("gstRate") or 0.0),
         cost_price=cost,
         mrp=price,
-        description=data.get("description") or f"High quality {title}",
+        description=data.get("description") or "",
         is_active=True,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
@@ -788,15 +785,15 @@ def get_settings(user: User = Depends(get_current_user), db: Session = Depends(g
         "profile": {
             "fullName": full_name,
             "email": user.email,
-            "phoneNumber": pref_dict.get("phoneNumber", "+91 98765 43210"),
+            "phoneNumber": pref_dict.get("phoneNumber", ""),
             "role": getattr(user, "role", "Super Admin"),
         },
         "business": {
-            "businessName": seller.name if seller else "Shubham Enterprises Pvt Ltd",
+            "businessName": seller.name if seller else "",
             "businessType": pref_dict.get("businessType", "Private Limited"),
-            "gstNumber": pref_dict.get("gstNumber", "27AABCS1429B1Z8"),
-            "panNumber": pref_dict.get("panNumber", "AABCS1429B"),
-            "billingAddress": pref_dict.get("billingAddress", "Warehouse Plot 42, Andheri East, Mumbai, Maharashtra 400069"),
+            "gstNumber": pref_dict.get("gstNumber", ""),
+            "panNumber": pref_dict.get("panNumber", ""),
+            "billingAddress": pref_dict.get("billingAddress", ""),
             "currency": pref_dict.get("currency", "INR"),
             "timezone": pref_dict.get("timezone", "Asia/Kolkata (IST)"),
         },
@@ -807,7 +804,7 @@ def get_settings(user: User = Depends(get_current_user), db: Session = Depends(g
                 "storeName": m.display_name or f"{m.marketplace.capitalize()} Store",
                 "status": "Connected" if m.is_connected else "Disconnected",
                 "autoSync": True,
-                "lastSync": m.last_sync_at.strftime("%b %d, %I:%M %p") if m.last_sync_at else "Just now"
+                "lastSync": m.last_sync_at.strftime("%b %d, %I:%M %p") if m.last_sync_at else ""
             }
             for m in mkts
         ],
@@ -872,8 +869,8 @@ def get_reports_data(user: User = Depends(get_current_user), db: Session = Depen
 
     category_counts = {}
     for prod in db.scalars(select(Product).where(Product.seller_account_id.in_(sellers))).all():
-        cat = prod.category or "Home & Kitchen"
-        category_counts[cat] = category_counts.get(cat, 0) + float(prod.mrp or 499.0)
+        cat = prod.category or ""
+        category_counts[cat] = category_counts.get(cat, 0) + float(prod.mrp or 0.0)
     cat_total = sum(category_counts.values()) or 1
     palette = ["bg-[#3B82F6]", "bg-[#8B5CF6]", "bg-[#F43F5E]", "bg-[#F59E0B]", "bg-[#10B981]", "bg-[#06B6D4]"]
     category_data = [
@@ -885,7 +882,7 @@ def get_reports_data(user: User = Depends(get_current_user), db: Session = Depen
     mkt_colors = {"amazon": "#F59E0B", "flipkart": "#3B82F6", "meesho": "#EC4899", "myntra": "#A855F7"}
     for o in orders:
         mkt_acc = db.scalar(select(MarketplaceAccount).where(MarketplaceAccount.id == o.marketplace_account_id))
-        mkt_name = (mkt_acc.marketplace if mkt_acc else "amazon").capitalize()
+        mkt_name = (mkt_acc.marketplace if mkt_acc else "").capitalize()
         mkt_orders[mkt_name] = mkt_orders.get(mkt_name, 0) + 1
     ord_total = len(orders) or 1
     marketplace_orders = [
@@ -896,7 +893,7 @@ def get_reports_data(user: User = Depends(get_current_user), db: Session = Depen
     status_counts = {}
     status_colors = {"delivered": "#10B981", "shipped": "#3B82F6", "packed": "#8B5CF6", "confirmed": "#6366F1", "processing": "#8B5CF6", "cancelled": "#EF4444", "returned": "#0EA5E9"}
     for o in orders:
-        st = (o.status or "confirmed").lower()
+        st = (o.status or "").lower()
         status_counts[st] = status_counts.get(st, 0) + 1
     order_status_segments = [
         {"label": k.capitalize(), "count": v, "percent": round((v / ord_total) * 100, 1), "color": status_colors.get(k, "#94A3B8")}
@@ -907,30 +904,26 @@ def get_reports_data(user: User = Depends(get_current_user), db: Session = Depen
     for r in finance_rows:
         if r.entry_type == "sale" and r.occurred_at:
             day_str = r.occurred_at.strftime("%b %d")
-            mkt = "amazon" if "flipkart" not in (r.description or "").lower() else "flipkart"
+            mkt = "flipkart" if "flipkart" in (r.description or "").lower() else "amazon"
             if day_str not in buckets:
                 buckets[day_str] = {"day": day_str, "amazon": 0.0, "flipkart": 0.0, "meesho": 0.0, "myntra": 0.0}
             buckets[day_str][mkt] += float(r.amount)
     sales_timeline = list(buckets.values())
     if not sales_timeline:
-        sales_timeline = [
-            {"day": "Sep 18", "amazon": 3200, "flipkart": 2400, "meesho": 0, "myntra": 0},
-            {"day": "Sep 19", "amazon": 4100, "flipkart": 3100, "meesho": 0, "myntra": 0},
-            {"day": "Sep 20", "amazon": 4900, "flipkart": 3600, "meesho": 0, "myntra": 0}
-        ]
+        sales_timeline = []
 
     top_products = []
     for i, p in enumerate(db.scalars(select(Product).where(Product.seller_account_id.in_(sellers), Product.is_active == True).limit(10)).all()):
         inv = db.scalar(select(InventoryItem).where(InventoryItem.product_id == p.id))
-        stock = inv.quantity if inv else 10
+        stock = inv.quantity if inv else 0
         top_products.append({
             "rank": i + 1,
             "name": p.title,
             "sku": p.sku,
-            "marketplace": "Amazon" if i % 2 == 0 else "Flipkart",
-            "orders": max(stock, 10),
-            "revenue": round(float(p.mrp or 499.0) * max(stock, 10), 2),
-            "trend": 10 + (i % 5),
+            "marketplace": "",
+            "orders": 0,
+            "revenue": round(float(p.mrp or 0.0) * stock, 2),
+            "trend": 0,
             "trendPositive": True,
             "imageType": _sku_image_type(p.sku)
         })
@@ -943,11 +936,11 @@ def get_reports_data(user: User = Depends(get_current_user), db: Session = Depen
             "totalProducts": products_count,
             "avgOrderValue": aov,
             "netProfit": round(net_profit, 2),
-            "salesGrowth": 14.5,
-            "ordersGrowth": 12.8,
-            "listingsGrowth": 8.0,
-            "aovGrowth": 3.2,
-            "profitGrowth": 16.4
+            "salesGrowth": 0,
+            "ordersGrowth": 0,
+            "listingsGrowth": 0,
+            "aovGrowth": 0,
+            "profitGrowth": 0
         },
         "categoryData": category_data,
         "marketplaceOrders": marketplace_orders,

@@ -78,22 +78,19 @@ export default function AiListingStudioWorkspace({
         const list = Array.isArray(data) ? data : (data.items || []);
         const mapped: CatalogSourceItem[] = list.map((p: any) => ({
           id: p.id,
-          name: p.title || p.name || 'Catalog Item',
-          brand: p.brand || 'AquaPure',
-          category: p.category || 'General',
-          sku: p.sku || 'SKU',
-          price: p.price || 499,
-          mrp: p.mrp || (p.price ? Math.round(p.price * 1.5) : 799),
-          title: p.title || p.name || 'Catalog Item',
-          bullets: [
-            p.description || 'High quality durable material',
-            'Multi-marketplace ready with verified SKU compliance'
-          ],
-          description: p.description || 'Full product description',
-          keywords: [p.category || 'general', p.brand || 'brand'],
-          images: [{ id: 'img-1', url: 'primary', label: 'Primary', isPrimary: true }],
-          rating: 4.8,
-          reviewsCount: 120,
+          name: p.title || p.name || '',
+          brand: p.brand || '',
+          category: p.category || '',
+          sku: p.sku || '',
+          price: p.price ?? 0,
+          mrp: p.mrp ?? p.price ?? 0,
+          title: p.title || p.name || '',
+          bullets: p.description ? [p.description] : [],
+          description: p.description || '',
+          keywords: [p.category, p.brand].filter(Boolean),
+          images: [],
+          rating: 0,
+          reviewsCount: 0,
         }));
         setCatalogSources(mapped);
       })
@@ -101,11 +98,11 @@ export default function AiListingStudioWorkspace({
   }, []);
 
   // Form State matching screenshot
-  const [productName, setProductName] = useState('Stainless Steel Water Bottle');
-  const [brand, setBrand] = useState('HydroMate');
-  const [category, setCategory] = useState('Home & Kitchen > Kitchen & Dining > Water Bottles');
+  const [productName, setProductName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [category, setCategory] = useState('');
   const [identifierType, setIdentifierType] = useState<'SKU' | 'ASIN' | 'FSN' | 'UPC'>('SKU');
-  const [sku, setSku] = useState('HM-SSB-1000');
+  const [sku, setSku] = useState('');
 
   // Media
   const [images, setImages] = useState<Array<{ id: string; label: string; isPrimary?: boolean }>>([
@@ -117,28 +114,18 @@ export default function AiListingStudioWorkspace({
 
   // Content
   const [title, setTitle] = useState(
-    'HydroMate Stainless Steel Water Bottle 1000ml | Leak Proof | BPA Free | Double Wall Vacuum Insulated | Hot & Cold | For Office, Gym, Travel'
+    ''
   );
-  const [bulletPoints, setBulletPoints] = useState<string[]>([
-    'Premium 304 stainless steel – durable and rust proof',
-    'Keeps beverages hot for 12 hours & cold for 24 hours',
-    'Leak proof and BPA free for safe drinking'
-  ]);
+  const [bulletPoints, setBulletPoints] = useState<string[]>([]);
   const [description, setDescription] = useState(
-    'HydroMate 1000ml Stainless Steel Water Bottle is engineered with advanced double-walled vacuum insulation to preserve your beverage temperature for hours. Designed for modern professionals, fitness enthusiasts, and travelers.'
+    ''
   );
-  const [backendKeywords, setBackendKeywords] = useState<string[]>([
-    'stainless steel water bottle',
-    'insulated flask 1 litre',
-    'gym bottle bpa free',
-    'hot and cold flask',
-    'travel bottle office'
-  ]);
+  const [backendKeywords, setBackendKeywords] = useState<string[]>([]);
 
   // Marketplace preview tab
   const [previewMarketplace, setPreviewMarketplace] = useState<'Amazon' | 'Flipkart' | 'Meesho' | 'Myntra'>('Amazon');
-  const [selectedCapacity, setSelectedCapacity] = useState('1000 ml');
-  const [selectedColour, setSelectedColour] = useState('Silver');
+  const [selectedCapacity, setSelectedCapacity] = useState('');
+  const [selectedColour, setSelectedColour] = useState('');
   const [activePreviewThumbnail, setActivePreviewThumbnail] = useState(0);
 
   // Modals & UI helpers
@@ -149,17 +136,17 @@ export default function AiListingStudioWorkspace({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Optimization checklist / score
-  const [optimizationScore, setOptimizationScore] = useState(88);
+  const [optimizationScore, setOptimizationScore] = useState(0);
   const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
 
   // Marketplace pricing & config for step 3
-  const [amazonPrice, setAmazonPrice] = useState(599);
-  const [amazonMrp, setAmazonMrp] = useState(999);
-  const [flipkartPrice, setFlipkartPrice] = useState(579);
-  const [meeshoPrice, setMeeshoPrice] = useState(549);
-  const [myntraPrice, setMyntraPrice] = useState(599);
-  const [hsnCode, setHsnCode] = useState('73239390');
-  const [gstRate, setGstRate] = useState('18%');
+  const [amazonPrice, setAmazonPrice] = useState(0);
+  const [amazonMrp, setAmazonMrp] = useState(0);
+  const [flipkartPrice, setFlipkartPrice] = useState(0);
+  const [meeshoPrice, setMeeshoPrice] = useState(0);
+  const [myntraPrice, setMyntraPrice] = useState(0);
+  const [hsnCode, setHsnCode] = useState('');
+  const [gstRate, setGstRate] = useState('');
 
   // Confirmation checkbox for step 4
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -204,32 +191,21 @@ export default function AiListingStudioWorkspace({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Generate high-converting e-commerce listing content for: Product: "${productName}", Brand: "${brand}", Category: "${category}". Optimize for Amazon India and Flipkart with high search volume keywords.`
+          message: `Generate high-converting e-commerce listing content for: Product: "${productName}", Brand: "${brand}", Category: "${category}".`
         })
       });
       const data = await res.json();
-      // Apply polished AI output
-      setTitle(`${brand} ${productName} 1000ml | Leak Proof | BPA Free | Double Wall Vacuum Insulated | Hot & Cold | For Office, Gym, Travel`);
-      setBulletPoints([
-        'Premium 304 food-grade stainless steel – rust proof, odor-free, and dent resistant',
-        'Advanced vacuum insulation keeps drinks steaming hot for 12 hrs & ice cold for 24 hrs',
-        '100% leak proof airtight silicone seal cap for spill-free travel and gym backpack storage',
-        'Ergonomic sweat-proof powder coating with wide mouth for easy ice cube filling and cleaning',
-        'BPA-free, non-toxic, eco-friendly reusable flask certified for daily family health'
-      ]);
-      setOptimizationScore(96);
-      showToast('Listing enhanced with high-conversion AI copy & keywords!');
+      const aiTitle = data?.title || data?.listing?.title;
+      const aiBullets = data?.bulletPoints || data?.listing?.bulletPoints;
+      const aiKeywords = data?.keywords || data?.listing?.keywords;
+      if (typeof aiTitle === 'string') setTitle(aiTitle);
+      if (Array.isArray(aiBullets)) setBulletPoints(aiBullets.filter((v: unknown): v is string => typeof v === 'string'));
+      if (Array.isArray(aiKeywords)) setBackendKeywords(aiKeywords.filter((v: unknown): v is string => typeof v === 'string'));
+      setOptimizationScore(aiTitle || aiBullets || aiKeywords ? 100 : 0);
+      showToast(aiTitle || aiBullets || aiKeywords ? 'AI suggestions applied.' : 'No structured AI listing data returned.');
     } catch {
-      setTitle(`${brand} ${productName} 1000ml | Leak Proof | BPA Free | Double Wall Vacuum Insulated | Hot & Cold | For Office, Gym, Travel`);
-      setBulletPoints([
-        'Premium 304 stainless steel – durable and rust proof',
-        'Keeps beverages hot for 12 hours & cold for 24 hours',
-        'Leak proof and BPA free for safe drinking',
-        'Ergonomic grip with condensation-free powder finish',
-        'Eco-friendly sustainable choice for office, gym and trekking'
-      ]);
-      setOptimizationScore(92);
-      showToast('AI suggestions applied to listing title & bullet points.');
+      setOptimizationScore(0);
+      showToast('AI listing generation failed.');
     } finally {
       setIsGeneratingAi(false);
     }
@@ -239,33 +215,13 @@ export default function AiListingStudioWorkspace({
   const handleApplySuggestion = (key: string) => {
     if (appliedSuggestions.includes(key)) return;
     setAppliedSuggestions(prev => [...prev, key]);
-    setOptimizationScore(prev => Math.min(prev + 3, 100));
-
-    if (key === 'title') {
-      setTitle(`${brand} ${productName} 1000ml | Leak Proof | BPA Free | Double Wall Vacuum Insulated | Hot & Cold | For Office, Gym, Travel (Silver)`);
-      showToast('Title updated with high-ranking color and volume attributes (+12% visibility).');
-    } else if (key === 'bullets') {
-      setBulletPoints(prev => [
-        ...prev,
-        'Sweat-proof condensation-free exterior ensures dry hands and bags'
-      ]);
-      showToast('Added high-engagement bullet point (+10% engagement).');
-    } else if (key === 'keywords') {
-      setBackendKeywords(prev => [...prev, 'vacuum insulated sports bottle', 'diwali gift water bottle', 'flask for school gym']);
-      showToast('Added 3 high-volume search keywords (+15% search rank).');
-    } else if (key === 'images') {
-      setImages(prev => [
-        ...prev,
-        { id: `img-${Date.now()}`, label: 'Lifestyle Gym Workout' }
-      ]);
-      showToast('Added lifestyle context image slot (+8% conversion).');
-    }
+    showToast(`No stored AI suggestion is available for ${key}.`);
   };
 
   // Add bullet point
   const handleAddBulletPoint = () => {
     if (bulletPoints.length < 5) {
-      setBulletPoints([...bulletPoints, 'Wide mouth design accommodates ice cubes and facilitates effortless cleaning']);
+      setBulletPoints(prev => [...prev, '']);
     } else {
       showToast('Maximum 5 key feature bullet points recommended for marketplace compliance.');
     }
@@ -824,30 +780,30 @@ export default function AiListingStudioWorkspace({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
                     <div className="text-slate-500 text-[11px]">Title SEO</div>
-                    <div className="font-bold text-slate-900 text-base">95%</div>
+                    <div className="font-bold text-slate-900 text-base">0%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-indigo-600 h-full rounded-full" style={{ width: '95%' }} />
+                      <div className="bg-indigo-600 h-full rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
                     <div className="text-slate-500 text-[11px]">Feature Bullets</div>
-                    <div className="font-bold text-slate-900 text-base">92%</div>
+                    <div className="font-bold text-slate-900 text-base">0%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: '92%' }} />
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
                     <div className="text-slate-500 text-[11px]">Image Quality</div>
-                    <div className="font-bold text-slate-900 text-base">88%</div>
+                    <div className="font-bold text-slate-900 text-base">0%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full rounded-full" style={{ width: '88%' }} />
+                      <div className="bg-blue-500 h-full rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
                     <div className="text-slate-500 text-[11px]">Search Terms</div>
-                    <div className="font-bold text-slate-900 text-base">98%</div>
+                    <div className="font-bold text-slate-900 text-base">'—'</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-purple-600 h-full rounded-full" style={{ width: '98%' }} />
+                      <div className="bg-purple-600 h-full rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
                 </div>
@@ -1563,7 +1519,7 @@ function BottleIllustration({ className = "w-24 h-44", color = "Silver" }: { cla
       {/* Specular Highlight / Sheen reflection */}
       <path d="M38 56 C32 64 30 76 30 88 L30 176 C30 182 32 186 36 188 L34 188 C28 186 26 182 26 176 L26 88 C26 76 28 64 34 56 Z" fill="white" fillOpacity="0.4" />
 
-      {/* HydroMate Subtle Engraved Logo */}
+      {/* Product logo */}
       <text x="50" y="125" fill="#475569" fontSize="6" fontWeight="bold" textAnchor="middle" transform="rotate(-90 50 125)" letterSpacing="1">
         HYDROMATE
       </text>

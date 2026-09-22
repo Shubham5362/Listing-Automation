@@ -87,7 +87,7 @@ export default function ReportsWorkspace({
   >('Overview');
 
   // Filter States
-  const [dateRange, setDateRange] = useState('Dec 01, 2024 - Dec 15, 2024');
+  const [dateRange, setDateRange] = useState('');
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const [compareOption, setCompareOption] = useState('Compare: Previous Period');
   const [isCompareOpen, setIsCompareOpen] = useState(false);
@@ -109,7 +109,7 @@ export default function ReportsWorkspace({
   const [newScheduleName, setNewScheduleName] = useState('Weekly Sales Summary');
   const [newScheduleFrequency, setNewScheduleFrequency] = useState('Every Monday at 9:00 AM');
   const [newScheduleFormat, setNewScheduleFormat] = useState<'CSV' | 'PDF' | 'XLSX'>('PDF');
-  const [newScheduleEmail, setNewScheduleEmail] = useState('shubham@sellerhub.io');
+  const [newScheduleEmail, setNewScheduleEmail] = useState('');
 
   const [activeReportModal, setActiveReportModal] = useState<ReportCategoryCard | null>(null);
   const [isAiInsightsModalOpen, setIsAiInsightsModalOpen] = useState(false);
@@ -122,89 +122,23 @@ export default function ReportsWorkspace({
   };
 
   // Scheduled Reports List
-  const [scheduledReports, setScheduledReports] = useState<ScheduledReport[]>([
-    {
-      id: 'sch-1',
-      name: 'Daily Sales Report',
-      schedule: 'Every day at 9:00 AM',
-      format: 'CSV',
-      recipients: 'shubham@sellerhub.io',
-      status: 'Active',
-      lastRun: 'Today, 9:00 AM'
-    },
-    {
-      id: 'sch-2',
-      name: 'Weekly Business Report',
-      schedule: 'Every Monday at 9:00 AM',
-      format: 'PDF',
-      recipients: 'shubham@sellerhub.io, finance@sellerhub.io',
-      status: 'Active',
-      lastRun: 'Dec 11, 9:00 AM'
-    },
-    {
-      id: 'sch-3',
-      name: 'Monthly P&L Report',
-      schedule: '1st of every month at 9:00 AM',
-      format: 'PDF',
-      recipients: 'founders@sellerhub.io',
-      status: 'Active',
-      lastRun: 'Dec 01, 9:00 AM'
-    }
-  ]);
+  const [scheduledReports, setScheduledReports] = useState<ScheduledReport[]>([]);
 
-  const [summary, setSummary] = useState({
-    totalSales: 428560,
-    totalOrders: 1248,
-    totalListings: 642,
-    totalProducts: 642,
-    avgOrderValue: 343,
-    netProfit: 68920,
-    salesGrowth: 12.5,
-    ordersGrowth: 18.2,
-    listingsGrowth: 8.1,
-    aovGrowth: -2.4,
-    profitGrowth: 15.6,
-  });
+  const [summary, setSummary] = useState({ totalSales: 0, totalOrders: 0, totalListings: 0, totalProducts: 0, avgOrderValue: 0, netProfit: 0, salesGrowth: 0, ordersGrowth: 0, listingsGrowth: 0, aovGrowth: 0, profitGrowth: 0 });
 
   const [topSellingProducts, setTopSellingProducts] = useState<any[]>([]);
 
   // Revenue by Category
-  const [categoryData, setCategoryData] = useState<any[]>([
-    { name: 'Home & Kitchen', revenue: 128450, percent: 30, color: 'bg-[#3B82F6]' },
-    { name: 'Beauty & Personal Care', revenue: 86320, percent: 20, color: 'bg-[#8B5CF6]' },
-    { name: 'Electronics', revenue: 72610, percent: 17, color: 'bg-[#F43F5E]' },
-    { name: 'Fashion', revenue: 68220, percent: 16, color: 'bg-[#F59E0B]' },
-    { name: 'Health & Wellness', revenue: 42960, percent: 10, color: 'bg-[#10B981]' },
-  ]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
 
   // Orders by Marketplace
-  const [marketplaceOrders, setMarketplaceOrders] = useState<any[]>([
-    { name: 'Amazon', count: 520, percent: 41.7, color: '#F59E0B' },
-    { name: 'Flipkart', count: 368, percent: 29.5, color: '#3B82F6' },
-    { name: 'Meesho', count: 220, percent: 17.6, color: '#EC4899' },
-    { name: 'Myntra', count: 140, percent: 11.2, color: '#A855F7' },
-  ]);
+  const [marketplaceOrders, setMarketplaceOrders] = useState<any[]>([]);
 
   // Order Status distribution
-  const [orderStatusSegments, setOrderStatusSegments] = useState<any[]>([
-    { label: 'Delivered', count: 892, percent: 71.5, color: '#10B981' },
-    { label: 'Shipped', count: 210, percent: 16.8, color: '#3B82F6' },
-    { label: 'Processing', count: 86, percent: 6.9, color: '#8B5CF6' },
-    { label: 'Cancelled', count: 42, percent: 3.4, color: '#EF4444' },
-    { label: 'Returned', count: 18, percent: 1.4, color: '#0EA5E9' },
-  ]);
+  const [orderStatusSegments, setOrderStatusSegments] = useState<any[]>([]);
 
   // Timeline points for Sales Trend
-  const [salesTimeline, setSalesTimeline] = useState<any[]>([
-    { day: 'Dec 01', amazon: 38200, flipkart: 26100, meesho: 12400, myntra: 8500 },
-    { day: 'Dec 03', amazon: 41200, flipkart: 28900, meesho: 13800, myntra: 9100 },
-    { day: 'Dec 05', amazon: 36800, flipkart: 25400, meesho: 11900, myntra: 7800 },
-    { day: 'Dec 07', amazon: 39500, flipkart: 29800, meesho: 14200, myntra: 9600 },
-    { day: 'Dec 09', amazon: 43200, flipkart: 32400, meesho: 15600, myntra: 10400 },
-    { day: 'Dec 11', amazon: 37900, flipkart: 27800, meesho: 12900, myntra: 8900 },
-    { day: 'Dec 13', amazon: 45600, flipkart: 35100, meesho: 16800, myntra: 11200 },
-    { day: 'Dec 15', amazon: 48900, flipkart: 38200, meesho: 17400, myntra: 12100 },
-  ]);
+  const [salesTimeline, setSalesTimeline] = useState<any[]>([]);
 
   useEffect(() => {
     fetch('/api/v1/reports')
@@ -231,7 +165,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
       defaultFormat: 'CSV',
-      sampleRowsCount: 1248
+      sampleRowsCount: 0
     },
     {
       id: 'order',
@@ -241,7 +175,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
       defaultFormat: 'CSV',
-      sampleRowsCount: 1248
+      sampleRowsCount: 0
     },
     {
       id: 'product',
@@ -251,7 +185,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-purple-50',
       iconColor: 'text-purple-600',
       defaultFormat: 'XLSX',
-      sampleRowsCount: 642
+      sampleRowsCount: 0
     },
     {
       id: 'inventory',
@@ -261,7 +195,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
       defaultFormat: 'CSV',
-      sampleRowsCount: 642
+      sampleRowsCount: 0
     },
     {
       id: 'advertising',
@@ -351,12 +285,7 @@ export default function ReportsWorkspace({
         content =
           'Date,Marketplace,SKU,Product Name,Category,Units Sold,Revenue (INR),Fees (INR),Net Profit (INR),Status\n' +
           salesTimeline
-            .flatMap((pt, i) => [
-              `${pt.day} 2024,Amazon,SKU-BTL-01,Stainless Steel Water Bottle,Home & Kitchen,${Math.floor(pt.amazon / 200)},${pt.amazon},${Math.floor(pt.amazon * 0.15)},${Math.floor(pt.amazon * 0.22)},Completed`,
-              `${pt.day} 2024,Flipkart,SKU-EAR-02,Wireless Bluetooth Earbuds,Electronics,${Math.floor(pt.flipkart / 200)},${pt.flipkart},${Math.floor(pt.flipkart * 0.14)},${Math.floor(pt.flipkart * 0.24)},Completed`,
-              `${pt.day} 2024,Meesho,SKU-TSH-03,Cotton T-Shirt (Pack of 3),Fashion,${Math.floor(pt.meesho / 150)},${pt.meesho},${Math.floor(pt.meesho * 0.11)},${Math.floor(pt.meesho * 0.28)},Completed`,
-              `${pt.day} 2024,Myntra,SKU-SER-04,Face Serum 30ml,Beauty & Personal Care,${Math.floor(pt.myntra / 150)},${pt.myntra},${Math.floor(pt.myntra * 0.18)},${Math.floor(pt.myntra * 0.26)},Completed`
-            ])
+            .map((pt) => `${pt.day ?? ''},${pt.marketplace ?? ''},${pt.sku ?? ''},${pt.productName ?? ''},${pt.category ?? ''},${pt.orders ?? 0},${pt.sales ?? 0},${pt.fees ?? 0},${pt.profit ?? 0},${pt.status ?? ''}`)
             .join('\n');
         filename += '.csv';
       } else if (format === 'JSON') {
@@ -365,11 +294,11 @@ export default function ReportsWorkspace({
           generatedAt: new Date().toISOString(),
           period: dateRange,
           summary: {
-            totalSales: 428560,
-            totalOrders: 1248,
-            totalListings: 642,
-            avgOrderValue: 343,
-            netProfit: 68920
+            totalSales: summary.totalSales,
+            totalOrders: summary.totalOrders,
+            totalListings: summary.totalListings,
+            avgOrderValue: summary.avgOrderValue,
+            netProfit: summary.netProfit
           },
           marketplaceShare: marketplaceOrders,
           categoryRevenue: categoryData,
@@ -379,7 +308,7 @@ export default function ReportsWorkspace({
         filename += '.json';
       } else {
         // PDF Summary as structured text / printable format
-        content = `====================================================\nSELLERHUB ENTERPRISE REPORT: ${reportTitle.toUpperCase()}\nDate Range: ${dateRange}\nGenerated on: ${new Date().toLocaleString()}\n====================================================\n\nEXECUTIVE KPI SUMMARY:\n- Total Sales: Rs. 4,28,560 (+12.5% vs previous period)\n- Total Orders: 1,248 (+18.2% vs previous period)\n- Total Listings: 642 (+8.1% vs previous period)\n- Avg. Order Value: Rs. 343 (-2.4% vs previous period)\n- Net Profit: Rs. 68,920 (+15.6% vs previous period)\n\nMARKETPLACE PERFORMANCE:\n- Amazon: 520 Orders (41.7%) | Sales: Rs. 1,78,710\n- Flipkart: 368 Orders (29.5%) | Sales: Rs. 1,26,420\n- Meesho: 220 Orders (17.6%) | Sales: Rs. 75,430\n- Myntra: 140 Orders (11.2%) | Sales: Rs. 48,000\n\nCATEGORY BREAKDOWN:\n- Home & Kitchen: Rs. 1,28,450 (30%)\n- Beauty & Personal Care: Rs. 86,320 (20%)\n- Electronics: Rs. 72,610 (17%)\n- Fashion: Rs. 68,220 (16%)\n- Health & Wellness: Rs. 42,960 (10%)\n\nEnd of Report.\n`;
+        content = `====================================================\n${reportTitle.toUpperCase()}\nDate Range: ${dateRange}\nGenerated on: ${new Date().toLocaleString()}\n====================================================\n\nEXECUTIVE KPI SUMMARY:\n${JSON.stringify(summary, null, 2)}\n\nMARKETPLACE PERFORMANCE:\n${JSON.stringify(marketplaceOrders, null, 2)}\n\nCATEGORY BREAKDOWN:\n${JSON.stringify(categoryData, null, 2)}\n\nEnd of Report.\n`;
         filename += '.txt';
       }
 
@@ -541,9 +470,9 @@ export default function ReportsWorkspace({
                     Select Date Range
                   </div>
                   {[
-                    'Dec 01, 2024 - Dec 15, 2024',
+                    '',
                     'Today (Dec 16, 2024)',
-                    'Yesterday (Dec 15, 2024)',
+                    'Yesterday',
                     'Last 7 Days',
                     'Last 14 Days',
                     'Last 30 Days',
@@ -679,7 +608,7 @@ export default function ReportsWorkspace({
             <div className="text-xs text-slate-500 font-medium pt-1">Total Sales</div>
             <div className="text-lg sm:text-xl font-bold text-slate-900">₹{Number(summary.totalSales || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ {summary.salesGrowth || 14.5}%</span>
+              <span>{summary.salesGrowth ? `↑ ${summary.salesGrowth}%` : '—'}</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -692,7 +621,7 @@ export default function ReportsWorkspace({
             <div className="text-xs text-slate-500 font-medium pt-1">Total Orders</div>
             <div className="text-lg sm:text-xl font-bold text-slate-900">{Number(summary.totalOrders || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ {summary.ordersGrowth || 12.8}%</span>
+              <span>{summary.ordersGrowth ? `↑ ${summary.ordersGrowth}%` : '—'}</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -731,7 +660,7 @@ export default function ReportsWorkspace({
             <div className="text-xs text-slate-500 font-medium pt-1">Net Profit</div>
             <div className="text-lg sm:text-xl font-bold text-slate-900">₹{Number(summary.netProfit || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ {summary.profitGrowth || 16.4}%</span>
+              <span>{summary.profitGrowth ? `↑ ${summary.profitGrowth}%` : '—'}</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -1096,7 +1025,7 @@ export default function ReportsWorkspace({
             </div>
 
             <div className="text-[10px] text-slate-400 text-center pt-1">
-              Home & Kitchen leads category share at 30% of total GMV
+              No category insights available
             </div>
           </div>
         </div>
@@ -1786,40 +1715,40 @@ export default function ReportsWorkspace({
               <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl space-y-1">
                 <div className="font-bold text-emerald-900 flex items-center gap-1.5">
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span>Category Growth Opportunity: Home & Kitchen</span>
+                  <span>No category growth insight available</span>
                 </div>
                 <p className="text-emerald-800 text-[11px]">
-                  Home & Kitchen GMV is up 28% month-over-month. Top searches include "insulation flask" and "cast iron skillet". Consider onboarding 3 new SKUs.
+                  Connect report data to generate category insights.
                 </p>
               </div>
 
               <div className="p-3 bg-purple-50/60 border border-purple-100 rounded-xl space-y-1">
                 <div className="font-bold text-purple-900 flex items-center gap-1.5">
                   <Lightbulb className="w-4 h-4 text-purple-600" />
-                  <span>Listing Conversion Tuning: 12 Underperforming SKUs</span>
+                  <span>No listing conversion insight available</span>
                 </div>
                 <p className="text-purple-800 text-[11px]">
-                  Conversion dropped from 7.2% to 4.1% on Flipkart apparel. Adding lifestyle hero images and 5 bullet points will boost conversions by ~18%.
+                  Connect analytics data to generate listing conversion insights.
                 </p>
               </div>
 
               <div className="p-3 bg-amber-50/60 border border-amber-100 rounded-xl space-y-1">
                 <div className="font-bold text-amber-900 flex items-center gap-1.5">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span>Stockout Risk: Stainless Steel Water Bottle</span>
+                  <span>No stockout insight available</span>
                 </div>
                 <p className="text-amber-800 text-[11px]">
-                  At current velocity of 245 units/15 days, existing warehouse stock will deplete in 6.8 days. Trigger automated PO to supplier immediately.
+                  Connect inventory data to generate stockout insights.
                 </p>
               </div>
 
               <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl space-y-1">
                 <div className="font-bold text-blue-900 flex items-center gap-1.5">
                   <Megaphone className="w-4 h-4 text-blue-600" />
-                  <span>Advertising Budget Expansion: Amazon Sponsored Brands</span>
+                  <span>No advertising insight available</span>
                 </div>
                 <p className="text-blue-800 text-[11px]">
-                  ROAS climbed to 4.8x on top campaign. Budget exhaustion is occurring by 4:00 PM daily. Increasing daily budget by ₹1,500 could yield +₹8,200 net margin.
+                  Connect advertising data to generate budget insights.
                 </p>
               </div>
             </div>
@@ -1894,7 +1823,7 @@ export default function ReportsWorkspace({
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-              <span className="text-xs text-slate-500">Showing top 5 of 642 active listings</span>
+              <span className="text-xs text-slate-500">Showing available report data</span>
               <button
                 type="button"
                 onClick={() => {

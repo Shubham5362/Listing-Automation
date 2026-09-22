@@ -79,7 +79,7 @@ export default function OrdersWorkspace({
           const list = Array.isArray(data) ? data : (data.items || []);
           if (list.length > 0) {
             const mapped: OrderRecord[] = list.map((o: any, idx: number) => {
-              const mkt = (o.carrier?.toLowerCase().includes('ekart') || o.marketplace_account_id === 98) ? 'Flipkart' : 'Amazon';
+              const mkt = o.marketplace || '';
               
               let status: OrderRecord['status'] = 'Processing';
               const st = (o.status || '').toLowerCase();
@@ -99,24 +99,24 @@ export default function OrdersWorkspace({
                 const imgType: OrderProductItem['imageType'] = s.includes('tum') || s.includes('shk') ? 'tumbler' : s.includes('mug') ? 'mug' : s.includes('flask') || s.includes('flk') ? 'flask' : 'bottle-black';
                 return {
                   id: `p-${it.id || iIdx}`,
-                  name: it.title || 'Stainless Steel Water Bottle 1L',
+                  name: it.title || '',
                   sku: sku,
                   imageType: imgType,
                   quantity: it.quantity || 1,
-                  unitPrice: it.unit_price || 499
+                  unitPrice: it.unit_price ?? 0
                 };
               }) : [{
                 id: `p-${o.id}`,
-                name: 'Stainless Steel Water Bottle 1L',
-                sku: 'BOT-100-BLK',
+                name: '',
+                sku: '',
                 imageType: 'bottle-black' as const,
                 quantity: 1,
-                unitPrice: o.total_amount || 499
+                unitPrice: o.total_amount ?? 0
               }];
 
-              const address = o.shipping_address || '123, Green Park, New Delhi, Delhi - 110016';
+              const address = o.shipping_address || '';
               const parts = address.split(',');
-              const cityState = parts.length >= 2 ? `${parts[parts.length - 2].trim()}, ${parts[parts.length - 1].trim().split('-')[0].trim()}` : 'Delhi, DL';
+              const cityState = parts.length >= 2 ? `${parts[parts.length - 2].trim()}, ${parts[parts.length - 1].trim().split('-')[0].trim()}` : '';
 
               return {
                 id: `ord-${o.id || idx + 1}`,
@@ -127,20 +127,20 @@ export default function OrdersWorkspace({
                 customer: {
                   name: o.customer_name || 'Verified Customer',
                   cityState: cityState,
-                  phone: o.customer_phone || '+91 98765 43210',
-                  email: o.customer_email || 'customer@example.com',
+                  phone: o.customer_phone || '',
+                  email: o.customer_email || '',
                   address: address
                 },
                 products: prods,
                 moreProductsCount: prods.length > 1 ? prods.length - 1 : undefined,
-                amount: o.total_amount || 499,
+                amount: o.total_amount ?? 0,
                 currency: 'INR',
                 status: status,
                 paymentMethod: o.payment_status === 'paid' ? 'Prepaid (UPI)' : 'Cash on Delivery',
                 deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined,
                 tracking: {
                   courier: o.carrier || (mkt === 'Amazon' ? 'Amazon Shipping' : 'Ekart Logistics'),
-                  trackingId: o.tracking_number || (mkt === 'Amazon' ? `AMZ${o.id}71829IN` : `FMPC${o.id}7109IN`),
+                  trackingId: o.tracking_number || '',
                   status: status,
                   deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined
                 }
@@ -165,7 +165,7 @@ export default function OrdersWorkspace({
         const list = Array.isArray(data) ? data : (data.items || []);
         if (list.length > 0) {
           const mapped: OrderRecord[] = list.map((o: any, idx: number) => {
-            const mkt = (o.carrier?.toLowerCase().includes('ekart') || o.marketplace_account_id === 98) ? 'Flipkart' : 'Amazon';
+            const mkt = o.marketplace || '';
             let status: OrderRecord['status'] = 'Processing';
             const st = (o.status || '').toLowerCase();
             if (st === 'delivered') status = 'Delivered';
@@ -184,24 +184,24 @@ export default function OrdersWorkspace({
               const imgType: OrderProductItem['imageType'] = s.includes('tum') || s.includes('shk') ? 'tumbler' : s.includes('mug') ? 'mug' : s.includes('flask') || s.includes('flk') ? 'flask' : 'bottle-black';
               return {
                 id: `p-${it.id || iIdx}`,
-                name: it.title || 'Stainless Steel Water Bottle 1L',
+                name: it.title || '',
                 sku: sku,
                 imageType: imgType,
                 quantity: it.quantity || 1,
-                unitPrice: it.unit_price || 499
+                unitPrice: it.unit_price ?? 0
               };
             }) : [{
               id: `p-${o.id}`,
-              name: 'Stainless Steel Water Bottle 1L',
-              sku: 'BOT-100-BLK',
+              name: '',
+              sku: '',
               imageType: 'bottle-black' as const,
               quantity: 1,
-              unitPrice: o.total_amount || 499
+              unitPrice: o.total_amount ?? 0
             }];
 
-            const address = o.shipping_address || '123, Green Park, New Delhi, Delhi - 110016';
+            const address = o.shipping_address || '';
             const parts = address.split(',');
-            const cityState = parts.length >= 2 ? `${parts[parts.length - 2].trim()}, ${parts[parts.length - 1].trim().split('-')[0].trim()}` : 'Delhi, DL';
+            const cityState = parts.length >= 2 ? `${parts[parts.length - 2].trim()}, ${parts[parts.length - 1].trim().split('-')[0].trim()}` : '';
 
             return {
               id: `ord-${o.id || idx + 1}`,
@@ -212,20 +212,20 @@ export default function OrdersWorkspace({
               customer: {
                 name: o.customer_name || 'Verified Customer',
                 cityState: cityState,
-                phone: o.customer_phone || '+91 98765 43210',
-                email: o.customer_email || 'customer@example.com',
+                phone: o.customer_phone || '',
+                email: o.customer_email || '',
                 address: address
               },
               products: prods,
               moreProductsCount: prods.length > 1 ? prods.length - 1 : undefined,
-              amount: o.total_amount || 499,
+              amount: o.total_amount ?? 0,
               currency: 'INR',
               status: status,
               paymentMethod: o.payment_status === 'paid' ? 'Prepaid (UPI)' : 'Cash on Delivery',
               deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined,
               tracking: {
                 courier: o.carrier || (mkt === 'Amazon' ? 'Amazon Shipping' : 'Ekart Logistics'),
-                trackingId: o.tracking_number || (mkt === 'Amazon' ? `AMZ${o.id}71829IN` : `FMPC${o.id}7109IN`),
+                trackingId: o.tracking_number || '',
                 status: status,
                 deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined
               }
@@ -490,7 +490,7 @@ export default function OrdersWorkspace({
 
                 {dateRangePickerOpen && (
                   <div className="absolute right-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 text-xs">
-                    {['Today', 'Yesterday', 'Last 7 Days (Dec 10 - Dec 16)', 'Last 30 Days', 'This Month', 'Custom Range'].map(range => (
+                    {['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Custom Range'].map(range => (
                       <button
                         key={range}
                         onClick={() => {
@@ -519,10 +519,10 @@ export default function OrdersWorkspace({
                 <span className="text-[11.5px] font-medium text-slate-500">Total Orders</span>
               </div>
               <div className="mt-2.5">
-                <div className="text-xl font-bold text-slate-900 leading-tight">184</div>
+                <div className="text-xl font-bold text-slate-900 leading-tight">{orders.length}</div>
                 <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
                   <span>↑</span>
-                  <span>12.8% vs previous 7 days</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -537,12 +537,12 @@ export default function OrdersWorkspace({
               </div>
               <div className="mt-2.5">
                 <div className="text-xl font-bold text-slate-900 leading-tight flex items-baseline">
-                  <span>124</span>
-                  <span className="text-xs font-normal text-slate-400 ml-1">(67%)</span>
+                  <span>{orders.filter((o) => o.status === 'Delivered').length}</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1">{orders.length ? `(${Math.round((orders.filter((o) => o.status === 'Delivered').length / orders.length) * 100)}%)` : '(0%)'}</span>
                 </div>
                 <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
                   <span>↑</span>
-                  <span>15.2%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -557,12 +557,12 @@ export default function OrdersWorkspace({
               </div>
               <div className="mt-2.5">
                 <div className="text-xl font-bold text-slate-900 leading-tight flex items-baseline">
-                  <span>28</span>
-                  <span className="text-xs font-normal text-slate-400 ml-1">(15%)</span>
+                  <span>{orders.filter((o) => o.status === 'Shipped').length}</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1">{orders.length ? `(${Math.round((orders.filter((o) => o.status === 'Shipped').length / orders.length) * 100)}%)` : '(0%)'}</span>
                 </div>
                 <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
                   <span>↑</span>
-                  <span>8.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -577,12 +577,12 @@ export default function OrdersWorkspace({
               </div>
               <div className="mt-2.5">
                 <div className="text-xl font-bold text-slate-900 leading-tight flex items-baseline">
-                  <span>18</span>
-                  <span className="text-xs font-normal text-slate-400 ml-1">(10%)</span>
+                  <span>{orders.filter((o) => o.status === 'Processing').length}</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1">{orders.length ? `(${Math.round((orders.filter((o) => o.status === 'Processing').length / orders.length) * 100)}%)` : '(0%)'}</span>
                 </div>
                 <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
                   <span>↓</span>
-                  <span>4.1%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -597,12 +597,12 @@ export default function OrdersWorkspace({
               </div>
               <div className="mt-2.5">
                 <div className="text-xl font-bold text-slate-900 leading-tight flex items-baseline">
-                  <span>8</span>
-                  <span className="text-xs font-normal text-slate-400 ml-1">(4%)</span>
+                  <span>{orders.filter((o) => o.status === 'Cancelled').length}</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1">{orders.length ? `(${Math.round((orders.filter((o) => o.status === 'Cancelled').length / orders.length) * 100)}%)` : '(0%)'}</span>
                 </div>
                 <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
                   <span>↑</span>
-                  <span>2.5%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -617,12 +617,12 @@ export default function OrdersWorkspace({
               </div>
               <div className="mt-2.5">
                 <div className="text-xl font-bold text-slate-900 leading-tight flex items-baseline">
-                  <span>6</span>
-                  <span className="text-xs font-normal text-slate-400 ml-1">(3%)</span>
+                  <span>{orders.filter((o) => o.status === 'Return Requested').length}</span>
+                  <span className="text-xs font-normal text-slate-400 ml-1">{orders.length ? `(${Math.round((orders.filter((o) => o.status === 'Return Requested').length / orders.length) * 100)}%)` : '(0%)'}</span>
                 </div>
                 <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
                   <span>↑</span>
-                  <span>1.2%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -631,10 +631,10 @@ export default function OrdersWorkspace({
           {/* 3. Order Status Tabs */}
           <div className="border-b border-slate-200 flex items-center gap-6 text-xs font-semibold overflow-x-auto scrollbar-none">
             {[
-              { id: 'All', label: 'All Orders', count: 184 },
-              { id: 'Pending', label: 'Pending', count: 18 },
-              { id: 'Shipped', label: 'Shipped', count: 28 },
-              { id: 'Delivered', label: 'Delivered', count: 124 },
+              { id: 'All', label: 'All Orders', count: orders.length },
+              { id: 'Processing', label: 'Processing', count: orders.filter((o) => o.status === 'Processing').length },
+              { id: 'Shipped', label: 'Shipped', count: orders.filter((o) => o.status === 'Shipped').length },
+              { id: 'Delivered', label: 'Delivered', count: orders.filter((o) => o.status === 'Delivered').length },
               { id: 'Cancelled', label: 'Cancelled', count: 8 },
               { id: 'Returns', label: 'Returns', count: 6 }
             ].map(tab => {
@@ -1023,9 +1023,9 @@ export default function OrdersWorkspace({
             {/* 7. Pagination Bar */}
             <div className="px-4 py-3 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
               <div>
-                Showing <span className="font-semibold text-slate-900">1</span> to{' '}
-                <span className="font-semibold text-slate-900">10</span> of{' '}
-                <span className="font-semibold text-slate-900">184</span> orders
+                Showing <span className="font-semibold text-slate-900">{orders.length ? 1 : 0}</span> to{' '}
+                <span className="font-semibold text-slate-900">{Math.min(10, orders.length)}</span> of{' '}
+                <span className="font-semibold text-slate-900">{orders.length}</span> orders
               </div>
 
               <div className="flex items-center gap-1.5">

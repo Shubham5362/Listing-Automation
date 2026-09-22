@@ -65,39 +65,39 @@ export default function PricingWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: PricingRecord[] = json.items.map((p: any, idx: number) => {
-              const current = p.currentPrice !== undefined ? p.currentPrice : (p.current_price || p.mrp || 499);
-              const cost = p.costPrice !== undefined ? p.costPrice : (p.cost_price || 280);
-              const suggested = p.suggestedPrice !== undefined ? p.suggestedPrice : (p.suggested_price || Math.round(current * 0.94));
-              const minP = p.minPrice !== undefined ? p.minPrice : (p.min_price || Math.round(cost * 1.15));
-              const maxP = p.maxPrice !== undefined ? p.maxPrice : (p.max_price || Math.round(current * 1.4));
+              const current = p.currentPrice ?? p.current_price ?? p.mrp ?? 0;
+              const cost = p.costPrice ?? p.cost_price ?? 0;
+              const suggested = p.suggestedPrice ?? p.suggested_price ?? 0;
+              const minP = p.minPrice ?? p.min_price ?? 0;
+              const maxP = p.maxPrice ?? p.max_price ?? 0;
               const margin = p.marginPercent !== undefined ? p.marginPercent : Math.round(((current - cost) / current) * 100);
               const marginAmt = p.marginAmount !== undefined ? p.marginAmount : (current - cost);
-              const sku = p.sku || `SKU-00${idx + 1}`;
+              const sku = p.sku || '';
 
               return {
                 id: p.id || idx + 1,
-                name: p.name || p.title || `Product #${p.id || idx + 1}`,
-                category: p.category || 'Home & Kitchen',
+                name: p.name || p.title || '',
+                category: p.category || '',
                 sku: sku,
-                asin: p.asin || `B0${p.id || idx + 1}A8Y7Z`,
-                marketplaces: p.marketplaces || ['amazon', 'flipkart'],
+                asin: p.asin || '',
+                marketplaces: p.marketplaces || [],
                 currentPrice: current,
                 suggestedPrice: suggested,
-                hasAiSuggested: p.hasAiSuggested !== undefined ? p.hasAiSuggested : true,
+                hasAiSuggested: p.hasAiSuggested ?? false,
                 priceStatus: (p.priceStatus || p.price_status || (current > suggested ? 'Reprice' : 'Optimal')) as any,
-                buyBox: p.buyBox || (p.buyBoxWon || p.buy_box_won ? '94%' : 'No'),
+                buyBox: p.buyBox || '',
                 buyBoxWon: p.buyBoxWon !== undefined ? p.buyBoxWon : !!p.buy_box_won,
-                estProfitLift: p.estProfitLift || 12,
+                estProfitLift: p.estProfitLift ?? 0,
                 minPrice: minP,
                 maxPrice: maxP,
                 costPrice: cost,
                 marginPercent: margin,
                 marginAmount: marginAmt,
-                marketPriceAvg: p.marketPriceAvg || Math.round(current * 0.96),
-                priceRank: p.priceRank || '2 of 6',
-                lowestCompetitorPrice: p.lowestCompetitorPrice || suggested,
-                totalCompetitors: p.totalCompetitors || 6,
-                aiInsightText: p.aiInsightText || `Repricing to ₹${suggested} optimizes margin and Buy Box velocity across Amazon & Flipkart.`,
+                marketPriceAvg: p.marketPriceAvg ?? 0,
+                priceRank: p.priceRank || '',
+                lowestCompetitorPrice: p.lowestCompetitorPrice ?? 0,
+                totalCompetitors: p.totalCompetitors ?? 0,
+                aiInsightText: p.aiInsightText || '',
                 imageType: p.imageType || (sku.toLowerCase().includes('tum') ? 'tumbler' : sku.toLowerCase().includes('mug') ? 'mug' : 'bottle-black'),
               };
             });
@@ -114,14 +114,14 @@ export default function PricingWorkspace({
   // Tab counts
   const tabCounts = useMemo(() => {
     return {
-      all: 245,
-      repriceNeeded: 36,
-      underpriced: 18,
-      overpriced: 27,
-      buyBoxLost: 42,
-      priceWatch: 28,
+      all: pricingItems.length,
+      repriceNeeded: pricingItems.filter((p) => p.priceStatus === 'Reprice').length,
+      underpriced: pricingItems.filter((p) => p.priceStatus === 'Underpriced').length,
+      overpriced: pricingItems.filter((p) => p.priceStatus === 'Overpriced').length,
+      buyBoxLost: pricingItems.filter((p) => !p.buyBoxWon).length,
+      priceWatch: 0,
     };
-  }, []);
+  }, [pricingItems]);
 
   // Filtered pricing items
   const filteredItems = useMemo(() => {
@@ -276,7 +276,7 @@ export default function PricingWorkspace({
             return fetch(`/api/v1/pricing/${id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ price: it?.suggestedPrice || 499 })
+              body: JSON.stringify({ price: it?.suggestedPrice ?? 0 })
             });
           })
         );
@@ -405,10 +405,10 @@ export default function PricingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">245</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{pricingItems.length}</div>
                 <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-emerald-600">
                   <ArrowUp className="w-3 h-3" />
-                  <span>12.5%</span>
+                  <span>—</span>
                   <span className="text-slate-400 font-normal ml-0.5">vs last 30 days</span>
                 </div>
               </div>
@@ -423,10 +423,10 @@ export default function PricingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">68%</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{pricingItems.length ? Math.round((pricingItems.filter((p) => p.buyBoxWon).length / pricingItems.length) * 100) : 0}%</div>
                 <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-emerald-600">
                   <ArrowUp className="w-3 h-3" />
-                  <span>5.2%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -440,10 +440,10 @@ export default function PricingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">₹24</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">₹0</div>
                 <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-rose-600">
                   <ArrowDown className="w-3 h-3" />
-                  <span>18.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -457,10 +457,10 @@ export default function PricingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">₹12,480</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">₹{pricingItems.reduce((sum, p) => sum + (p.estProfitLift || 0), 0).toLocaleString('en-IN')}</div>
                 <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-emerald-600">
                   <ArrowUp className="w-3 h-3" />
-                  <span>22.0%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -474,10 +474,10 @@ export default function PricingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">18</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{tabCounts.underpriced}</div>
                 <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-rose-600">
                   <ArrowUp className="w-3 h-3" />
-                  <span>50.0%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -491,10 +491,10 @@ export default function PricingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">27</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{tabCounts.overpriced}</div>
                 <div className="flex items-center gap-1 mt-1 text-[11px] font-medium text-emerald-600">
                   <ArrowDown className="w-3 h-3" />
-                  <span>32.5%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -881,7 +881,7 @@ export default function PricingWorkspace({
               <div>
                 Showing <span className="font-semibold text-slate-800">1</span> to{' '}
                 <span className="font-semibold text-slate-800">10</span> of{' '}
-                <span className="font-semibold text-slate-800">245</span> products
+                <span className="font-semibold text-slate-800">{filteredItems.length}</span> products
               </div>
 
               <div className="flex items-center gap-1">

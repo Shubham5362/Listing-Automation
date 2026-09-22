@@ -139,20 +139,20 @@ export default function AutomationsWorkspace({
       .then(data => {
         if (Array.isArray(data)) {
           const mapped: AutomationItem[] = data.map((item: any, idx: number) => ({
-            id: String(item.id || ('auto-' + (idx + 1))),
-            name: item.name || 'Automation Rule',
-            description: item.description || (item.actions && item.actions[0] && item.actions[0].message ? item.actions[0].message : 'Automated multi-channel rule'),
+            id: String(item.id ?? ''),
+            name: item.name || '',
+            description: item.description || (item.actions && item.actions[0] && item.actions[0].message ? item.actions[0].message : ''),
             type: item.name && item.name.includes('Price') ? 'Price Update' : item.name && item.name.includes('Inventory') ? 'Inventory Sync' : item.name && item.name.includes('Review') ? 'Customer Engagement' : 'Product Listing',
-            marketplaces: ['amazon', 'flipkart'],
+            marketplaces: Array.isArray(item.marketplaces) ? item.marketplaces : [],
             scheduleType: item.trigger_type === 'event' ? 'Event' : 'Daily',
-            scheduleText: item.trigger_type === 'event' ? 'Event Triggered' : 'Every Day at 09:00 AM',
-            progress: item.status === 'Running' ? { current: 12, total: 50, percent: 24 } : null,
+            scheduleText: item.trigger_type === 'event' ? 'Event Triggered' : (item.schedule_text || ''),
+            progress: item.progress || null,
             status: item.status === 'Active' ? 'Scheduled' : item.status === 'Running' ? 'Running' : item.status === 'Paused' ? 'Paused' : 'Scheduled',
-            lastRunDate: item.last_run_at ? new Date(item.last_run_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today',
-            lastRunTime: '10:00 AM',
-            nextRunDate: 'Tomorrow',
-            nextRunTime: '09:00 AM',
-            createdBy: 'Shubham',
+            lastRunDate: item.last_run_at ? new Date(item.last_run_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            lastRunTime: item.last_run_at ? new Date(item.last_run_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '',
+            nextRunDate: item.next_run_at ? new Date(item.next_run_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            nextRunTime: item.next_run_at ? new Date(item.next_run_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '',
+            createdBy: '',
             enabled: Boolean(item.enabled),
           }));
           setAutomations(mapped);
@@ -166,11 +166,11 @@ export default function AutomationsWorkspace({
         const list = Array.isArray(data) ? data : (data.items || []);
         const mappedProducts: CatalogProduct[] = list.map((p: any) => ({
           id: p.id,
-          sku: p.sku || 'SKU',
-          name: p.title || p.name || 'Product',
-          category: p.category || 'General',
-          stock: p.stock_quantity != null ? p.stock_quantity : (p.stock != null ? p.stock : 100),
-          price: p.price != null ? p.price : 499,
+          sku: p.sku || '',
+          name: p.title || p.name || '',
+          category: p.category || '',
+          stock: p.stock_quantity != null ? p.stock_quantity : (p.stock != null ? p.stock : 0),
+          price: p.price != null ? p.price : 0,
           status: p.status === 'active' ? 'Active' : 'Unlisted',
         }));
         setCatalogProductsList(mappedProducts);
@@ -185,7 +185,7 @@ export default function AutomationsWorkspace({
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(10);
-  const [dateRangeText] = useState('Dec 1, 2024 - Dec 31, 2024');
+  const [dateRangeText] = useState('');
 
   // Modals and Drawers
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -396,7 +396,7 @@ export default function AutomationsWorkspace({
               <div className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">{totalCount}</div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
                 <span>↑</span>
-                <span>3 new this month</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -456,7 +456,7 @@ export default function AutomationsWorkspace({
               <div className="text-2xl font-bold text-slate-900 tracking-tight mt-0.5">{completedCount}</div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
                 <span>↑</span>
-                <span>24% vs last month</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -1215,45 +1215,25 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Generate an optimized marketplace title and 3 bullet points for a Stainless Steel Water Bottle. Seller instructions: "${aiInstructions}"`
+          message: `Generate optimized marketplace listing content for the selected products. Seller instructions: "${aiInstructions}"`
         })
       });
       const data = await res.json();
       if (data && data.answer) {
         const lines = String(data.answer).split('\n').map((l: string) => l.trim()).filter(Boolean);
-        const titleCandidate = lines.find((l: string) => l.length > 20 && !l.startsWith('-') && !l.startsWith('*')) || lines[0] || 'AquaPure Stainless Steel Water Bottle 1L | Leak-Proof Insulated Flask for Office, Gym & Travel (Black)';
+        const titleCandidate = lines.find((l: string) => l.length > 20 && !l.startsWith('-') && !l.startsWith('*')) || lines[0] || '';
         const bullets = lines.filter((l: string) => l.startsWith('-') || l.startsWith('*') || l.startsWith('•')).map((l: string) => l.replace(/^[-*•]\s*/, ''));
         setAiGeneratedSample({
           title: titleCandidate.replace(/^["']|["']$/g, ''),
-          bullets: bullets.length >= 2 ? bullets.slice(0, 3) : [
-            'PREMIUM FOOD GRADE 304 STEEL: Rust-free double-wall construction keeping drinks chilled for 24 hrs and hot for 12 hrs.',
-            '100% LEAK-PROOF & ERGONOMIC: Airtight silicone seal prevents spills in backpack or car cup holder.',
-            'ECO-FRIENDLY & BPA FREE: Zero plastic taste, durable powder coating resistant to scratches and dents.'
-          ],
-          priceMarkup: '₹499 base → ₹524 on Amazon IN (+5% referral compensation)'
+          bullets: bullets.slice(0, 3),
+          priceMarkup: ''
         });
       } else {
-        setAiGeneratedSample({
-          title: 'AquaPure Stainless Steel Water Bottle 1L | Leak-Proof Insulated Flask for Office, Gym & Travel (Black)',
-          bullets: [
-            'PREMIUM FOOD GRADE 304 STEEL: Rust-free double-wall construction keeping drinks chilled for 24 hrs and hot for 12 hrs.',
-            '100% LEAK-PROOF & ERGONOMIC: Airtight silicone seal prevents spills in backpack or car cup holder.',
-            'ECO-FRIENDLY & BPA FREE: Zero plastic taste, durable powder coating resistant to scratches and dents.'
-          ],
-          priceMarkup: '₹499 base → ₹524 on Amazon IN (+5% referral compensation)'
-        });
+        setAiGeneratedSample({ title: '', bullets: [], priceMarkup: '' });
       }
     } catch {
       // Fallback
-      setAiGeneratedSample({
-        title: 'AquaPure Premium Stainless Steel Bottle 1000ml - Durable Leak-Proof Design',
-        bullets: [
-          'Double-walled vacuum insulation keeps liquids cold or hot for hours.',
-          'Built with durable food-grade stainless steel with BPA-free spout.',
-          'Perfect for daily gym workouts, trekking, and office hydration.'
-        ],
-        priceMarkup: '₹499 base → ₹524 on Amazon IN'
-      });
+      setAiGeneratedSample({ title: '', bullets: [], priceMarkup: '' });
     } finally {
       setAiTestingPrompt(false);
     }
@@ -1282,7 +1262,7 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
       lastRunTime: 'Just now',
       nextRunDate: 'Today',
       nextRunTime: timeSlots[0] || '10:00 AM',
-      createdBy: 'Shubham',
+      createdBy: '',
       enabled: true,
       dailyLimit,
       batchSize,
@@ -1655,7 +1635,7 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-500">Test how the AI interprets your prompt on sample SKU SB-1L-001</span>
+                <span className="text-[11px] text-slate-500">Test how the AI interprets your prompt on the selected products</span>
                 <button
                   type="button"
                   onClick={handleTestAi}

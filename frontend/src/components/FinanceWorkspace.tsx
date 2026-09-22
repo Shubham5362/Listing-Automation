@@ -64,25 +64,16 @@ export default function FinanceWorkspace({
   const [typeFilter, setTypeFilter] = useState('All Transaction Types');
   const [timeFilter, setTimeFilter] = useState('Last 30 Days');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isSettlementDrawerOpen, setIsSettlementDrawerOpen] = useState(true);
-  const [selectedSettlement, setSelectedSettlement] = useState({
-    id: 'SETT-2024-015',
-    date: 'Dec 15, 2024',
-    marketplace: 'Amazon',
-    amount: '₹1,24,350',
-    status: 'Completed',
-    utrNumber: 'HDFC1234567890',
-    expectedDate: 'Dec 15, 2024',
-    processedDate: 'Dec 15, 2024, 10:24 AM',
-  });
+  const [isSettlementDrawerOpen, setIsSettlementDrawerOpen] = useState(false);
+  const [selectedSettlement, setSelectedSettlement] = useState({ id: '', date: '', marketplace: '', amount: '', status: '', utrNumber: '', expectedDate: '', processedDate: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [financeSummary, setFinanceSummary] = useState({
-    sales: 1248670,
-    total_expenses: 248920,
-    net_profit: 326480,
-    entry_count: 18,
+    sales: 0,
+    total_expenses: 0,
+    net_profit: 0,
+    entry_count: 0,
   });
 
   // Sync with backend finance API
@@ -94,33 +85,33 @@ export default function FinanceWorkspace({
           const json = await res.json();
           if (json.summary) {
             setFinanceSummary({
-              sales: json.summary.sales || 1248670,
-              total_expenses: json.summary.total_expenses || 248920,
-              net_profit: json.summary.net_profit || 326480,
-              entry_count: json.summary.entry_count || 18,
+              sales: json.summary.sales ?? 0,
+              total_expenses: json.summary.total_expenses ?? 0,
+              net_profit: json.summary.net_profit ?? 0,
+              entry_count: json.summary.entry_count ?? 0,
             });
           }
           if (json.items && json.items.length > 0) {
             const mapped: FinanceTransaction[] = json.items.map((tx: any, idx: number) => {
-              const amt = tx.amount !== undefined ? tx.amount : (tx.type === 'Payout' ? 124350 : 499);
+              const amt = tx.amount ?? 0;
               const isNeg = amt < 0;
               const formattedAmt = isNeg ? `-₹${Math.abs(amt).toLocaleString('en-IN')}` : `₹${amt.toLocaleString('en-IN')}`;
-              const mkt = (tx.marketplace || 'Amazon').toLowerCase().includes('flipkart') ? 'Flipkart' : 'Amazon';
+              const mkt = tx.marketplace || '';
 
               return {
-                id: tx.transaction_number || `TRX-2024-${String(tx.id || idx + 1).padStart(3, '0')}`,
-                date: tx.created_at ? tx.created_at.split(' ')[0] : 'Dec 15, 2024',
-                type: (tx.type || 'Order Payment') as any,
-                description: tx.description || (tx.type === 'Payout' ? `${mkt} Settlement` : 'Order Payment'),
+                id: tx.transaction_number || String(tx.id ?? ''),
+                date: tx.created_at ? tx.created_at.split(' ')[0] : '',
+                type: (tx.type || '') as any,
+                description: tx.description || '',
                 orderId: tx.order_number || '-',
                 amount: amt,
                 amountDisplay: formattedAmt,
                 isNegative: isNeg,
-                status: (tx.status || 'Completed') as any,
-                marketplace: mkt,
-                settlementId: `SETT-2024-${String(tx.id || idx + 1).padStart(3, '0')}`,
-                utrNumber: `HDFC${String(tx.id || 1234567890).padEnd(10, '0')}`,
-                processedDate: tx.created_at || 'Dec 15, 2024, 10:24 AM',
+                status: (tx.status || '') as any,
+                marketplace: mkt as any,
+                settlementId: tx.settlementId || '',
+                utrNumber: tx.utrNumber || '',
+                processedDate: tx.created_at || '',
               };
             });
             setTransactions(mapped);
@@ -198,14 +189,14 @@ export default function FinanceWorkspace({
   const handleRowClick = (tx: FinanceTransaction) => {
     if (tx.type === 'Payout') {
       setSelectedSettlement({
-        id: tx.settlementId || 'SETT-2024-015',
+        id: tx.settlementId || '',
         date: tx.date,
         marketplace: tx.marketplace,
         amount: tx.amountDisplay,
         status: tx.status,
-        utrNumber: tx.utrNumber || 'HDFC1234567890',
+        utrNumber: tx.utrNumber || '',
         expectedDate: tx.date,
-        processedDate: tx.processedDate || `${tx.date}, 10:24 AM`,
+        processedDate: tx.processedDate || tx.date,
       });
       setIsSettlementDrawerOpen(true);
     }
@@ -304,7 +295,7 @@ export default function FinanceWorkspace({
           {/* Date Range Selector */}
           <div className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer">
             <Calendar className="w-3.5 h-3.5 text-slate-500" />
-            <span>Dec 1, 2024 - Dec 31, 2024</span>
+            <span>—</span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </div>
 
@@ -341,7 +332,7 @@ export default function FinanceWorkspace({
             <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.sales).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
               <TrendingUp className="w-3 h-3" />
-              <span>18.3% vs last month</span>
+              <span>—</span>
             </div>
           </div>
         </div>
@@ -355,10 +346,10 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Total Payouts</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.sales * 0.9).toLocaleString('en-IN')}</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{transactions.filter((tx) => tx.type === 'Payout').reduce((sum, tx) => sum + tx.amount, 0).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
               <TrendingUp className="w-3 h-3" />
-              <span>16.7%</span>
+              <span>—</span>
             </div>
           </div>
         </div>
@@ -375,7 +366,7 @@ export default function FinanceWorkspace({
             <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.total_expenses).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-500 mt-1">
               <TrendingUp className="w-3 h-3" />
-              <span>12.4%</span>
+              <span>—</span>
             </div>
           </div>
         </div>
@@ -392,7 +383,7 @@ export default function FinanceWorkspace({
             <div className="text-xl font-bold text-slate-900 tracking-tight">₹{Math.round(financeSummary.net_profit).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
               <TrendingUp className="w-3 h-3" />
-              <span>22.8%</span>
+              <span>—</span>
             </div>
           </div>
         </div>
@@ -406,7 +397,7 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Pending Settlement</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹1,24,580</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹0</div>
             <div className="h-4 mt-1" />
           </div>
         </div>
@@ -420,10 +411,10 @@ export default function FinanceWorkspace({
             <span className="text-[11px] font-medium text-slate-500">Refunds</span>
           </div>
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">₹48,360</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">₹{transactions.filter((tx) => tx.type === 'Refund').reduce((sum, tx) => sum + Math.abs(tx.amount), 0).toLocaleString('en-IN')}</div>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-500 mt-1">
               <TrendingUp className="w-3 h-3" />
-              <span>5.2%</span>
+              <span>—</span>
             </div>
           </div>
         </div>
@@ -446,10 +437,10 @@ export default function FinanceWorkspace({
           {/* Tabs */}
           <div className="flex items-center gap-2 px-5 pt-3 border-b border-slate-200 overflow-x-auto scrollbar-none">
             {[
-              { id: 'All Transactions', label: 'All Transactions', count: '1,248' },
-              { id: 'Payouts', label: 'Payouts', count: '48' },
-              { id: 'Fees', label: 'Fees', count: '320' },
-              { id: 'Refunds', label: 'Refunds', count: '86' },
+              { id: 'All Transactions', label: 'All Transactions', count: '{transactions.length}' },
+              { id: 'Payouts', label: 'Payouts', count: transactions.filter((tx) => tx.type === 'Payout').length },
+              { id: 'Fees', label: 'Fees', count: transactions.filter((tx) => tx.type === 'Fee' || tx.type === 'FBA Fee').length },
+              { id: 'Refunds', label: 'Refunds', count: transactions.filter((tx) => tx.type === 'Refund').length },
               { id: 'Adjustments', label: 'Adjustments', count: '12' },
               { id: 'Tax', label: 'Tax', count: '28' },
             ].map((tab) => {
@@ -621,7 +612,7 @@ export default function FinanceWorkspace({
                   const encodedUri = encodeURI(csvContent);
                   const link = document.createElement('a');
                   link.setAttribute('href', encodedUri);
-                  link.setAttribute('download', `Financial_Statement_Dec_2024.csv`);
+                  link.setAttribute('download', `Financial_Statement_${new Date().toISOString().slice(0, 10)}.csv`);
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
@@ -752,7 +743,7 @@ export default function FinanceWorkspace({
             <div>
               Showing <span className="font-semibold text-slate-800">1</span> to{' '}
               <span className="font-semibold text-slate-800">10</span> of{' '}
-              <span className="font-semibold text-slate-800">1,248</span> transactions
+              <span className="font-semibold text-slate-800">{transactions.length}</span> transactions
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -917,16 +908,16 @@ export default function FinanceWorkspace({
                 <Calendar className="w-4 h-4 text-slate-700" />
                 <h3 className="text-sm font-bold text-slate-900">Monthly Summary</h3>
               </div>
-              <span className="text-xs font-medium text-slate-500">Dec 2024</span>
+              <span className="text-xs font-medium text-slate-500">—</span>
             </div>
 
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Total Revenue</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">₹12,48,670</span>
+                  <span className="font-bold text-slate-900">₹{Math.round(financeSummary.sales).toLocaleString('en-IN')}</span>
                   <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> 18.3%
+                    <span>—</span>
                   </span>
                 </div>
               </div>
@@ -934,9 +925,9 @@ export default function FinanceWorkspace({
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Total Fees</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">-₹2,48,920</span>
+                  <span className="font-bold text-slate-900">-₹{Math.round(financeSummary.total_expenses).toLocaleString('en-IN')}</span>
                   <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> 12.4%
+                    <span>—</span>
                   </span>
                 </div>
               </div>
@@ -944,9 +935,9 @@ export default function FinanceWorkspace({
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Advertising Spend</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">-₹24,580</span>
+                  <span className="font-bold text-slate-900">₹{transactions.filter((tx) => tx.type === 'Advertising').reduce((sum, tx) => sum + Math.abs(tx.amount), 0).toLocaleString('en-IN')}</span>
                   <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> 8.2%
+                    <span>—</span>
                   </span>
                 </div>
               </div>
@@ -954,9 +945,9 @@ export default function FinanceWorkspace({
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Refunds</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">-₹48,360</span>
+                  <span className="font-bold text-slate-900">₹{transactions.filter((tx) => tx.type === 'Refund').reduce((sum, tx) => sum + Math.abs(tx.amount), 0).toLocaleString('en-IN')}</span>
                   <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> 5.2%
+                    <span>—</span>
                   </span>
                 </div>
               </div>
@@ -964,9 +955,9 @@ export default function FinanceWorkspace({
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Other Charges</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">-₹12,330</span>
+                  <span className="font-bold text-slate-900">₹{transactions.filter((tx) => tx.type === 'Adjustment' || tx.type === 'Tax').reduce((sum, tx) => sum + Math.abs(tx.amount), 0).toLocaleString('en-IN')}</span>
                   <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> 3.1%
+                    <span>—</span>
                   </span>
                 </div>
               </div>
@@ -974,9 +965,9 @@ export default function FinanceWorkspace({
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900">Net Profit</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-extrabold text-slate-900">₹3,26,480</span>
+                  <span className="text-sm font-extrabold text-slate-900">₹{Math.round(financeSummary.net_profit).toLocaleString('en-IN')}</span>
                   <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> 22.8%
+                    <span>—</span>
                   </span>
                 </div>
               </div>
@@ -999,38 +990,7 @@ export default function FinanceWorkspace({
             </div>
 
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between py-1">
-                <span className="text-slate-700 font-medium">Dec 15, 2024</span>
-                <div className="flex items-center gap-2.5">
-                  <span className="font-bold text-slate-900">₹1,24,350</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Completed
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between py-1">
-                <span className="text-slate-700 font-medium">Dec 08, 2024</span>
-                <div className="flex items-center gap-2.5">
-                  <span className="font-bold text-slate-900">₹98,420</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Completed
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between py-1">
-                <span className="text-slate-700 font-medium">Dec 01, 2024</span>
-                <div className="flex items-center gap-2.5">
-                  <span className="font-bold text-slate-900">₹1,02,580</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Completed
-                  </span>
-                </div>
-              </div>
+              <div className="text-slate-400 py-4 text-center">No payout data available.</div>
             </div>
           </div>
 

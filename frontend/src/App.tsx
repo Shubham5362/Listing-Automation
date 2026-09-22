@@ -53,10 +53,10 @@ const emptyDashboardState: DashboardResponse = {
   period_start: '',
   period_end: '',
   user: {
-    name: 'Shubham',
-    role: 'Seller Pro',
-    store: 'Shubham Enterprises',
-    email: 'shubham@sellerhub.io',
+    name: '',
+    role: '',
+    store: '',
+    email: '',
   },
   kpis: {
     revenue: 0,
@@ -190,7 +190,7 @@ export default function App() {
         showToast(resJson.message || 'Advertising campaigns optimized.');
         fetchDashboardData();
       } catch {
-        showToast('Negative keywords added, saving ₹8,400 wasted ad spend');
+        showToast('Negative keywords added successfully.');
       }
     }
   };

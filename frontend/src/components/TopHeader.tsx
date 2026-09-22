@@ -205,8 +205,8 @@ export default function TopHeader({
           {userMenuOpen && (
             <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50 text-xs">
               <div className="px-3 py-2 border-b border-slate-100">
-                <div className="font-bold text-slate-900">Shubham Enterprises</div>
-                <div className="text-[11px] text-slate-500">shubham@sellerhub.io</div>
+                <div className="font-bold text-slate-900">—</div>
+                <div className="text-[11px] text-slate-500">—</div>
               </div>
               <div className="px-3 py-1.5 text-slate-600 font-medium">Plan: Seller Pro (Active)</div>
               <div className="pt-1 border-t border-slate-100">

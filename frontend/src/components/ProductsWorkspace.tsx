@@ -70,10 +70,10 @@ export default function ProductsWorkspace({
   const [newProductForm, setNewProductForm] = useState({
     name: '',
     sku: '',
-    category: 'Home & Kitchen',
-    price: '499',
-    stock: '50',
-    margin: '25',
+    category: '',
+    price: '',
+    stock: '',
+    margin: '',
   });
 
   // Sync and enrich from real backend catalog endpoint
@@ -85,10 +85,10 @@ export default function ProductsWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: ProductCatalogItem[] = json.items.map((item: any) => {
-              const stock = item.stock !== undefined ? item.stock : (item.stock_qty !== undefined ? item.stock_qty : 50);
-              const price = item.price || item.mrp || 499;
-              const cost = item.cost_price || 250;
-              const margin = item.margin !== undefined ? item.margin : Math.round(((price - cost) / price) * 100);
+              const stock = item.stock !== undefined ? item.stock : (item.stock_qty !== undefined ? item.stock_qty : 0);
+              const price = item.price ?? item.mrp ?? 0;
+              const cost = item.cost_price ?? 0;
+              const margin = item.margin !== undefined ? item.margin : (price > 0 ? Math.round(((price - cost) / price) * 100) : 0);
               const isStockOut = stock === 0;
               const isLow = stock > 0 && stock <= (item.reorder_level || 15);
               const sku = item.sku || '';
@@ -104,35 +104,29 @@ export default function ProductsWorkspace({
 
               return {
                 id: item.id,
-                name: item.name || item.title || 'Stainless Steel Water Bottle 1L',
-                category: item.category || 'Home & Kitchen',
-                brand: item.brand || 'AquaPure',
+                name: item.name || item.title || '',
+                category: item.category || '',
+                brand: item.brand || '',
                 sku: sku,
-                hsnCode: item.hsnCode || item.hsn_code || '7323',
-                weight: item.weight || '350 g',
-                dimensions: item.dimensions || '28 x 7 x 7 cm',
-                createdOn: item.createdOn || (item.created_at ? item.created_at.split(' ')[0] : 'Aug 12, 2024'),
-                lastUpdated: item.lastUpdated || (item.updated_at ? item.updated_at.split(' ')[0] : 'Dec 15, 2024'),
+                hsnCode: item.hsnCode || item.hsn_code || '',
+                weight: item.weight || '',
+                dimensions: item.dimensions || '',
+                createdOn: item.createdOn || (item.created_at ? item.created_at.split(' ')[0] : ''),
+                lastUpdated: item.lastUpdated || (item.updated_at ? item.updated_at.split(' ')[0] : ''),
                 imageType: imgType,
-                marketplaces: item.marketplaces || ['amazon', 'flipkart'],
+                marketplaces: item.marketplaces || [],
                 stock: stock,
                 availableStock: item.availableStock !== undefined ? item.availableStock : stock,
                 reservedStock: item.reservedStock !== undefined ? item.reservedStock : (item.reserved_quantity || 0),
-                inboundStock: item.inboundStock || 25,
+                inboundStock: item.inboundStock ?? 0,
                 stockStatus: item.stockStatus || (isStockOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'),
                 price: price,
-                revenue30d: item.revenue30d || Math.round(price * Math.max(stock, 10)),
+                revenue30d: item.revenue30d ?? 0,
                 margin: margin,
                 listingStatus: item.listingStatus || (item.is_active ? 'Active' : 'Archived'),
-                asin: item.asin || `B0${item.id}A8Y7Z`,
-                flipkartFsn: item.flipkartFsn || `BOT${item.id}99XYZ`,
-                growthMetrics: item.growthMetrics || {
-                  revenueGrowth: 14.2,
-                  unitsSold: 98,
-                  unitsSoldGrowth: 12.8,
-                  averagePrice: price,
-                  marginGrowth: 2.1,
-                },
+                asin: item.asin || '',
+                flipkartFsn: item.flipkartFsn || '',
+                growthMetrics: item.growthMetrics || undefined,
               };
             });
             setProducts(mapped);
@@ -161,12 +155,12 @@ export default function ProductsWorkspace({
   // Tab counts
   const tabCounts = useMemo(() => {
     return {
-      all: 245,
-      active: 218,
-      outOfStock: 12,
-      lowStock: 18,
-      suppressed: 6,
-      archived: 9,
+      all: products.length,
+      active: products.filter((p) => p.listingStatus === 'Active').length,
+      outOfStock: products.filter((p) => p.stockStatus === 'Out of Stock').length,
+      lowStock: products.filter((p) => p.stockStatus === 'Low Stock').length,
+      suppressed: products.filter((p) => p.listingStatus === 'Suppressed').length,
+      archived: products.filter((p) => p.listingStatus === 'Archived').length,
     };
   }, []);
 
@@ -335,8 +329,8 @@ export default function ProductsWorkspace({
       return;
     }
     const stockVal = parseInt(newProductForm.stock, 10) || 0;
-    const priceVal = parseFloat(newProductForm.price) || 499;
-    const marginVal = parseInt(newProductForm.margin, 10) || 25;
+    const priceVal = parseFloat(newProductForm.price) || 0;
+    const marginVal = parseInt(newProductForm.margin, 10) || 0;
 
     let createdId = Date.now();
     try {
@@ -365,18 +359,18 @@ export default function ProductsWorkspace({
       name: newProductForm.name,
       sku: newProductForm.sku,
       category: newProductForm.category,
-      brand: 'AquaPure',
-      hsnCode: '7323',
-      weight: '320 g',
-      dimensions: '25 x 7 x 7 cm',
+      brand: '',
+      hsnCode: '',
+      weight: '',
+      dimensions: '',
       createdOn: 'Just now',
       lastUpdated: 'Just now',
       imageType: 'bottle-black',
-      marketplaces: ['amazon', 'flipkart'],
+      marketplaces: [],
       stock: stockVal,
       availableStock: stockVal,
       reservedStock: 0,
-      inboundStock: 25,
+      inboundStock: 0,
       stockStatus: stockVal === 0 ? 'Out of Stock' : stockVal <= 15 ? 'Low Stock' : 'In Stock',
       price: priceVal,
       revenue30d: 0,
@@ -391,10 +385,10 @@ export default function ProductsWorkspace({
     setNewProductForm({
       name: '',
       sku: '',
-      category: 'Home & Kitchen',
-      price: '499',
-      stock: '50',
-      margin: '25',
+      category: '',
+      price: '',
+      stock: '',
+      margin: '',
     });
   };
 
@@ -548,9 +542,9 @@ export default function ProductsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Total Products</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">245</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{products.length}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                  <span>↑ 12.5%</span>
+                  <span>—</span>
                   <span className="text-slate-400 font-normal">vs last 30 days</span>
                 </div>
               </div>
@@ -565,9 +559,9 @@ export default function ProductsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Active Listings</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">218</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{products.filter((p) => p.listingStatus === 'Active').length}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                  <span>↑ 8.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -581,9 +575,9 @@ export default function ProductsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Out of Stock</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">12</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{products.filter((p) => p.stockStatus === 'Out of Stock').length}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                  <span>↑ 33.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -597,9 +591,9 @@ export default function ProductsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Low Stock</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">18</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{products.filter((p) => p.stockStatus === 'Low Stock').length}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                  <span>↑ 12.5%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -613,9 +607,9 @@ export default function ProductsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Suppressed</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">6</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{products.filter((p) => p.listingStatus === 'Suppressed').length}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                  <span>↑ 50.0%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -629,9 +623,9 @@ export default function ProductsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Avg. Margin</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">24.8%</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{products.length ? `${(products.reduce((sum, p) => sum + p.margin, 0) / products.length).toFixed(1)}%` : '0%'}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                  <span>↑ 2.4%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -1119,7 +1113,7 @@ export default function ProductsWorkspace({
               <div>
                 Showing <span className="font-semibold text-slate-800">1</span> to{' '}
                 <span className="font-semibold text-slate-800">10</span> of{' '}
-                <span className="font-semibold text-slate-800">245</span> products
+                <span className="font-semibold text-slate-800">{filteredProducts.length}</span> products
               </div>
 
               <div className="flex items-center gap-2">
@@ -1348,7 +1342,7 @@ export default function ProductsWorkspace({
             <button onClick={() => setIsAiEnrichOpen(false)} className="text-slate-400 hover:text-white">✕</button>
           </div>
           <p className="text-xs text-slate-300">
-            Scanning 245 listings for keyword density, image compliance, and margin optimization opportunities.
+            Scanning {products.length} listings for keyword density, image compliance, and margin optimization opportunities.
           </p>
           <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
             <div className="bg-violet-500 h-full w-3/4 animate-pulse rounded-full" />
