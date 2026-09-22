@@ -261,8 +261,6 @@ export default function AiSellerCopilotWorkspace({
       }]);
       console.error('Automation approval failed:', error);
     }
-
-    }
   };
 
   // Submit modification
