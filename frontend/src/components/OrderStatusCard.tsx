@@ -10,13 +10,8 @@ export default function OrderStatusCard({
   orderStatus,
   onViewAll,
 }: OrderStatusCardProps) {
-  const breakdown = orderStatus.breakdown || [
-    { name: 'Delivered', count: 124, percent: 67, color: '#10b981' },
-    { name: 'Shipped', count: 28, percent: 15, color: '#3b82f6' },
-    { name: 'Processing', count: 18, percent: 10, color: '#f59e0b' },
-    { name: 'Cancelled', count: 8, percent: 4, color: '#ef4444' },
-    { name: 'Return Requested', count: 6, percent: 3, color: '#8b5cf6' },
-  ];
+  const breakdown = orderStatus?.breakdown?.length ? orderStatus.breakdown : [];
+  const totalOrders = orderStatus?.total ?? breakdown.reduce((acc, seg) => acc + (seg.count || 0), 0);
 
   // SVG Donut calculation
   const size = 110;
@@ -69,7 +64,7 @@ export default function OrderStatusCard({
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-xl font-extrabold text-slate-900 leading-none">
-              {orderStatus.total || 184}
+              {totalOrders}
             </span>
             <span className="text-[10px] font-medium text-slate-400 mt-0.5">
               Total Orders

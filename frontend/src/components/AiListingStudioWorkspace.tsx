@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import {
   Sparkles,
   HelpCircle,
@@ -54,79 +54,7 @@ interface CatalogSourceItem {
   reviewsCount: number;
 }
 
-const defaultCatalogSources: CatalogSourceItem[] = [
-  {
-    id: 1,
-    name: 'Stainless Steel Water Bottle',
-    brand: 'HydroMate',
-    category: 'Home & Kitchen > Kitchen & Dining > Water Bottles',
-    sku: 'HM-SSB-1000',
-    price: 599,
-    mrp: 999,
-    title: 'HydroMate Stainless Steel Water Bottle 1000ml | Leak Proof | BPA Free | Double Wall Vacuum Insulated | Hot & Cold | For Office, Gym, Travel',
-    bullets: [
-      'Premium 304 stainless steel – durable and rust proof',
-      'Keeps beverages hot for 12 hours & cold for 24 hours',
-      'Leak proof and BPA free for safe drinking'
-    ],
-    description: 'HydroMate 1000ml Stainless Steel Water Bottle is engineered with advanced double-walled vacuum insulation to preserve your beverage temperature for hours. Designed for modern professionals, fitness enthusiasts, and travelers.',
-    keywords: ['stainless steel water bottle', 'insulated flask 1 litre', 'gym bottle bpa free', 'hot and cold flask', 'travel bottle office'],
-    rating: 4.3,
-    reviewsCount: 12458,
-    images: [
-      { id: 'img-1', url: 'primary-bottle', label: 'Primary Angle', isPrimary: true },
-      { id: 'img-2', url: 'angle-bottle', label: 'Perspective Angle' },
-      { id: 'img-3', url: 'cap-mouth', label: 'Airtight Spout' },
-      { id: 'img-4', url: 'lifestyle-table', label: 'Office Lifestyle' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Insulated Tumbler 500ml',
-    brand: 'HydroMate',
-    category: 'Home & Kitchen > Kitchen & Dining > Travel Mugs',
-    sku: 'HM-IT-500',
-    price: 499,
-    mrp: 799,
-    title: 'HydroMate Insulated Coffee Tumbler 500ml with Spill-Proof Lid | Double Wall Flask for Tea & Cold Brew',
-    bullets: [
-      'Vacuum insulated double wall body keeps coffee steaming hot for 6 hours',
-      'Splash-resistant flip lid with ergonomic straw port',
-      'Sweat-proof exterior fits standard car cup holders effortlessly'
-    ],
-    description: 'The everyday coffee companion crafted from pro-grade 18/8 stainless steel with a sleek matte finish.',
-    keywords: ['coffee tumbler', 'insulated mug', 'car flask', 'travel tumbler 500ml'],
-    rating: 4.4,
-    reviewsCount: 4210,
-    images: [
-      { id: 'img-t1', url: 'primary-bottle', label: 'Tumbler Front', isPrimary: true },
-      { id: 'img-t2', url: 'angle-bottle', label: 'Lid Close-up' }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Travel Mug Premium',
-    brand: 'HydroMate',
-    category: 'Home & Kitchen > Kitchen & Dining > Thermos Flasks',
-    sku: 'HM-TMP-750',
-    price: 799,
-    mrp: 1299,
-    title: 'HydroMate Travel Mug Premium 750ml | Matte Finish Vacuum Flask with Thermal Sensor Cap',
-    bullets: [
-      'Smart temperature touch LED display on insulated cap',
-      'Dual-lock leakproof safety button prevents accidental opens in bags',
-      '18/8 food grade interior leaves no metallic aftertaste'
-    ],
-    description: 'Engineered for rugged outdoor adventures and daily corporate commutes.',
-    keywords: ['smart thermos flask', 'led temperature bottle', 'travel flask 750ml'],
-    rating: 4.5,
-    reviewsCount: 6830,
-    images: [
-      { id: 'img-m1', url: 'primary-bottle', label: 'Mug Front', isPrimary: true },
-      { id: 'img-m2', url: 'lifestyle-table', label: 'Desk Setup' }
-    ]
-  }
-];
+const defaultCatalogSources: CatalogSourceItem[] = [];
 
 interface AiListingStudioWorkspaceProps {
   onOpenAiCopilot?: () => void;
@@ -141,6 +69,36 @@ export default function AiListingStudioWorkspace({
 }: AiListingStudioWorkspaceProps) {
   // Stepper state: 1: Product Information, 2: AI Optimization, 3: Marketplace Setup, 4: Preview & Confirm
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+  const [catalogSources, setCatalogSources] = useState<CatalogSourceItem[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/products')
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.items || []);
+        const mapped: CatalogSourceItem[] = list.map((p: any) => ({
+          id: p.id,
+          name: p.title || p.name || 'Catalog Item',
+          brand: p.brand || 'AquaPure',
+          category: p.category || 'General',
+          sku: p.sku || 'SKU',
+          price: p.price || 499,
+          mrp: p.mrp || (p.price ? Math.round(p.price * 1.5) : 799),
+          title: p.title || p.name || 'Catalog Item',
+          bullets: [
+            p.description || 'High quality durable material',
+            'Multi-marketplace ready with verified SKU compliance'
+          ],
+          description: p.description || 'Full product description',
+          keywords: [p.category || 'general', p.brand || 'brand'],
+          images: [{ id: 'img-1', url: 'primary', label: 'Primary', isPrimary: true }],
+          rating: 4.8,
+          reviewsCount: 120,
+        }));
+        setCatalogSources(mapped);
+      })
+      .catch(err => console.error('Failed to fetch catalog sources:', err));
+  }, []);
 
   // Form State matching screenshot
   const [productName, setProductName] = useState('Stainless Steel Water Bottle');
@@ -525,7 +483,7 @@ export default function AiListingStudioWorkspace({
                           <div className="px-2.5 py-1.5 font-bold text-slate-400 text-[10px] uppercase tracking-wider">
                             Choose Catalog Product:
                           </div>
-                          {defaultCatalogSources.map(item => (
+                          {catalogSources.map(item => (
                             <button
                               key={item.id}
                               onClick={() => handleImportProduct(item)}

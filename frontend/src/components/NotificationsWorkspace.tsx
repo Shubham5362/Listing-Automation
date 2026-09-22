@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Bell,
   Settings,
@@ -72,153 +72,48 @@ export default function NotificationsWorkspace({
   onSelectMarketplaceFilter,
   onUpdateUnreadCount
 }: NotificationsWorkspaceProps) {
-  // Master notifications data exactly matching the reference image (48 total, initial page of 10)
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'notif-1',
-      title: 'Low Stock Alert',
-      description: 'SKU HM-SSB-1000 is running low (3 units left)',
-      category: 'Inventory',
-      marketplace: 'Amazon',
-      time: '10:24 AM',
-      status: 'Unread',
-      iconType: 'warning',
-      sku: 'HM-SSB-1000'
-    },
-    {
-      id: 'notif-2',
-      title: 'New Order Received',
-      description: 'Order #408-1234567 for ₹1,299',
-      category: 'Orders',
-      marketplace: 'Flipkart',
-      time: '09:18 AM',
-      status: 'Unread',
-      iconType: 'cart'
-    },
-    {
-      id: 'notif-3',
-      title: 'Listing Published',
-      description: "Your product 'Stainless Steel Water Bottle' is now live",
-      category: 'Listings',
-      marketplace: 'Amazon',
-      time: 'Yesterday, 06:45 PM',
-      status: 'Read',
-      iconType: 'trending'
-    },
-    {
-      id: 'notif-4',
-      title: 'Price Change Detected',
-      description: 'Competitor price dropped by 12%',
-      category: 'Pricing',
-      marketplace: 'Flipkart',
-      time: 'Yesterday, 04:20 PM',
-      status: 'Read',
-      iconType: 'megaphone'
-    },
-    {
-      id: 'notif-5',
-      title: 'Settlement Processed',
-      description: '₹24,350 has been credited to your account',
-      category: 'Finance',
-      marketplace: 'Amazon',
-      time: 'Dec 13, 2024, 11:30 AM',
-      status: 'Read',
-      iconType: 'wallet'
-    },
-    {
-      id: 'notif-6',
-      title: 'Inventory Sync Complete',
-      description: 'Successfully synced 1,248 products',
-      category: 'System',
-      marketplace: 'Meesho',
-      time: 'Dec 13, 2024, 10:12 AM',
-      status: 'Read',
-      iconType: 'box'
-    },
-    {
-      id: 'notif-7',
-      title: 'Listing Error',
-      description: '3 listings failed to publish',
-      category: 'Listings',
-      marketplace: 'Myntra',
-      time: 'Dec 12, 2024, 06:18 PM',
-      status: 'Read',
-      iconType: 'warning'
-    },
-    {
-      id: 'notif-8',
-      title: 'New Feature Available',
-      description: 'Try our new AI Keyword Optimization',
-      category: 'System',
-      marketplace: null,
-      time: 'Dec 12, 2024, 02:45 PM',
-      status: 'Read',
-      iconType: 'info'
-    },
-    {
-      id: 'notif-9',
-      title: 'Return Requested',
-      description: 'Order #408-7654321 return requested',
-      category: 'Orders',
-      marketplace: 'Amazon',
-      time: 'Dec 11, 2024, 01:20 PM',
-      status: 'Read',
-      iconType: 'return'
-    },
-    {
-      id: 'notif-10',
-      title: 'Weekly Performance Report',
-      description: 'Your weekly business report is ready',
-      category: 'Analytics',
-      marketplace: null,
-      time: 'Dec 09, 2024, 09:00 AM',
-      status: 'Read',
-      iconType: 'analytics'
-    },
-    // Remaining notifications for pages 2-5
-    {
-      id: 'notif-11',
-      title: 'Buy Box Lost on Amazon',
-      description: 'Competitor undercut price by ₹45 on SKU HM-SSB-2000',
-      category: 'Pricing',
-      marketplace: 'Amazon',
-      time: 'Dec 08, 2024, 03:15 PM',
-      status: 'Read',
-      iconType: 'megaphone'
-    },
-    {
-      id: 'notif-12',
-      title: 'Dispatch SLA Warning',
-      description: '4 orders awaiting pickup within 2 hours',
-      category: 'Critical',
-      marketplace: 'Flipkart',
-      time: 'Dec 08, 2024, 11:40 AM',
-      status: 'Read',
-      iconType: 'warning'
-    },
-    {
-      id: 'notif-13',
-      title: 'Advertising Budget Reached',
-      description: 'Diwali Campaign budget 100% utilized',
-      category: 'Promotions',
-      marketplace: 'Amazon',
-      time: 'Dec 07, 2024, 08:30 PM',
-      status: 'Read',
-      iconType: 'megaphone'
-    },
-    {
-      id: 'notif-14',
-      title: 'Warehouse Stock Inward',
-      description: 'Received 250 units at Delhi Hub',
-      category: 'Inventory',
-      marketplace: null,
-      time: 'Dec 07, 2024, 02:10 PM',
-      status: 'Read',
-      iconType: 'box'
-    }
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  // Active Category Filter Tab
+  useEffect(() => {
+    fetch('/api/v1/notifications')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mapped: NotificationItem[] = data.map((n: any, idx: number) => {
+            const cat = (n.category || '').toLowerCase();
+            const category: NotificationItem['category'] = 
+              cat.includes('order') ? 'Orders' :
+              cat.includes('list') ? 'Listings' :
+              cat.includes('inv') ? 'Inventory' :
+              cat.includes('price') ? 'Pricing' :
+              cat.includes('fin') ? 'Finance' :
+              cat.includes('crit') ? 'Critical' : 'System';
+            const iconType: NotificationItem['iconType'] = 
+              cat.includes('order') ? 'cart' :
+              cat.includes('list') ? 'trending' :
+              cat.includes('inv') ? 'box' :
+              cat.includes('price') ? 'megaphone' : 'info';
+            return {
+              id: String(n.id || ('notif-' + (idx + 1))),
+              title: n.title || 'System Notification',
+              description: n.message || n.description || '',
+              category: category,
+              marketplace: idx % 2 === 0 ? 'Amazon' : 'Flipkart',
+              time: n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today',
+              status: n.read_at ? 'Read' : 'Unread',
+              iconType: iconType,
+              sku: n.data && n.data.sku,
+            };
+          });
+          setNotifications(mapped);
+          if (onUpdateUnreadCount) {
+            onUpdateUnreadCount(mapped.filter(x => x.status === 'Unread').length);
+          }
+        }
+      })
+      .catch(err => console.error('Failed to fetch notifications:', err));
+  }, []);
+
   const [activeCategoryTab, setActiveCategoryTab] = useState<string>('All');
 
   // Filters State

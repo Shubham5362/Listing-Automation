@@ -122,7 +122,7 @@ export default function ReturnDetailsDrawer({
   };
 
   return (
-    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] lg:w-[410px] 2xl:w-[430px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
+    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[350px] lg:w-[360px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
       {/* Header */}
       <div className="p-4 border-b border-slate-100 space-y-3">
         <div className="flex items-start justify-between gap-2">

@@ -103,291 +103,7 @@ export interface AutomationItem {
   }[];
 }
 
-// Initial automations matching the exact 8 visible rows in reference image + additional for pagination
-const initialAutomations: AutomationItem[] = [
-  {
-    id: 'auto-1',
-    name: 'Daily 50 Listings',
-    description: 'Auto list new products',
-    type: 'Product Listing',
-    marketplaces: ['amazon', 'flipkart'],
-    additionalMarketplacesCount: 1,
-    scheduleType: 'Daily',
-    scheduleText: 'Daily',
-    scheduleSubText: '10:00 AM',
-    progress: {
-      current: 25,
-      total: 50,
-      percent: 50
-    },
-    status: 'Running',
-    lastRunDate: 'Today',
-    lastRunTime: '10:00 AM',
-    nextRunDate: 'Today',
-    nextRunTime: '02:00 PM',
-    createdBy: 'Shubham',
-    enabled: true,
-    dailyLimit: 50,
-    batchSize: 10,
-    selectedProductsCount: 50,
-    aiPrompt: 'Optimize listing titles for festival rush with high-conversion keywords, generate 5 bullet points emphasizing durability, and format backend search terms.',
-    recentLogs: [
-      { time: '10:00:15 AM', message: 'Batch #1 initiated: 10 items dispatched to Amazon India & Flipkart', type: 'info' },
-      { time: '10:01:42 AM', message: '10 ASINs generated with AI titles & bullet points', type: 'success' },
-      { time: '12:00:08 PM', message: 'Batch #2 completed: 15 items published successfully', type: 'success' },
-      { time: '12:02:10 PM', message: 'Next scheduled batch: 25 items at 02:00 PM', type: 'info' }
-    ]
-  },
-  {
-    id: 'auto-2',
-    name: 'Festival Collection',
-    description: 'List seasonal products',
-    type: 'Product Listing',
-    marketplaces: ['myntra', 'amazon'],
-    scheduleType: 'Specific Date',
-    scheduleText: 'Dec 16, 2024',
-    scheduleSubText: '09:00 AM',
-    progress: {
-      current: 0,
-      total: 30,
-      percent: 0
-    },
-    status: 'Scheduled',
-    lastRunDate: '-',
-    nextRunDate: 'Dec 16, 2024',
-    nextRunTime: '09:00 AM',
-    createdBy: 'Shubham',
-    enabled: true,
-    dailyLimit: 30,
-    batchSize: 10,
-    selectedProductsCount: 30,
-    aiPrompt: 'Highlight festive occasion styling, premium gift box packaging, and fast express delivery.',
-    recentLogs: [
-      { time: 'Yesterday', message: 'Workflow scheduled for Dec 16, 2024 at 09:00 AM', type: 'info' },
-      { time: 'Yesterday', message: 'Pre-flight catalog check verified 30 products ready for listing', type: 'success' }
-    ]
-  },
-  {
-    id: 'auto-3',
-    name: 'Clearance Sale',
-    description: 'Auto list discount products',
-    type: 'Product Listing',
-    marketplaces: ['meesho', 'flipkart'],
-    scheduleType: 'Days of Week',
-    scheduleText: 'Mon, Wed, Fri',
-    scheduleSubText: '02:00 PM',
-    progress: {
-      current: 50,
-      total: 50,
-      percent: 100
-    },
-    status: 'Completed',
-    lastRunDate: 'Yesterday',
-    lastRunTime: '02:00 PM',
-    nextRunDate: '-',
-    createdBy: 'Shubham',
-    enabled: false,
-    dailyLimit: 50,
-    batchSize: 25,
-    selectedProductsCount: 50,
-    aiPrompt: 'Focus on maximum discount, bulk savings value proposition, and liquidation urgency.',
-    recentLogs: [
-      { time: 'Yesterday 02:00 PM', message: 'Clearance batch started (50 items)', type: 'info' },
-      { time: 'Yesterday 02:18 PM', message: '50/50 discount listings published to Meesho and Flipkart', type: 'success' },
-      { time: 'Yesterday 02:20 PM', message: 'Workflow completed successfully', type: 'success' }
-    ]
-  },
-  {
-    id: 'auto-4',
-    name: 'Price Update Rule',
-    description: 'Auto update prices',
-    type: 'Price Update',
-    marketplaces: ['amazon', 'flipkart'],
-    scheduleType: 'Daily',
-    scheduleText: 'Daily',
-    scheduleSubText: '01:00 AM',
-    progress: null,
-    status: 'Running',
-    lastRunDate: 'Today',
-    lastRunTime: '01:00 AM',
-    nextRunDate: 'Tomorrow',
-    nextRunTime: '01:00 AM',
-    createdBy: 'Shubham',
-    enabled: true,
-    aiPrompt: 'Adjust prices dynamically to win the Buy Box while maintaining a minimum 18% net profit margin.',
-    recentLogs: [
-      { time: '01:00:05 AM', message: 'Competitive scan analyzed 42 active SKUs', type: 'info' },
-      { time: '01:02:40 AM', message: 'Repriced 5 SKUs by +4.2% based on Buy Box algorithm', type: 'success' }
-    ]
-  },
-  {
-    id: 'auto-5',
-    name: 'Inventory Sync',
-    description: 'Update stock automatically',
-    type: 'Inventory Sync',
-    marketplaces: ['amazon', 'meesho'],
-    scheduleType: 'Interval',
-    scheduleText: 'Every 6 hours',
-    progress: null,
-    status: 'Running',
-    lastRunDate: 'Today',
-    lastRunTime: '08:00 AM',
-    nextRunDate: 'Today',
-    nextRunTime: '02:00 PM',
-    createdBy: 'Shubham',
-    enabled: true,
-    recentLogs: [
-      { time: '08:00:12 AM', message: 'Two-way stock reconciliation completed for 1,284 listings', type: 'success' },
-      { time: '08:00:14 AM', message: 'Buffer safety threshold applied to low-stock items', type: 'info' }
-    ]
-  },
-  {
-    id: 'auto-6',
-    name: 'Ad Campaign Launch',
-    description: 'Enable ads after listing',
-    type: 'Advertising',
-    marketplaces: ['amazon'],
-    scheduleType: 'Event',
-    scheduleText: 'After 1 hour',
-    scheduleSubText: 'Post listing',
-    progress: null,
-    status: 'Paused',
-    lastRunDate: 'Dec 12, 2024',
-    lastRunTime: '05:00 PM',
-    nextRunDate: '-',
-    createdBy: 'Shubham',
-    enabled: false,
-    recentLogs: [
-      { time: 'Dec 12, 05:00 PM', message: 'Sponsored Products campaign activated for 4 new ASINs', type: 'success' },
-      { time: 'Dec 12, 05:30 PM', message: 'Automation paused by user Shubham', type: 'warning' }
-    ]
-  },
-  {
-    id: 'auto-7',
-    name: 'Review Request',
-    description: 'Send review requests',
-    type: 'Customer Engagement',
-    marketplaces: ['flipkart', 'meesho'],
-    additionalMarketplacesCount: 1,
-    scheduleType: 'Event',
-    scheduleText: 'After 7 days',
-    scheduleSubText: 'Post listing',
-    progress: null,
-    status: 'Scheduled',
-    lastRunDate: '-',
-    nextRunDate: 'Dec 18, 2024',
-    nextRunTime: '10:00 AM',
-    createdBy: 'Shubham',
-    enabled: true,
-    recentLogs: [
-      { time: 'Dec 11', message: 'Customer engagement cadence configured for verified delivered orders', type: 'info' }
-    ]
-  },
-  {
-    id: 'auto-8',
-    name: 'Low Stock Alert',
-    description: 'Get notified on low stock',
-    type: 'Alert',
-    marketplaces: ['amazon'],
-    scheduleType: 'Real-time',
-    scheduleText: 'Real-time',
-    progress: null,
-    status: 'Running',
-    lastRunDate: 'Today',
-    lastRunTime: '09:15 AM',
-    nextRunDate: '-',
-    createdBy: 'Shubham',
-    enabled: true,
-    recentLogs: [
-      { time: '09:15:22 AM', message: 'Stock alert triggered for SKU ABC123 (18 units left, ~2.1 days cover)', type: 'warning' }
-    ]
-  },
-  // Extra automations for page 2 (total 12 automations)
-  {
-    id: 'auto-9',
-    name: 'Buy Box Defender',
-    description: 'Real-time price match',
-    type: 'Price Update',
-    marketplaces: ['amazon'],
-    scheduleType: 'Real-time',
-    scheduleText: 'Real-time',
-    progress: null,
-    status: 'Running',
-    lastRunDate: 'Today',
-    lastRunTime: '10:12 AM',
-    nextRunDate: '-',
-    createdBy: 'Shubham',
-    enabled: true,
-    recentLogs: [
-      { time: '10:12 AM', message: 'Buy box secured on 3 ASINs against competing sellers', type: 'success' }
-    ]
-  },
-  {
-    id: 'auto-10',
-    name: 'Suppression Auto-Resolver',
-    description: 'Auto patch missing compliance codes',
-    type: 'Product Listing',
-    marketplaces: ['amazon', 'flipkart'],
-    scheduleType: 'Daily',
-    scheduleText: 'Daily',
-    scheduleSubText: '04:00 AM',
-    progress: {
-      current: 15,
-      total: 20,
-      percent: 75
-    },
-    status: 'Running',
-    lastRunDate: 'Today',
-    lastRunTime: '04:00 AM',
-    nextRunDate: 'Tomorrow',
-    nextRunTime: '04:00 AM',
-    createdBy: 'Shubham',
-    enabled: true,
-    dailyLimit: 20,
-    recentLogs: [
-      { time: '04:00 AM', message: 'Fixed missing HSN and dimension attributes across 15 listings', type: 'success' }
-    ]
-  },
-  {
-    id: 'auto-11',
-    name: 'Weekend Promotion Blast',
-    description: 'Scheduled festive listing push',
-    type: 'Product Listing',
-    marketplaces: ['myntra'],
-    scheduleType: 'Days of Week',
-    scheduleText: 'Sun',
-    scheduleSubText: '11:00 PM',
-    progress: {
-      current: 0,
-      total: 40,
-      percent: 0
-    },
-    status: 'Scheduled',
-    lastRunDate: 'Dec 08, 2024',
-    lastRunTime: '11:00 PM',
-    nextRunDate: 'Dec 22, 2024',
-    nextRunTime: '11:00 PM',
-    createdBy: 'Shubham',
-    enabled: true,
-    dailyLimit: 40
-  },
-  {
-    id: 'auto-12',
-    name: 'High Returns Quarantine',
-    description: 'Delist SKUs with >15% return rate',
-    type: 'Alert',
-    marketplaces: ['amazon', 'flipkart'],
-    scheduleType: 'Interval',
-    scheduleText: 'Every 24 hours',
-    progress: null,
-    status: 'Paused',
-    lastRunDate: 'Dec 14, 2024',
-    lastRunTime: '06:00 AM',
-    nextRunDate: '-',
-    createdBy: 'Shubham',
-    enabled: false
-  }
-];
+const initialAutomations: AutomationItem[] = [];
 
 // Catalog products available for automation selection
 interface CatalogProduct {
@@ -400,18 +116,7 @@ interface CatalogProduct {
   status: string;
 }
 
-const catalogProductsList: CatalogProduct[] = [
-  { id: 1, sku: 'SB-1L-001', name: 'Stainless Steel Bottle 1L', category: 'Home & Kitchen', stock: 184, price: 499, status: 'Active' },
-  { id: 2, sku: 'IT-500-002', name: 'Insulated Tumbler 500ml', category: 'Drinkware', stock: 142, price: 599, status: 'Active' },
-  { id: 3, sku: 'TM-PREM-003', name: 'Travel Mug Premium', category: 'Drinkware', stock: 98, price: 799, status: 'Active' },
-  { id: 4, sku: 'WB-750-004', name: 'Water Bottle 750ml', category: 'Home & Kitchen', stock: 121, price: 399, status: 'Active' },
-  { id: 5, sku: 'KB-500-005', name: 'Kids Bottle 500ml', category: 'Home & Kitchen', stock: 96, price: 349, status: 'Active' },
-  { id: 6, sku: 'CWB-1L-006', name: 'Copper Water Bottle 1L', category: 'Ayurveda & Health', stock: 64, price: 899, status: 'Unlisted' },
-  { id: 7, sku: 'GWB-600-007', name: 'Glass Water Bottle 600ml', category: 'Drinkware', stock: 45, price: 449, status: 'Unlisted' },
-  { id: 8, sku: 'MB-2L-008', name: 'Motivational Bottle 2L', category: 'Fitness & Sports', stock: 88, price: 649, status: 'Unlisted' },
-  { id: 9, sku: 'PS-700-009', name: 'Protein Shaker 700ml', category: 'Fitness & Sports', stock: 110, price: 299, status: 'Active' },
-  { id: 10, sku: 'IWB-800-010', name: 'Infuser Water Bottle 800ml', category: 'Drinkware', stock: 72, price: 549, status: 'Unlisted' },
-];
+const defaultCatalogProducts: CatalogProduct[] = [];
 
 interface AutomationsWorkspaceProps {
   onOpenAiCopilot?: () => void;
@@ -426,6 +131,52 @@ export default function AutomationsWorkspace({
 }: AutomationsWorkspaceProps) {
   // State management
   const [automations, setAutomations] = useState<AutomationItem[]>(initialAutomations);
+  const [catalogProductsList, setCatalogProductsList] = useState<CatalogProduct[]>(defaultCatalogProducts);
+
+  useEffect(() => {
+    fetch('/api/v1/automations')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mapped: AutomationItem[] = data.map((item: any, idx: number) => ({
+            id: String(item.id || ('auto-' + (idx + 1))),
+            name: item.name || 'Automation Rule',
+            description: item.description || (item.actions && item.actions[0] && item.actions[0].message ? item.actions[0].message : 'Automated multi-channel rule'),
+            type: item.name && item.name.includes('Price') ? 'Price Update' : item.name && item.name.includes('Inventory') ? 'Inventory Sync' : item.name && item.name.includes('Review') ? 'Customer Engagement' : 'Product Listing',
+            marketplaces: ['amazon', 'flipkart'],
+            scheduleType: item.trigger_type === 'event' ? 'Event' : 'Daily',
+            scheduleText: item.trigger_type === 'event' ? 'Event Triggered' : 'Every Day at 09:00 AM',
+            progress: item.status === 'Running' ? { current: 12, total: 50, percent: 24 } : null,
+            status: item.status === 'Active' ? 'Scheduled' : item.status === 'Running' ? 'Running' : item.status === 'Paused' ? 'Paused' : 'Scheduled',
+            lastRunDate: item.last_run_at ? new Date(item.last_run_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today',
+            lastRunTime: '10:00 AM',
+            nextRunDate: 'Tomorrow',
+            nextRunTime: '09:00 AM',
+            createdBy: 'Shubham',
+            enabled: Boolean(item.enabled),
+          }));
+          setAutomations(mapped);
+        }
+      })
+      .catch(err => console.error('Failed to fetch automations:', err));
+
+    fetch('/api/v1/products')
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.items || []);
+        const mappedProducts: CatalogProduct[] = list.map((p: any) => ({
+          id: p.id,
+          sku: p.sku || 'SKU',
+          name: p.title || p.name || 'Product',
+          category: p.category || 'General',
+          stock: p.stock_quantity != null ? p.stock_quantity : (p.stock != null ? p.stock : 100),
+          price: p.price != null ? p.price : 499,
+          status: p.status === 'active' ? 'Active' : 'Unlisted',
+        }));
+        setCatalogProductsList(mappedProducts);
+      })
+      .catch(err => console.error('Failed to fetch products:', err));
+  }, []);
   const [activeTab, setActiveTab] = useState<'All Automations' | 'Active' | 'Scheduled' | 'Paused' | 'Completed' | 'Failed'>('All Automations');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarketplace, setSelectedMarketplace] = useState<string>('All Marketplaces');
@@ -1229,6 +980,7 @@ export default function AutomationsWorkspace({
       ========================================================== */}
       {isCreateModalOpen && (
         <CreateAutomationModal
+          catalogProductsList={catalogProductsList}
           onClose={() => setIsCreateModalOpen(false)}
           onCreated={(newAuto) => {
             setAutomations(prev => [newAuto, ...prev]);
@@ -1389,9 +1141,10 @@ function renderStatusBadge(status: AutomationItem['status']) {
 interface CreateAutomationModalProps {
   onClose: () => void;
   onCreated: (item: AutomationItem) => void;
+  catalogProductsList?: CatalogProduct[];
 }
 
-function CreateAutomationModal({ onClose, onCreated }: CreateAutomationModalProps) {
+function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }: CreateAutomationModalProps) {
   const [step, setStep] = useState<number>(1);
 
   // Form State
@@ -1643,7 +1396,7 @@ function CreateAutomationModal({ onClose, onCreated }: CreateAutomationModalProp
                           if (selectedProductIds.length === catalogProductsList.length) {
                             setSelectedProductIds([]);
                           } else {
-                            setSelectedProductIds(catalogProductsList.map(p => p.id));
+                            setSelectedProductIds(catalogProductsList.map((p: CatalogProduct) => p.id));
                           }
                         }}
                         className="text-indigo-600 hover:underline font-bold"
@@ -1652,7 +1405,7 @@ function CreateAutomationModal({ onClose, onCreated }: CreateAutomationModalProp
                       </button>
                     </div>
                     <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 text-xs">
-                      {catalogProductsList.map((product) => {
+                      {catalogProductsList.map((product: CatalogProduct) => {
                         const isChecked = selectedProductIds.includes(product.id);
                         return (
                           <div
@@ -2043,10 +1796,9 @@ function AutomationSummaryDrawer({
   onRunNow
 }: AutomationSummaryDrawerProps) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end">
-      <div className="bg-white w-full max-w-lg h-full shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 border-l border-slate-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[350px] lg:w-[360px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-indigo-600">Automation Rule</span>
@@ -2215,8 +1967,7 @@ function AutomationSummaryDrawer({
             {automation.enabled ? 'Pause Rule' : 'Activate Rule'}
           </button>
         </div>
-      </div>
-    </div>
+    </aside>
   );
 }
 

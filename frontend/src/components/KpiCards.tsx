@@ -57,60 +57,67 @@ const Sparkline = ({
 };
 
 export default function KpiCards({ kpis }: KpiCardsProps) {
+  const rev = kpis?.revenue ?? 0;
+  const ords = kpis?.orders ?? 0;
+  const netProf = kpis?.net_profit ?? 0;
+  const margin = kpis?.profit_margin ?? (rev > 0 ? (netProf / rev) * 100 : 0);
+  const rets = kpis?.returns ?? 0;
+  const invVal = kpis?.inventory_value || (kpis?.inventory_value_numeric ? `₹${kpis.inventory_value_numeric.toLocaleString('en-IN')}` : '₹0');
+
   const cards = [
     {
       id: 'revenue',
       label: 'Revenue',
-      value: `₹${(kpis.revenue || 241820).toLocaleString('en-IN')}`,
-      trendText: `${kpis.revenue_growth || 14.2}% vs yesterday`,
-      isUp: true,
+      value: `₹${Math.round(rev).toLocaleString('en-IN')}`,
+      trendText: `${kpis?.revenue_growth != null ? kpis.revenue_growth : 0}% vs yesterday`,
+      isUp: (kpis?.revenue_growth ?? 0) >= 0,
       color: '#10b981', // emerald
-      sparkPoints: [18, 25, 22, 24, 28, 31, 29],
+      sparkPoints: [rev * 0.7, rev * 0.85, rev * 0.78, rev * 0.9, rev * 0.95, rev * 0.92, rev || 1],
     },
     {
       id: 'orders',
       label: 'Orders',
-      value: (kpis.orders || 184).toString(),
-      trendText: `${kpis.orders_growth || 12.8}% vs yesterday`,
-      isUp: true,
+      value: ords.toString(),
+      trendText: `${kpis?.orders_growth != null ? kpis.orders_growth : 0}% vs yesterday`,
+      isUp: (kpis?.orders_growth ?? 0) >= 0,
       color: '#3b82f6', // blue
-      sparkPoints: [14, 18, 16, 20, 22, 26, 25],
+      sparkPoints: [ords * 0.6, ords * 0.8, ords * 0.75, ords * 0.9, ords * 0.85, ords * 0.95, ords || 1],
     },
     {
       id: 'net_profit',
       label: 'Net Profit',
-      value: `₹${(kpis.net_profit || 46210).toLocaleString('en-IN')}`,
-      trendText: `${kpis.net_profit_growth || 18.4}% vs yesterday`,
-      isUp: true,
+      value: `₹${Math.round(netProf).toLocaleString('en-IN')}`,
+      trendText: `${kpis?.net_profit_growth != null ? kpis.net_profit_growth : 0}% vs yesterday`,
+      isUp: (kpis?.net_profit_growth ?? 0) >= 0,
       color: '#8b5cf6', // purple
-      sparkPoints: [5.4, 7.8, 6.2, 6.9, 8.9, 8.8, 10.2],
+      sparkPoints: [netProf * 0.65, netProf * 0.8, netProf * 0.7, netProf * 0.85, netProf * 0.9, netProf * 0.95, netProf || 1],
     },
     {
       id: 'profit_margin',
       label: 'Profit Margin',
-      value: `${kpis.profit_margin || 19.1}%`,
-      trendText: `${kpis.profit_margin_growth || 2.4}% vs yesterday`,
-      isUp: true,
+      value: `${margin.toFixed(1)}%`,
+      trendText: `${kpis?.profit_margin_growth != null ? kpis.profit_margin_growth : 0}% vs yesterday`,
+      isUp: (kpis?.profit_margin_growth ?? 0) >= 0,
       color: '#14b8a6', // teal
-      sparkPoints: [18.2, 18.5, 18.4, 18.7, 18.9, 19.0, 19.1],
+      sparkPoints: [margin * 0.9, margin * 0.92, margin * 0.95, margin * 0.98, margin, margin * 0.99, margin || 1],
     },
     {
       id: 'returns',
       label: 'Returns',
-      value: (kpis.returns || 8).toString(),
-      trendText: `${Math.abs(kpis.returns_growth || 20.0)}% vs yesterday`,
-      isUp: false, // Down is good for returns, but shown with down arrow in red
+      value: rets.toString(),
+      trendText: `${Math.abs(kpis?.returns_growth || 0)}% vs yesterday`,
+      isUp: (kpis?.returns_growth ?? 0) <= 0, // Down is good for returns
       color: '#f43f5e', // rose
-      sparkPoints: [12, 11, 10, 9, 11, 9, 8],
+      sparkPoints: [rets + 2, rets + 1, rets + 2, rets + 1, rets, rets, rets || 1],
     },
     {
       id: 'inventory_value',
       label: 'Inventory Value',
-      value: kpis.inventory_value || '₹12.4L',
-      trendText: `${kpis.inventory_value_growth || 5.1}% vs yesterday`,
-      isUp: true,
+      value: invVal,
+      trendText: `${kpis?.inventory_value_growth != null ? kpis.inventory_value_growth : 0}% vs yesterday`,
+      isUp: (kpis?.inventory_value_growth ?? 0) >= 0,
       color: '#f59e0b', // amber
-      sparkPoints: [11.8, 11.9, 12.0, 12.1, 12.2, 12.3, 12.4],
+      sparkPoints: [10, 11, 11, 12, 12, 12.2, 12.4],
     },
   ];
 

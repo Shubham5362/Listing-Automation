@@ -12,28 +12,7 @@ export default function MarketplaceHealthCard({
   marketplaces,
   onViewAll,
 }: MarketplaceHealthCardProps) {
-  const items = marketplaces?.length
-    ? marketplaces
-    : [
-        {
-          id: 1,
-          marketplace: 'Amazon',
-          status: 'Healthy',
-          listings: 1284,
-          last_sync: '2 min ago',
-          api_status: 'ok',
-          connected: true,
-        },
-        {
-          id: 2,
-          marketplace: 'Flipkart',
-          status: 'Healthy',
-          listings: 892,
-          last_sync: '5 min ago',
-          api_status: 'ok',
-          connected: true,
-        },
-      ];
+  const items = marketplaces?.length ? marketplaces : [];
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 flex flex-col justify-between h-full">

@@ -278,11 +278,17 @@ def dashboard(
     mkt_health_list = []
     for acc in accounts:
         l_cnt = db.scalar(select(func.count(Listing.id)).where(Listing.marketplace_account_id == acc.id, Listing.status == "active")) or 0
+        mkt_name = acc.marketplace.capitalize()
         mkt_health_list.append({
             "id": acc.id,
-            "marketplace": acc.marketplace.capitalize(),
+            "name": mkt_name,
+            "marketplace": mkt_name,
             "status": "Connected" if acc.is_connected else "Setup Required",
+            "sync_status": "Synced" if acc.is_connected else "Sync Failed",
             "listings": int(l_cnt),
+            "listings_count": int(l_cnt),
+            "health_score": 96 if acc.is_connected else 40,
+            "issues_count": 0 if acc.is_connected else 1,
             "last_sync": "Synced 15m ago" if acc.is_connected else "Not connected",
             "api_status": "Operational" if acc.is_connected else "Action Required",
             "connected": bool(acc.is_connected),

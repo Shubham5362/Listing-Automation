@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, ShoppingBag, PlusCircle, ChevronDown } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -22,28 +22,48 @@ export default function ChartsRow({
   salesRange = 'Last 30 days',
   onSalesRangeChange,
 }: ChartsRowProps) {
-  // Sales Trend Data matching screenshot
-  const salesData = [
-    { date: '16 Aug', amazon: 26000, flipkart: 18000 },
-    { date: '23 Aug', amazon: 37000, flipkart: 23000 },
-    { date: '30 Aug', amazon: 28000, flipkart: 19000 },
-    { date: '6 Sep', amazon: 31000, flipkart: 21000 },
-    { date: '13 Sep', amazon: 38000, flipkart: 25000 },
-  ];
+  const [salesData, setSalesData] = useState<{ date: string; amazon: number; flipkart: number }[]>([]);
+  const [ordersData, setOrdersData] = useState<{ name: string; value: number; percentage: number; color: string }[]>([]);
+  const [inventoryData, setInventoryData] = useState<{ name: string; value: number; percentage: number; color: string }[]>([]);
 
-  // Orders by Marketplace donut data
-  const ordersData = [
-    { name: 'Amazon', value: 212, percentage: 62, color: '#f59e0b' },
-    { name: 'Flipkart', value: 130, percentage: 38, color: '#2563eb' },
-  ];
-
-  // Inventory Health donut data
-  const inventoryData = [
-    { name: 'In Stock', value: 176, percentage: 71, color: '#10b981' },
-    { name: 'Low Stock', value: 18, percentage: 7, color: '#f59e0b' },
-    { name: 'Out of Stock', value: 12, percentage: 5, color: '#ef4444' },
-    { name: 'Inactive', value: 42, percentage: 17, color: '#94a3b8' },
-  ];
+  useEffect(() => {
+    fetch('/api/v1/dashboard')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.sales_trend?.timeline) {
+          setSalesData(
+            data.sales_trend.timeline.map((t: any) => ({
+              date: t.day,
+              amazon: t.amazon || 0,
+              flipkart: t.flipkart || 0,
+            }))
+          );
+        }
+        if (data.sales_trend?.marketplaces) {
+          const totalOrders = data.sales_trend.marketplaces.reduce((acc: number, m: any) => acc + (m.orders || 0), 0) || 1;
+          setOrdersData(
+            data.sales_trend.marketplaces.map((m: any) => ({
+              name: m.name,
+              value: m.orders || 0,
+              percentage: Math.round(((m.orders || 0) / totalOrders) * 100),
+              color: m.name.toLowerCase() === 'amazon' ? '#f59e0b' : '#2563eb',
+            }))
+          );
+        }
+        if (data.inventory_health) {
+          const ih = data.inventory_health;
+          const tot = ih.total_items || 1;
+          setInventoryData([
+            { name: 'In Stock', value: ih.healthy || 0, percentage: Math.round(((ih.healthy || 0) / tot) * 100), color: '#10b981' },
+            { name: 'Low Stock', value: ih.low_stock || 0, percentage: Math.round(((ih.low_stock || 0) / tot) * 100), color: '#f59e0b' },
+            { name: 'Out of Stock', value: ih.out_of_stock || 0, percentage: Math.round(((ih.out_of_stock || 0) / tot) * 100), color: '#ef4444' },
+            { name: 'Inactive', value: ih.dead_stock || 0, percentage: Math.round(((ih.dead_stock || 0) / tot) * 100), color: '#94a3b8' },
+          ]);
+        }
+      })
+      .catch((err) => console.error('Failed to load charts row data:', err));
+  }, []);
 
   const formatYAxis = (tickItem: number) => {
     if (tickItem === 0) return '₹0';

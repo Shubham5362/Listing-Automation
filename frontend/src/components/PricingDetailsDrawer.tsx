@@ -116,7 +116,7 @@ export default function PricingDetailsDrawer({
   };
 
   return (
-    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] lg:w-[410px] xl:w-[430px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
+    <aside className="fixed top-0 right-0 bottom-0 w-full sm:w-[350px] lg:w-[360px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all">
       {/* Toast Notification */}
       {appliedNotice && (
         <div className="bg-emerald-600 text-white text-xs font-medium px-4 py-2 flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">

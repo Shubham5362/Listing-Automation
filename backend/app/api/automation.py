@@ -55,8 +55,14 @@ def create_automation(payload: AutomationCreate, seller_account_id: int, db: Ses
 
 
 @router.get("", response_model=list[AutomationRead])
-def list_automations(seller_account_id: int, enabled: bool | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    _seller(db, user, seller_account_id)
+def list_automations(seller_account_id: int | None = Query(default=None), enabled: bool | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        s = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+        if not s:
+            s = db.scalar(select(SellerAccount.id).where(SellerAccount.is_active == True))
+        seller_account_id = s
+    if not seller_account_id:
+        return []
     query = select(AutomationRule).where(AutomationRule.seller_account_id == seller_account_id)
     if enabled is not None:
         query = query.where(AutomationRule.enabled == enabled)

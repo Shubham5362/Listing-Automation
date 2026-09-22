@@ -124,7 +124,7 @@ export default function ListingDetailsDrawer({
 
   return (
     <aside
-      className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] lg:w-[400px] xl:w-[420px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all"
+      className="fixed top-0 right-0 bottom-0 w-full sm:w-[350px] lg:w-[360px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-all"
       aria-label="Listing Details"
     >
       {/* Drawer Top Header */}

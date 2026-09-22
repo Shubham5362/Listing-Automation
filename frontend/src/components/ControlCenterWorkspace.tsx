@@ -90,140 +90,14 @@ export default function ControlCenterWorkspace({
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [selectedMarketplaceModal, setSelectedMarketplaceModal] = useState<string | null>(null);
 
-  // Critical Alerts State (Matching reference image)
-  const [alerts, setAlerts] = useState<AlertItem[]>([
-    {
-      id: 'alert-1',
-      title: 'Amazon Order Sync Failed',
-      time: 'Today, 10:24 AM',
-      severity: 'critical',
-      actionLabel: 'Fix',
-      details: 'SP-API rate limit hit during hourly polling for Order #408-1234567. Automatic backoff recommended.',
-      channel: 'Amazon'
-    },
-    {
-      id: 'alert-2',
-      title: '3 Listings Failed to Publish',
-      time: 'Today, 09:18 AM',
-      severity: 'critical',
-      actionLabel: 'View',
-      details: 'Flipkart catalog validation error: Mandatory brand certification document missing for SKU HM-SSB-1000.',
-      channel: 'Flipkart'
-    },
-    {
-      id: 'alert-3',
-      title: 'High API Usage (80%)',
-      time: 'Today, 08:45 AM',
-      severity: 'warning',
-      actionLabel: 'View',
-      details: 'Amazon SP-API calls reached 8,000 / 10,000 daily allocation. Quota resets at midnight UTC.',
-      channel: 'Amazon'
-    },
-    {
-      id: 'alert-4',
-      title: 'Inventory Sync Error (Flipkart)',
-      time: 'Today, 07:32 AM',
-      severity: 'critical',
-      actionLabel: 'Fix',
-      details: 'Timeout connecting to Flipkart Seller Edge API during SKU stock update. 48 SKUs pending sync.',
-      channel: 'Flipkart'
-    },
-    {
-      id: 'alert-5',
-      title: 'Automation Queue Delayed',
-      time: 'Today, 06:21 AM',
-      severity: 'warning',
-      actionLabel: 'View',
-      details: 'Background worker pool experiencing high CPU load. Job latency currently ~4.2s (target < 1.0s).',
-      channel: 'System'
-    }
-  ]);
+  // Critical Alerts State
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
-  // Automations State (Matching reference image)
-  const [automations, setAutomations] = useState<AutomationItem[]>([
-    {
-      id: 'auto-1',
-      name: 'Bulk Product Listing',
-      iconType: 'workflow',
-      status: 'Running',
-      progress: 68,
-      currentStep: 34,
-      totalSteps: 50
-    },
-    {
-      id: 'auto-2',
-      name: 'Price Update Automation',
-      iconType: 'tag',
-      status: 'Running',
-      progress: 45,
-      currentStep: 18,
-      totalSteps: 40
-    },
-    {
-      id: 'auto-3',
-      name: 'Inventory Sync',
-      iconType: 'box',
-      status: 'Scheduled',
-      scheduledText: 'Starts in 2h 15m'
-    },
-    {
-      id: 'auto-4',
-      name: 'Ad Campaign Automation',
-      iconType: 'megaphone',
-      status: 'Completed',
-      progress: 100,
-      currentStep: 25,
-      totalSteps: 25
-    },
-    {
-      id: 'auto-5',
-      name: 'Order Processing',
-      iconType: 'cart',
-      status: 'Running',
-      progress: 72,
-      currentStep: 36,
-      totalSteps: 50
-    }
-  ]);
+  // Automations State
+  const [automations, setAutomations] = useState<AutomationItem[]>([]);
 
-  // Recent System Activity State (Matching reference image)
-  const [activities, setActivities] = useState<ActivityItem[]>([
-    {
-      id: 'act-1',
-      time: '10:24 AM',
-      type: 'Sync',
-      details: 'Amazon orders synced (24 new orders)',
-      status: 'Success'
-    },
-    {
-      id: 'act-2',
-      time: '10:18 AM',
-      type: 'Automation',
-      details: 'Bulk listing automation started',
-      status: 'Success'
-    },
-    {
-      id: 'act-3',
-      time: '09:45 AM',
-      type: 'Error',
-      details: 'Failed to publish 3 listings on Flipkart',
-      status: 'Failed'
-    },
-    {
-      id: 'act-4',
-      time: '09:32 AM',
-      type: 'Sync',
-      details: 'Inventory synced (1,248 products)',
-      status: 'Success'
-    },
-    {
-      id: 'act-5',
-      time: '08:15 AM',
-      type: 'System',
-      details: 'Scheduled maintenance completed',
-      status: 'Success'
-    }
-  ]);
+  // Recent System Activity State
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   // Live fetch from backend
   const fetchOperationsOverview = async () => {
@@ -232,12 +106,38 @@ export default function ControlCenterWorkspace({
       const res = await fetch('/api/v1/operations/overview');
       if (res.ok) {
         const json = await res.json();
-        // Keep live alerts & count synchronized
-        if (json.alerts && Array.isArray(json.alerts) && json.alerts.length > 0) {
-          // If live alerts returned from server, enrich them
-          console.log('Operations overview loaded:', json);
+        if (json.alerts && Array.isArray(json.alerts)) {
+          const mappedAlerts: AlertItem[] = json.alerts.map((a: any, idx: number) => ({
+            id: 'alert-' + (idx + 1),
+            title: a.message || 'System Notification',
+            time: 'Active',
+            severity: a.severity === 'critical' ? 'critical' : 'warning',
+            actionLabel: a.severity === 'critical' ? 'Fix' : 'View',
+            details: (a.count || 1) + ' item(s) affected in ' + (a.type || 'inventory') + ' category.',
+            channel: 'System'
+          }));
+          setAlerts(mappedAlerts);
         }
       }
+
+      fetch('/api/v1/automations')
+        .then(r => r.json())
+        .then(autoData => {
+          if (Array.isArray(autoData)) {
+            const mappedAuto: AutomationItem[] = autoData.map((item: any, idx: number) => ({
+              id: String(item.id || ('auto-' + (idx + 1))),
+              name: item.name || 'Automation Rule',
+              iconType: item.name && item.name.includes('Price') ? 'tag' : item.name && item.name.includes('Inventory') ? 'box' : item.name && item.name.includes('Ad') ? 'megaphone' : item.name && item.name.includes('Order') ? 'cart' : 'workflow',
+              status: item.status === 'Running' ? 'Running' : item.status === 'Active' ? 'Scheduled' : 'Completed',
+              progress: item.status === 'Running' ? 68 : 100,
+              currentStep: item.status === 'Running' ? 14 : 20,
+              totalSteps: 20,
+              scheduledText: 'Daily schedule active'
+            }));
+            setAutomations(mappedAuto);
+          }
+        })
+        .catch(() => {});
     } catch (err) {
       console.warn('Using live state for operations center:', err);
     } finally {

@@ -49,10 +49,9 @@ import ReportsWorkspace from './components/ReportsWorkspace';
 import SettingsWorkspace from './components/SettingsWorkspace';
 import { DashboardResponse, AttentionItem } from './types';
 
-// Default initial state matching image in case of initial load delay
-const initialDashboardState: DashboardResponse = {
-  period_start: '2024-12-10T00:00:00',
-  period_end: '2024-12-16T23:59:59',
+const emptyDashboardState: DashboardResponse = {
+  period_start: '',
+  period_end: '',
   user: {
     name: 'Shubham',
     role: 'Seller Pro',
@@ -60,190 +59,64 @@ const initialDashboardState: DashboardResponse = {
     email: 'shubham@sellerhub.io',
   },
   kpis: {
-    revenue: 241820,
-    revenue_growth: 14.2,
-    orders: 184,
-    orders_growth: 12.8,
-    net_profit: 46210,
-    net_profit_growth: 18.4,
-    profit_margin: 19.1,
-    profit_margin_growth: 2.4,
-    returns: 8,
-    returns_growth: -20.0,
-    inventory_value: '₹12.4L',
-    inventory_value_numeric: 1240000,
-    inventory_value_growth: 5.1,
-    active_listings: 2176,
-    buy_box_rate: 94.2,
+    revenue: 0,
+    revenue_growth: 0,
+    orders: 0,
+    orders_growth: 0,
+    net_profit: 0,
+    net_profit_growth: 0,
+    profit_margin: 0,
+    profit_margin_growth: 0,
+    returns: 0,
+    returns_growth: 0,
+    inventory_value: '₹0',
+    inventory_value_numeric: 0,
+    inventory_value_growth: 0,
+    active_listings: 0,
+    buy_box_rate: 0,
   },
   sales_trend: {
-    total: 241820,
-    growth: 14.2,
-    timeline: [
-      { day: 'Dec 10', amazon: 18200, flipkart: 9800, total: 28000 },
-      { day: 'Dec 11', amazon: 25400, flipkart: 14200, total: 39600 },
-      { day: 'Dec 12', amazon: 21800, flipkart: 11200, total: 33000 },
-      { day: 'Dec 13', amazon: 23100, flipkart: 13900, total: 37000 },
-      { day: 'Dec 14', amazon: 27900, flipkart: 17400, total: 45300 },
-      { day: 'Dec 15', amazon: 31200, flipkart: 21100, total: 52300 },
-      { day: 'Dec 16', amazon: 28620, flipkart: 16000, total: 44620 },
-    ],
-    marketplaces: [
-      {
-        name: 'Amazon',
-        revenue: 148220,
-        growth: 12.1,
-        share_percent: 61.3,
-        orders: 114,
-      },
-      {
-        name: 'Flipkart',
-        revenue: 93600,
-        growth: 18.4,
-        share_percent: 38.7,
-        orders: 70,
-      },
-    ],
+    total: 0,
+    growth: 0,
+    timeline: [],
+    marketplaces: [],
   },
-  profit_trend: [
-    { day: 'Dec 10', profit: 24000 },
-    { day: 'Dec 11', profit: 39000 },
-    { day: 'Dec 12', profit: 32000 },
-    { day: 'Dec 13', profit: 37000 },
-    { day: 'Dec 14', profit: 46000 },
-    { day: 'Dec 15', profit: 58000 },
-    { day: 'Dec 16', profit: 46210 },
-  ],
+  profit_trend: [],
   order_status: {
-    total: 184,
-    breakdown: [
-      { name: 'Delivered', count: 124, percent: 67, color: '#10b981' },
-      { name: 'Shipped', count: 28, percent: 15, color: '#3b82f6' },
-      { name: 'Processing', count: 18, percent: 10, color: '#f59e0b' },
-      { name: 'Cancelled', count: 8, percent: 4, color: '#ef4444' },
-      { name: 'Return Requested', count: 6, percent: 3, color: '#8b5cf6' },
-    ],
+    total: 0,
+    breakdown: [],
   },
-  marketplace_health: [
-    {
-      id: 1,
-      marketplace: 'Amazon',
-      status: 'Healthy',
-      listings: 1284,
-      last_sync: '2 min ago',
-      api_status: 'ok',
-      connected: true,
-    },
-    {
-      id: 2,
-      marketplace: 'Flipkart',
-      status: 'Healthy',
-      listings: 892,
-      last_sync: '5 min ago',
-      api_status: 'ok',
-      connected: true,
-    },
-  ],
+  marketplace_health: [],
   inventory_health: {
-    health_score: 87,
-    total_items: 8872,
-    healthy: 8421,
-    low_stock: 312,
-    out_of_stock: 48,
-    dead_stock: 91,
+    health_score: 100,
+    total_items: 0,
+    healthy: 0,
+    low_stock: 0,
+    out_of_stock: 0,
+    dead_stock: 0,
   },
-  top_products: [
-    { id: 1, rank: 1, name: 'Stainless Steel Bottle 1L', revenue: 48920, units: 184, margin: 28 },
-    { id: 2, rank: 2, name: 'Insulated Tumbler 500ml', revenue: 32400, units: 142, margin: 24 },
-    { id: 3, rank: 3, name: 'Travel Mug Premium', revenue: 28600, units: 98, margin: 31 },
-    { id: 4, rank: 4, name: 'Water Bottle 750ml', revenue: 24180, units: 121, margin: 22 },
-    { id: 5, rank: 5, name: 'Kids Bottle 500ml', revenue: 18420, units: 96, margin: 18 },
-  ],
-  needs_attention: [
-    {
-      id: 1,
-      category: 'inventory',
-      severity: 'critical',
-      title: 'SKU ABC123 will stock out in ~ 2 days',
-      subtitle: 'Current stock: 18 | Avg daily sales: 9',
-      badge: 'CRITICAL',
-      badgeColor: 'rose',
-      riskText: '₹12,600 at risk',
-      primaryAction: 'Reorder',
-      secondaryAction: 'Ask AI',
-      actionType: 'reorder',
-      data: { sku: 'ABC123', at_risk: 12600, current_stock: 18, daily_sales: 9 },
-    },
-    {
-      id: 2,
-      category: 'listings',
-      severity: 'warning',
-      title: '3 Amazon listings are suppressed',
-      subtitle: 'Potential lost revenue: ₹12,400/day',
-      badge: 'WARNING',
-      badgeColor: 'amber',
-      primaryAction: 'Fix Listings',
-      secondaryAction: 'View',
-      actionType: 'fix_listings',
-      data: { suppressed_count: 3, daily_loss: 12400 },
-    },
-    {
-      id: 3,
-      category: 'pricing',
-      severity: 'opportunity',
-      title: '5 products can increase margin by 3–6%',
-      subtitle: 'Based on competitor analysis',
-      badge: 'OPPORTUNITY',
-      badgeColor: 'yellow',
-      primaryAction: 'Review Pricing',
-      secondaryAction: 'Ask AI',
-      actionType: 'review_pricing',
-      data: { skus_count: 5, margin_boost: '3-6%' },
-    },
-    {
-      id: 4,
-      category: 'advertising',
-      severity: 'optimization',
-      title: 'Advertising has ₹8,400 estimated wasted spend',
-      subtitle: 'Across 3 campaigns',
-      badge: 'OPTIMIZATION',
-      badgeColor: 'blue',
-      primaryAction: 'Optimize Ads',
-      secondaryAction: 'View',
-      actionType: 'optimize_ads',
-      data: { wasted_amount: 8400, campaigns_count: 3 },
-    },
-  ],
-  recent_activity: [
-    { id: 1, type: 'order', title: '3 new orders received', time: '2 min ago', icon: 'cart' },
-    { id: 2, type: 'inventory', title: 'SKU XYZ991 stock updated 12 units', time: '8 min ago', icon: 'box' },
-    { id: 3, type: 'marketplace', title: 'Amazon listing updated successfully', time: '15 min ago', icon: 'amazon' },
-    { id: 4, type: 'pricing', title: 'Price changed for ABC123 ₹999 → ₹989', time: '22 min ago', icon: 'tag' },
-    { id: 5, type: 'returns', title: 'Return request received for #40291', time: '34 min ago', icon: 'return' },
-  ],
+  top_products: [],
+  needs_attention: [],
+  recent_activity: [],
   copilot_insight: {
     alert: {
-      title: 'Inventory Alert',
-      subtitle: 'SKU ABC123 will run out in 2.1 days',
-      sku: 'ABC123',
+      title: 'AI Seller Copilot',
+      subtitle: 'Monitoring active sales and inventory velocity',
+      sku: '',
     },
-    context: 'Inventory • SKU ABC123',
-    finding: 'Stock will run out in 2.1 days.',
-    why: [
-      '9 units/day average sales',
-      '18 units available',
-      'Supplier lead time: 5 days',
-    ],
+    context: 'Operations Active',
+    finding: 'All systems live and synchronized across connected marketplaces.',
+    why: ['Real-time sync active'],
     recommendation: {
-      title: 'Order 75 units',
-      cover: 'Expected stock cover: 8.3 days',
+      title: 'View Workspaces',
+      cover: 'Coverage optimal',
     },
     status: 'active',
   },
 };
 
 export default function App() {
-  const [data, setData] = useState<DashboardResponse>(initialDashboardState);
+  const [data, setData] = useState<DashboardResponse>(emptyDashboardState);
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
@@ -411,7 +284,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Products' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <ProductsWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -419,7 +292,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Listings' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <ListingsWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -427,7 +300,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Inventory' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <InventoryWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -435,7 +308,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Returns' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <ReturnsWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -443,7 +316,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Pricing' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <PricingWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -451,7 +324,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Advertising' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <AdvertisingWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -459,7 +332,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Analytics' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <AnalyticsWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -467,7 +340,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Finance' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <FinanceWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -475,7 +348,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Automations' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <AutomationsWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -483,7 +356,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'AI Listing Studio' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <AiListingStudioWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -491,7 +364,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'AI Seller Copilot' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <AiSellerCopilotWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -499,7 +372,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Marketplaces' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <MarketplacesWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -507,7 +380,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Notifications' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <NotificationsWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -516,7 +389,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Control Center' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <ControlCenterWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -524,7 +397,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Diagnostics' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <DiagnosticsWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -532,7 +405,7 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Reports' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <ReportsWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
@@ -540,14 +413,14 @@ export default function App() {
             />
           </div>
         ) : activeTab === 'Settings' ? (
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0">
             <SettingsWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               user={data.user}
             />
           </div>
         ) : (
-          <main className="flex-1 p-4 sm:p-6 lg:p-7 space-y-5 max-w-[1600px] w-full mx-auto">
+          <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 space-y-5 max-w-[1600px] w-full mx-auto">
             {activeTab === 'Dashboard' || activeTab === 'Overview' ? (
               <>
                 {/* Dashboard Greeting Header */}
@@ -690,7 +563,7 @@ export default function App() {
               )}
             </div>
           )}
-        </main>
+        </div>
       )}
       </div>
 

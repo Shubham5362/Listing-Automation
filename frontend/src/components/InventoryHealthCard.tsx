@@ -12,12 +12,12 @@ export default function InventoryHealthCard({
   onViewAll,
 }: InventoryHealthCardProps) {
   const data = inventoryHealth || {
-    health_score: 87,
-    total_items: 8872,
-    healthy: 8421,
-    low_stock: 312,
-    out_of_stock: 48,
-    dead_stock: 91,
+    health_score: 0,
+    total_items: 0,
+    healthy: 0,
+    low_stock: 0,
+    out_of_stock: 0,
+    dead_stock: 0,
   };
 
   return (

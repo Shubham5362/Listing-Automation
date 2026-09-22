@@ -7,7 +7,7 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "bash -c 'PYTHONPATH=\"$(pwd)/backend:${PYTHONPATH:-}\" python3 -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001 & cd frontend && ./node_modules/.bin/vite --port 3000 --host 0.0.0.0'",
+    "dev": "bash -c 'UVICORN_BIN=/app/applet/.venv/bin/uvicorn; [ -f \"$UVICORN_BIN\" ] || UVICORN_BIN=\"python3 -m uvicorn\"; PYTHONPATH=\"$(pwd)/backend:${PYTHONPATH:-}\" $UVICORN_BIN app.main:app --app-dir backend --host 127.0.0.1 --port 8001 --reload & cd frontend && ./node_modules/.bin/vite --port 3000 --host 0.0.0.0'",
     "build": "cd frontend && npm run build && rm -rf ../dist && cp -r dist ../dist",
     "lint": "cd frontend && ./node_modules/.bin/tsc -b --noEmit"
   }

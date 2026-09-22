@@ -99,196 +99,21 @@ export default function DiagnosticsWorkspace({
   const [toolRunning, setToolRunning] = useState(false);
   const [toolLogs, setToolLogs] = useState<string[]>([]);
 
-  // 1. Health Checks (Matching table in image)
-  const [healthChecks, setHealthChecks] = useState<HealthCheckItem[]>([
-    {
-      id: 'hc-1',
-      name: 'Web Application',
-      type: 'app',
-      status: 'Healthy',
-      responseTime: '120ms',
-      responseTimeMs: 120,
-      lastChecked: '10:24 AM'
-    },
-    {
-      id: 'hc-2',
-      name: 'Database',
-      type: 'database',
-      status: 'Healthy',
-      responseTime: '85ms',
-      responseTimeMs: 85,
-      lastChecked: '10:24 AM'
-    },
-    {
-      id: 'hc-3',
-      name: 'Amazon API',
-      type: 'marketplace',
-      marketplace: 'Amazon',
-      status: 'Healthy',
-      responseTime: '240ms',
-      responseTimeMs: 240,
-      lastChecked: '10:23 AM'
-    },
-    {
-      id: 'hc-4',
-      name: 'Flipkart API',
-      type: 'marketplace',
-      marketplace: 'Flipkart',
-      status: 'Healthy',
-      responseTime: '310ms',
-      responseTimeMs: 310,
-      lastChecked: '10:23 AM'
-    },
-    {
-      id: 'hc-5',
-      name: 'Meesho API',
-      type: 'marketplace',
-      marketplace: 'Meesho',
-      status: 'Warning',
-      responseTime: '1,240ms',
-      responseTimeMs: 1240,
-      lastChecked: '10:22 AM',
-      hasViewAction: true
-    },
-    {
-      id: 'hc-6',
-      name: 'Myntra API',
-      type: 'marketplace',
-      marketplace: 'Myntra',
-      status: 'Healthy',
-      responseTime: '280ms',
-      responseTimeMs: 280,
-      lastChecked: '10:23 AM'
-    },
-    {
-      id: 'hc-7',
-      name: 'Automation Engine',
-      type: 'engine',
-      status: 'Healthy',
-      responseTime: '190ms',
-      responseTimeMs: 190,
-      lastChecked: '10:24 AM'
-    },
-    {
-      id: 'hc-8',
-      name: 'File Storage',
-      type: 'storage',
-      status: 'Healthy',
-      responseTime: '160ms',
-      responseTimeMs: 160,
-      lastChecked: '10:24 AM'
-    },
-    {
-      id: 'hc-9',
-      name: 'Email Service',
-      type: 'email',
-      status: 'Healthy',
-      responseTime: '320ms',
-      responseTimeMs: 320,
-      lastChecked: '10:23 AM'
-    },
-    {
-      id: 'hc-10',
-      name: 'SMS Service',
-      type: 'sms',
-      status: 'Healthy',
-      responseTime: '410ms',
-      responseTimeMs: 410,
-      lastChecked: '10:23 AM'
-    }
-  ]);
+  const [healthChecks, setHealthChecks] = useState<HealthCheckItem[]>([]);
+  const [criticalIssues, setCriticalIssues] = useState<CriticalIssue[]>([]);
+  const [resolvedIssues, setResolvedIssues] = useState<ResolvedIssue[]>([]);
+  const [diagnosticActivity, setDiagnosticActivity] = useState<DiagnosticActivity[]>([]);
 
-  // 2. Critical Issues (Matching image)
-  const [criticalIssues, setCriticalIssues] = useState<CriticalIssue[]>([
-    {
-      id: 'issue-1',
-      title: 'Meesho API Timeout',
-      subtitle: 'API response time > 1s',
-      time: 'Today, 09:45 AM',
-      actionLabel: 'Fix',
-      component: 'Meesho API',
-      details: 'Gateway latency spike detected on endpoint /v2/orders/fetch. Request timed out after 1,240ms. Recommended action: switch to fallback replica cluster and apply query batching.'
-    },
-    {
-      id: 'issue-2',
-      title: '3 Listings Failed to Publish',
-      subtitle: 'Validation error',
-      time: 'Today, 08:18 AM',
-      actionLabel: 'View',
-      component: 'Listings',
-      details: 'Flipkart catalog validation error for 3 SKUs (HM-SSB-1000, HM-SSB-750, HM-CT-500). Required attribute "brand_compliance_doc" is missing or malformed.'
-    },
-    {
-      id: 'issue-3',
-      title: 'Inventory Sync Failed',
-      subtitle: 'Flipkart inventory not updating',
-      time: 'Today, 06:32 AM',
-      actionLabel: 'Fix',
-      component: 'Inventory',
-      details: 'HTTP 429 Too Many Requests received from Flipkart Seller Edge API during SKU stock reconciliation. 48 items pending in sync queue.'
-    }
-  ]);
-
-  // 3. Resolved Issues (Matching image)
-  const [resolvedIssues, setResolvedIssues] = useState<ResolvedIssue[]>([
-    {
-      id: 'res-1',
-      title: 'Amazon Order Sync Error',
-      resolution: 'Resolved automatically',
-      time: 'Today, 07:12 AM'
-    },
-    {
-      id: 'res-2',
-      title: 'Price Update Delay',
-      resolution: 'Resolved manually',
-      time: 'Yesterday, 11:20 PM'
-    },
-    {
-      id: 'res-3',
-      title: 'Email Notification Failure',
-      resolution: 'Resolved automatically',
-      time: 'Yesterday, 06:45 PM'
-    }
-  ]);
-
-  // 4. Diagnostic Activity (Matching image)
-  const [diagnosticActivity, setDiagnosticActivity] = useState<DiagnosticActivity[]>([
-    {
-      id: 'act-1',
-      time: '10:24 AM',
-      type: 'System',
-      details: 'Full system diagnostic scan',
-      status: 'Success'
-    },
-    {
-      id: 'act-2',
-      time: '09:45 AM',
-      type: 'API',
-      details: 'Meesho API connection test',
-      status: 'Failed'
-    },
-    {
-      id: 'act-3',
-      time: '08:18 AM',
-      type: 'Listings',
-      details: 'Listing validation check',
-      status: 'Issues Found'
-    },
-    {
-      id: 'act-4',
-      time: '06:32 AM',
-      type: 'Inventory',
-      details: 'Inventory sync test',
-      status: 'Failed'
-    },
-    {
-      id: 'act-5',
-      time: '04:15 AM',
-      type: 'Database',
-      details: 'Database performance check',
-      status: 'Success'
-    }
-  ]);
+  useEffect(() => {
+    fetch('/api/v1/diagnostics-overview')
+      .then(res => res.json())
+      .then(data => {
+        if (data.healthChecks) setHealthChecks(data.healthChecks);
+        if (data.criticalIssues) setCriticalIssues(data.criticalIssues);
+        if (data.resolvedIssues) setResolvedIssues(data.resolvedIssues);
+      })
+      .catch(err => console.error('Diagnostics fetch failed:', err));
+  }, []);
 
   // 5. Issues by Component counts
   const [componentIssues, setComponentIssues] = useState([

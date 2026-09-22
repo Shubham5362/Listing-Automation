@@ -40,9 +40,15 @@ def create_notification(payload: NotificationCreate, seller_account_id: int, db:
 
 
 @router.get("", response_model=list[NotificationRead])
-def list_notifications(seller_account_id: int, unread_only: bool = False, category: str | None = Query(default=None), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    _seller(db, user, seller_account_id)
-    query = select(Notification).where(Notification.seller_account_id == seller_account_id, Notification.user_id == user.id)
+def list_notifications(seller_account_id: int | None = Query(default=None), unread_only: bool = False, category: str | None = Query(default=None), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        s = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+        if not s:
+            s = db.scalar(select(SellerAccount.id).where(SellerAccount.is_active == True))
+        seller_account_id = s
+    if not seller_account_id:
+        return []
+    query = select(Notification).where(Notification.seller_account_id == seller_account_id)
     if unread_only:
         query = query.where(Notification.read_at.is_(None))
     if category:

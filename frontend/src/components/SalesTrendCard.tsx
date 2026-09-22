@@ -10,25 +10,19 @@ interface SalesTrendCardProps {
 export default function SalesTrendCard({ salesTrend }: SalesTrendCardProps) {
   const [metricType, setMetricType] = useState<'Revenue' | 'Orders'>('Revenue');
 
-  const timeline = salesTrend.timeline || [
-    { day: 'Dec 10', amazon: 18200, flipkart: 9800, total: 28000 },
-    { day: 'Dec 11', amazon: 25400, flipkart: 14200, total: 39600 },
-    { day: 'Dec 12', amazon: 21800, flipkart: 11200, total: 33000 },
-    { day: 'Dec 13', amazon: 23100, flipkart: 13900, total: 37000 },
-    { day: 'Dec 14', amazon: 27900, flipkart: 17400, total: 45300 },
-    { day: 'Dec 15', amazon: 31200, flipkart: 21100, total: 52300 },
-    { day: 'Dec 16', amazon: 28620, flipkart: 16000, total: 44620 },
-  ];
+  const timeline = salesTrend?.timeline?.length ? salesTrend.timeline : [];
 
-  const amazonTotal = salesTrend.marketplaces?.find((m) => m.name === 'Amazon') || {
-    revenue: 148220,
-    growth: 12.1,
+  const amazonTotal = salesTrend?.marketplaces?.find((m) => m.name.toLowerCase() === 'amazon') || {
+    revenue: timeline.reduce((acc, d) => acc + (d.amazon || 0), 0),
+    growth: 0,
   };
-  const flipkartTotal = salesTrend.marketplaces?.find((m) => m.name === 'Flipkart') || {
-    revenue: 93600,
-    growth: 18.4,
-    share_percent: 38,
+  const flipkartTotal = salesTrend?.marketplaces?.find((m) => m.name.toLowerCase() === 'flipkart') || {
+    revenue: timeline.reduce((acc, d) => acc + (d.flipkart || 0), 0),
+    growth: 0,
+    share_percent: 0,
   };
+
+  const totalRevenue = salesTrend?.total || (amazonTotal.revenue + flipkartTotal.revenue);
 
   // SVG Chart Dimensions
   const width = 480;
@@ -41,26 +35,37 @@ export default function SalesTrendCard({ salesTrend }: SalesTrendCardProps) {
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
 
-  // Max scale up to 40,000 for individual day comparison or display
-  const maxVal = 35000;
+  // Max scale computed dynamically
+  const maxDayVal = timeline.length
+    ? Math.max(...timeline.map((d) => Math.max(d.amazon || 0, d.flipkart || 0)))
+    : 1000;
+  const maxVal = Math.max(maxDayVal * 1.25, 500);
 
   const getX = (index: number) =>
-    paddingLeft + (index / (timeline.length - 1)) * chartWidth;
+    timeline.length > 1
+      ? paddingLeft + (index / (timeline.length - 1)) * chartWidth
+      : paddingLeft + chartWidth / 2;
   const getY = (val: number) =>
     height - paddingBottom - (val / maxVal) * chartHeight;
 
   // Line paths
-  const amazonPoints = timeline.map((d, i) => `${getX(i).toFixed(1)},${getY(d.amazon).toFixed(1)}`);
-  const flipkartPoints = timeline.map((d, i) => `${getX(i).toFixed(1)},${getY(d.flipkart).toFixed(1)}`);
+  const amazonPoints = timeline.map((d, i) => `${getX(i).toFixed(1)},${getY(d.amazon || 0).toFixed(1)}`);
+  const flipkartPoints = timeline.map((d, i) => `${getX(i).toFixed(1)},${getY(d.flipkart || 0).toFixed(1)}`);
 
-  const amazonPath = `M ${amazonPoints.join(' L ')}`;
-  const flipkartPath = `M ${flipkartPoints.join(' L ')}`;
+  const amazonPath = amazonPoints.length ? `M ${amazonPoints.join(' L ')}` : '';
+  const flipkartPath = flipkartPoints.length ? `M ${flipkartPoints.join(' L ')}` : '';
+
+  const formatTick = (val: number) => {
+    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+    if (val >= 1000) return `₹${Math.round(val / 1000)}K`;
+    return `₹${Math.round(val)}`;
+  };
 
   const yLabels = [
-    { label: '₹4L', y: getY(35000) },
-    { label: '₹3L', y: getY(26250) },
-    { label: '₹2L', y: getY(17500) },
-    { label: '₹1L', y: getY(8750) },
+    { label: formatTick(maxVal), y: getY(maxVal) },
+    { label: formatTick(maxVal * 0.75), y: getY(maxVal * 0.75) },
+    { label: formatTick(maxVal * 0.5), y: getY(maxVal * 0.5) },
+    { label: formatTick(maxVal * 0.25), y: getY(maxVal * 0.25) },
     { label: '0', y: height - paddingBottom },
   ];
 
@@ -78,11 +83,11 @@ export default function SalesTrendCard({ salesTrend }: SalesTrendCardProps) {
       {/* Primary Value Callout */}
       <div className="mt-2 flex items-baseline gap-2">
         <div className="text-2xl font-bold text-slate-900 tracking-tight">
-          ₹{(salesTrend.total || 241820).toLocaleString('en-IN')}
+          ₹{Math.round(totalRevenue).toLocaleString('en-IN')}
         </div>
         <div className="flex items-center text-xs font-semibold text-emerald-600">
           <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>↑ {salesTrend.growth || 14.2}% vs yesterday</span>
+          <span>↑ {salesTrend?.growth ?? 0}% vs yesterday</span>
         </div>
       </div>
 
@@ -212,7 +217,7 @@ export default function SalesTrendCard({ salesTrend }: SalesTrendCardProps) {
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold text-slate-700">Flipkart</span>
                 <span className="px-1.5 py-0.2 bg-blue-50 text-blue-600 rounded text-[10px] font-bold">
-                  38%
+                  {Math.round(flipkartTotal.share_percent || (totalRevenue > 0 ? (flipkartTotal.revenue / totalRevenue) * 100 : 0))}%
                 </span>
               </div>
               <div className="text-sm font-bold text-slate-900 mt-0.5">

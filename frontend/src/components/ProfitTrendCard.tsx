@@ -9,17 +9,7 @@ interface ProfitTrendCardProps {
 export default function ProfitTrendCard({ profitTrend }: ProfitTrendCardProps) {
   const [filter, setFilter] = useState<'Net Profit' | 'Gross Profit'>('Net Profit');
 
-  const points = profitTrend?.length
-    ? profitTrend
-    : [
-        { day: 'Dec 10', profit: 24000 },
-        { day: 'Dec 11', profit: 39000 },
-        { day: 'Dec 12', profit: 32000 },
-        { day: 'Dec 13', profit: 37000 },
-        { day: 'Dec 14', profit: 46000 },
-        { day: 'Dec 15', profit: 58000 },
-        { day: 'Dec 16', profit: 46210 },
-      ];
+  const points = profitTrend?.length ? profitTrend : [];
 
   const width = 360;
   const height = 160;
@@ -30,13 +20,21 @@ export default function ProfitTrendCard({ profitTrend }: ProfitTrendCardProps) {
 
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
-  const maxVal = 80000;
+  
+  const rawMax = points.length ? Math.max(...points.map((p) => p.profit || 0)) : 1000;
+  const maxVal = Math.max(rawMax * 1.25, 500);
+
+  const formatTick = (val: number) => {
+    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+    if (val >= 1000) return `₹${Math.round(val / 1000)}K`;
+    return `₹${Math.round(val)}`;
+  };
 
   const yLabels = [
-    { label: '₹80K', val: 80000 },
-    { label: '₹60K', val: 60000 },
-    { label: '₹40K', val: 40000 },
-    { label: '₹20K', val: 20000 },
+    { label: formatTick(maxVal), val: maxVal },
+    { label: formatTick(maxVal * 0.75), val: maxVal * 0.75 },
+    { label: formatTick(maxVal * 0.5), val: maxVal * 0.5 },
+    { label: formatTick(maxVal * 0.25), val: maxVal * 0.25 },
     { label: '0', val: 0 },
   ];
 
@@ -44,7 +42,7 @@ export default function ProfitTrendCard({ profitTrend }: ProfitTrendCardProps) {
     height - paddingBottom - (val / maxVal) * chartHeight;
 
   const barWidth = 18;
-  const gap = (chartWidth - points.length * barWidth) / (points.length - 1);
+  const gap = points.length > 1 ? (chartWidth - points.length * barWidth) / (points.length - 1) : 0;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 flex flex-col justify-between h-full">
@@ -93,8 +91,7 @@ export default function ProfitTrendCard({ profitTrend }: ProfitTrendCardProps) {
           {/* Bars */}
           {points.map((p, i) => {
             const x = paddingLeft + i * (barWidth + gap);
-            // Normalize profit display so it represents daily net profit cleanly
-            const displayedProfit = p.profit < 15000 ? p.profit * 4.5 : p.profit;
+            const displayedProfit = p.profit || 0;
             const y = getY(displayedProfit);
             const bHeight = Math.max(4, height - paddingBottom - y);
 

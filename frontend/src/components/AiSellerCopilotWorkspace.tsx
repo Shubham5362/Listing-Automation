@@ -91,36 +91,13 @@ export default function AiSellerCopilotWorkspace({
   const [isTyping, setIsTyping] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Chat message thread initialized with the exact conversation from the reference image
+  // Chat message thread
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: 'msg-1',
-      sender: 'user',
-      timestamp: '10:24 AM',
-      text: 'Mere 100 new products ko Amazon aur Flipkart par list karne ki preparation karo, keywords same niche me vary karo aur 20-20 karke daily process karo.'
-    },
-    {
-      id: 'msg-2',
+      id: 'msg-welcome',
       sender: 'assistant',
-      timestamp: '10:24 AM',
-      text: 'Bilkul! Main aapke liye ek complete plan bana deta hoon. ◆\nYeh raha summary:',
-      plan: {
-        id: 'plan-101',
-        title: 'Plan: Bulk Product Listing Automation',
-        status: 'Ready for Approval',
-        totalProducts: 100,
-        marketplaces: ['Amazon', 'Flipkart'],
-        dailyLimit: '20 products per marketplace (40 total per day)',
-        estimatedDuration: '5 days',
-        productSelection: 'Latest 100 products from your catalog',
-        keywordStrategy: 'Niche-based variation (AI will generate unique keywords)',
-        content: 'AI optimized titles, bullets, description, attributes',
-        images: 'Use existing product images (auto-enhance if needed)',
-        schedule: 'Daily at 10:00 AM',
-        automation: 'Will create and activate automation after your approval',
-        nextStep:
-          'Please review the plan and confirm to proceed. I can also adjust the number of products, schedule, or marketplaces if needed.'
-      }
+      timestamp: 'Just now',
+      text: 'Hello! I am your AI Seller Copilot. I can prepare bulk listings, optimize titles & keywords, manage inventory alerts, and run multichannel automations across Amazon and Flipkart. How can I assist your store today?'
     }
   ]);
 
@@ -135,54 +112,50 @@ export default function AiSellerCopilotWorkspace({
   // Current active plan state
   const [activePlan, setActivePlan] = useState<PlanData>({
     id: 'plan-101',
-    title: 'Plan: Bulk Product Listing Automation',
+    title: 'Plan: Catalog Marketplace Sync & Optimization',
     status: 'Ready for Approval',
-    totalProducts: 100,
+    totalProducts: 10,
     marketplaces: ['Amazon', 'Flipkart'],
-    dailyLimit: '20 products per marketplace (40 total per day)',
-    estimatedDuration: '5 days',
-    productSelection: 'Latest 100 products from your catalog',
-    keywordStrategy: 'Niche-based variation (AI will generate unique keywords)',
+    dailyLimit: '20 products per marketplace',
+    estimatedDuration: '1 day',
+    productSelection: 'Active catalog products',
+    keywordStrategy: 'Niche-based variation (AI keyword optimization)',
     content: 'AI optimized titles, bullets, description, attributes',
     images: 'Use existing product images (auto-enhance if needed)',
     schedule: 'Daily at 10:00 AM',
     automation: 'Will create and activate automation after your approval',
     nextStep:
-      'Please review the plan and confirm to proceed. I can also adjust the number of products, schedule, or marketplaces if needed.'
+      'Please review the plan and confirm to proceed.'
   });
 
-  // 100 Affected Products Generator / State
-  const [affectedProducts, setAffectedProducts] = useState<AffectedProduct[]>(() => {
-    const categories = [
-      'Kitchen & Dining',
-      'Home & Living',
-      'Sports & Fitness',
-      'Electronics & Gadgets',
-      'Luggage & Backpacks'
-    ];
-    const sampleItems: AffectedProduct[] = [];
-    for (let i = 1; i <= 100; i++) {
-      const cat = categories[i % categories.length];
-      sampleItems.push({
-        id: i,
-        sku: `SKU-HM-${1000 + i}`,
-        name:
-          i === 1
-            ? 'Stainless Steel Water Bottle 1000ml Vacuum Insulated'
-            : i === 2
-            ? 'Insulated Coffee Tumbler 500ml Spill Proof Lid'
-            : i === 3
-            ? 'Thermal Travel Mug 750ml Matte Finish'
-            : `${cat.split(' ')[0]} Pro Series Item #${i}`,
-        category: cat,
-        price: 399 + (i % 15) * 50,
-        stock: 45 + (i % 50),
-        marketplaces: ['Amazon', 'Flipkart'],
-        selected: true
-      });
-    }
-    return sampleItems;
-  });
+  // Affected Products loaded dynamically from live catalog
+  const [affectedProducts, setAffectedProducts] = useState<AffectedProduct[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/personal/products')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.products) {
+          const items: AffectedProduct[] = data.products.map((p: any) => ({
+            id: p.id,
+            sku: p.sku || `SKU-${p.id}`,
+            name: p.title || p.name || 'Catalog Item',
+            category: p.category || 'General',
+            price: p.price || 0,
+            stock: p.stock ?? p.quantity ?? 0,
+            marketplaces: ['Amazon', 'Flipkart'],
+            selected: true,
+          }));
+          setAffectedProducts(items);
+          setActivePlan(prev => ({
+            ...prev,
+            totalProducts: items.length,
+            productSelection: `All ${items.length} products from your catalog`
+          }));
+        }
+      })
+      .catch(err => console.error('Failed to load products for copilot:', err));
+  }, []);
 
   const [affectedSearch, setAffectedSearch] = useState('');
   const chatScrollRef = useRef<HTMLDivElement | null>(null);

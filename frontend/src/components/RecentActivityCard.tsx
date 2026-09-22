@@ -63,22 +63,28 @@ export default function RecentActivityCard({
 
       {/* Activity List */}
       <div className="divide-y divide-slate-100 flex-1 flex flex-col justify-between mt-1">
-        {activities.map((item) => (
-          <div
-            key={item.id}
-            className="py-2.5 flex items-center justify-between gap-3 text-xs"
-          >
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              {getIcon(item.type, item.icon)}
-              <span className="font-semibold text-slate-800 truncate">
-                {item.title}
+        {activities?.length > 0 ? (
+          activities.map((item) => (
+            <div
+              key={item.id}
+              className="py-2.5 flex items-center justify-between gap-3 text-xs"
+            >
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                {getIcon(item.type, item.icon)}
+                <span className="font-semibold text-slate-800 truncate">
+                  {item.title}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 shrink-0 font-medium">
+                {item.time}
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 shrink-0 font-medium">
-              {item.time}
-            </span>
+          ))
+        ) : (
+          <div className="py-6 text-center text-xs text-slate-400 font-medium">
+            No recent activity recorded
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
