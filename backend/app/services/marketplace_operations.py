@@ -10,6 +10,7 @@ from app.core.security import decrypt_credentials
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
 from app.models.core import Marketplace, MarketplaceAccount
+from app.marketplaces.catalog import get_channel_catalog_item
 from app.services.jobs import enqueue_job
 
 
@@ -55,6 +56,11 @@ def _verify_price(client: Any, context: MarketplaceAccountContext, sku: str, exp
 
 def execute_marketplace_operation(db: Session, *, seller_account_id: int, marketplace_account_id: int, operation: str, payload: dict[str, Any]) -> dict[str, Any]:
     account = _account(db, marketplace_account_id, seller_account_id)
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise ValueError("Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise ValueError("No live adapter is registered for this marketplace")
     client = _client(account)
     context = _context(account)
     operation = operation.strip().lower()
@@ -74,7 +80,12 @@ def execute_marketplace_operation(db: Session, *, seller_account_id: int, market
 
 
 def enqueue_marketplace_operation(db: Session, *, seller_account_id: int, marketplace_account_id: int, operation: str, payload: dict[str, Any]) -> int:
-    _account(db, marketplace_account_id, seller_account_id)
+    account = _account(db, marketplace_account_id, seller_account_id)
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise ValueError("Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise ValueError("No live adapter is registered for this marketplace")
     operation = operation.strip().lower()
     if operation not in SUPPORTED_OPERATIONS:
         raise ValueError(f"Unsupported marketplace operation: {operation}")
