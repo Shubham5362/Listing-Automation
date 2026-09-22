@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface FeeSegment {
   name: string;
@@ -47,26 +47,6 @@ export default function FinanceFeeBreakdownDonut() {
     const offset = -(accumulatedPercent / 100) * circumference;
     accumulatedPercent += seg.percentage;
     return { ...seg, strokeDash, offset, index: idx };
-  });
-
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
-  const radius = 68;
-  const strokeWidth = 24;
-  const circumference = 2 * Math.PI * radius;
-
-  // Compute strokeDasharray and strokeDashoffset for each slice
-  let accumulatedPercent = 0;
-  const slices = feeSegments.map((seg, idx) => {
-    const strokeDash = (seg.percentage / 100) * circumference;
-    const offset = -(accumulatedPercent / 100) * circumference;
-    accumulatedPercent += seg.percentage;
-    return {
-      ...seg,
-      strokeDash,
-      offset,
-      index: idx,
-    };
   });
 
   return (
