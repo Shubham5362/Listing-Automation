@@ -29,7 +29,7 @@ services:
       - key: ALLOWED_HOSTS
         sync: false
       - key: PERSONAL_SELLER_NAME
-        value: My Business
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
