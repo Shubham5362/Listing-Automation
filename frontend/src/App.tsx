@@ -88,7 +88,7 @@ const emptyDashboardState: DashboardResponse = {
   },
   marketplace_health: [],
   inventory_health: {
-    health_score: 100,
+    health_score: 0,
     total_items: 0,
     healthy: 0,
     low_stock: 0,
@@ -100,18 +100,18 @@ const emptyDashboardState: DashboardResponse = {
   recent_activity: [],
   copilot_insight: {
     alert: {
-      title: 'AI Seller Copilot',
-      subtitle: 'Monitoring active sales and inventory velocity',
+      title: '',
+      subtitle: '',
       sku: '',
     },
-    context: 'Operations Active',
-    finding: 'All systems live and synchronized across connected marketplaces.',
-    why: ['Real-time sync active'],
+    context: '',
+    finding: '',
+    why: [],
     recommendation: {
-      title: 'View Workspaces',
-      cover: 'Coverage optimal',
+      title: '',
+      cover: '',
     },
-    status: 'active',
+    status: 'idle',
   },
 };
 
@@ -135,7 +135,7 @@ export default function App() {
         setData(json);
       }
     } catch (err) {
-      console.warn('Using local state; API fetch notice:', err);
+      console.warn('Dashboard API request failed:', err);
     }
   };
 
