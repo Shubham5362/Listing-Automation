@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Search,
   Bell,
@@ -36,6 +36,11 @@ export default function TopHeader({
 }: TopHeaderProps) {
   const [marketplaceDropdownOpen, setMarketplaceDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<{name?: string; role?: string}>({});
+
+  useEffect(() => {
+    fetch('/api/v1/auth/me').then((res) => res.ok ? res.json() : null).then((data) => data && setProfile(data)).catch(() => undefined);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -195,8 +200,8 @@ export default function TopHeader({
             </div>
 
             <div className="hidden md:flex flex-col text-left leading-none">
-              <span className="text-xs font-bold text-slate-900">Shubham</span>
-              <span className="text-[10px] font-medium text-slate-500 mt-0.5">Seller Pro</span>
+              <span className="text-xs font-bold text-slate-900">{profile.name || 'Seller'}</span>
+              <span className="text-[10px] font-medium text-slate-500 mt-0.5">{profile.role || 'Seller'}</span>
             </div>
 
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
