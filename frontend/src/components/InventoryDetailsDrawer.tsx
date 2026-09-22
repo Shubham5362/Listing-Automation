@@ -487,12 +487,7 @@ export default function InventoryDetailsDrawer({
         {/* Movements Tab */}
         {activeTab === 'Movements' && (
           <div className="space-y-2.5 text-xs">
-            {[
-              { type: 'Customer Order', qty: '-2 units', dest: 'Order #402-984321', date: 'Today, 2:15 PM', color: 'text-slate-700' },
-              { type: 'Customer Order', qty: '-1 unit', dest: 'Order #402-984310', date: 'Today, 11:30 AM', color: 'text-slate-700' },
-              { type: 'Inbound PO Receipt', qty: '+50 units', dest: 'PO #PO-2024-884', date: 'Dec 14, 2024', color: 'text-emerald-600 font-bold' },
-              { type: 'FBA Transfer', qty: '-20 units', dest: 'Shipment #FBA1789X', date: 'Dec 12, 2024', color: 'text-indigo-600' },
-            ].map((m, idx) => (
+            {movements.map((m: any, idx: number) => (
               <div key={idx} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80 flex items-center justify-between">
                 <div>
                   <div className="font-bold text-slate-900">{m.type}</div>
