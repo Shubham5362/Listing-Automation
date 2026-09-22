@@ -148,13 +148,7 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
   const [dataSharingConsent, setDataSharingConsent] = useState(true);
 
   // 4. Marketplace Accounts
-  const [marketplaces, setMarketplaces] = useState([
-    { id: 'amazon', name: 'Amazon', connected: true },
-    { id: 'flipkart', name: 'Flipkart', connected: true },
-    { id: 'meesho', name: 'Meesho', connected: true },
-    { id: 'myntra', name: 'Myntra', connected: true },
-    { id: 'shopify', name: 'Shopify', connected: false },
-  ]);
+  const [marketplaces, setMarketplaces] = useState<Array<{ id: string; name: string; connected: boolean }>>([]);
 
   // 5. Marketplace Configuration
   const [defaultMarketplace, setDefaultMarketplace] = useState('Amazon India');
