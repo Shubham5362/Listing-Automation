@@ -440,7 +440,7 @@ export default function App() {
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <span>Today</span>
                       <span className="text-slate-300">|</span>
-                      <span className="text-slate-500 font-normal">Dec 16, 2024</span>
+                      <span className="text-slate-500 font-normal"></span>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
                     </div>
 
