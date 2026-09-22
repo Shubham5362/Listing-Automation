@@ -269,7 +269,7 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   // 23. Billing & Subscription
-  // Plan: Seller Pro, Next: Jan 15, 2025
+  // Subscription details are loaded from the backend when available
 
   // 24. Audit Trail
   // View action logs
@@ -2148,7 +2148,7 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
               <div className="space-y-2 p-2.5 rounded-lg bg-slate-50/70 border border-slate-100">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-500">Current Plan</span>
-                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[10px] rounded-full">Seller Pro</span>
+                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[10px] rounded-full">{role || 'Plan not configured'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-500">Next Billing Date</span>
