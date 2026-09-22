@@ -1366,10 +1366,10 @@ export default function MarketplacesWorkspace({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { name: 'Amazon', connected: true },
-                { name: 'Flipkart', connected: true },
-                { name: 'Meesho', connected: true },
-                { name: 'Myntra', connected: true },
+                { name: 'Amazon', connected: false },
+                { name: 'Flipkart', connected: false },
+                { name: 'Meesho', connected: false },
+                { name: 'Myntra', connected: false },
                 { name: 'Ajio', connected: false },
                 { name: 'Snapdeal', connected: false },
                 { name: 'Tata Neu', connected: false },
