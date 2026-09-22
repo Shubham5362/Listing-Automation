@@ -269,8 +269,8 @@ export default function ControlCenterWorkspace({
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="text-xs text-slate-500 font-medium pt-1">Overall System Health</div>
-            <div className="text-base sm:text-lg font-bold text-slate-900">Healthy</div>
-            <div className="text-[11px] text-slate-400 font-normal">All systems operational</div>
+            <div className="text-base sm:text-lg font-bold text-slate-900">—</div>
+            <div className="text-[11px] text-slate-400 font-normal">No health data available</div>
           </div>
 
           {/* 2. Automations */}
@@ -455,8 +455,8 @@ export default function ControlCenterWorkspace({
             </div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span>Auto-recovery active</span>
-              <span className="text-emerald-600 font-semibold">99.8% resolution</span>
+              <span>Recovery status</span>
+              <span className="font-semibold">—</span>
             </div>
           </div>
         </div>
@@ -544,7 +544,7 @@ export default function ControlCenterWorkspace({
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span>Next scheduled batch</span>
-              <span className="font-semibold text-slate-600">12:30 PM IST</span>
+              <span className="font-semibold text-slate-600">—</span>
             </div>
           </div>
 
@@ -1028,32 +1028,16 @@ export default function ControlCenterWorkspace({
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="text-slate-400 text-[10px]">Database Pool</div>
-                  <div className="font-bold text-slate-900 text-sm mt-0.5">8 / 20 Active</div>
-                  <div className="text-emerald-600 text-[10px]">Healthy</div>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="text-slate-400 text-[10px]">Worker Threads</div>
-                  <div className="font-bold text-slate-900 text-sm mt-0.5">4 Nodes</div>
-                  <div className="text-emerald-600 text-[10px]">0 Queued Overflows</div>
-                </div>
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs text-slate-400">
+                No detailed system metrics available yet.
               </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                <div className="font-bold text-slate-800 text-xs">Latency Benchmarks</div>
-                <div className="flex justify-between text-[11px] text-slate-600">
-                  <span>SQLite Internal Cache</span>
-                  <span className="font-mono font-bold text-slate-900">1.2 ms</span>
-                </div>
                 <div className="flex justify-between text-[11px] text-slate-600">
                   <span>Amazon SP-API North America / India</span>
-                  <span className="font-mono font-bold text-slate-900">142 ms</span>
+                  <span className="font-mono font-bold text-slate-900">—</span>
                 </div>
                 <div className="flex justify-between text-[11px] text-slate-600">
                   <span>Flipkart Seller Edge Gateway</span>
-                  <span className="font-mono font-bold text-slate-900">188 ms</span>
+                  <span className="font-mono font-bold text-slate-900">—</span>
                 </div>
               </div>
             </div>
