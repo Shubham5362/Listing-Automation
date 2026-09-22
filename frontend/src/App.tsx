@@ -124,7 +124,7 @@ export default function App() {
   const [selectedMarketplace, setSelectedMarketplace] = useState('all');
   const [externalAiPrompt, setExternalAiPrompt] = useState<string | undefined>();
   const [toastNotification, setToastNotification] = useState<string | null>(null);
-  const [notificationsBadge, setNotificationsBadge] = useState<number>(3);
+  const [notificationsBadge, setNotificationsBadge] = useState<number>(0);
 
   // Load live data from the backend
   const fetchDashboardData = async () => {
@@ -252,8 +252,9 @@ export default function App() {
         }}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
-        ordersBadge={data.order_status?.breakdown?.find((b) => b.name === 'Processing')?.count || 12}
+        ordersBadge={data.order_status?.breakdown?.find((b) => b.name === 'Processing')?.count || 0}
         notificationsBadge={notificationsBadge}
+        marketplaceHealth={data.marketplace_health}
       />
 
       {/* Main Container Area */}
@@ -427,7 +428,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                      Good morning, {data.user?.name || 'Shubham'} 👋
+                      {data.user?.name ? `Good morning, ${data.user.name} 👋` : 'Welcome to SellerHub'}
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-normal">
                       Here's what's happening with your business today.
