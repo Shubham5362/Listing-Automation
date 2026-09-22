@@ -484,7 +484,7 @@ export default function OrdersWorkspace({
                   className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-2 transition-colors"
                 >
                   <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Dec 10, 2024 - Dec 16, 2024</span>
+                  <span>Selected date range</span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
 
