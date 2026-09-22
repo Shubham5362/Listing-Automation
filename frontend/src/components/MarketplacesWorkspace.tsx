@@ -429,18 +429,7 @@ export default function MarketplacesWorkspace({
     } catch {
       // Fallback
     }
-    setTimeout(() => {
-      setIsReconciliationModalOpen({
-        account,
-        result: {
-          checked: account.listings,
-          matched: account.listings,
-          mismatches: [],
-          missing_remote: []
-        }
-      });
-      showToast(`✓ ${account.name}: ${account.listings} SKUs reconciled with zero mismatch.`);
-    }, 1000);
+    showToast(`Unable to verify ${account.name} reconciliation from the marketplace API.`);
   };
 
   // Inspect Adapter Action
@@ -456,18 +445,8 @@ export default function MarketplacesWorkspace({
     } catch {
       // Fallback
     }
-    setAdapterModalAccount({
-      marketplace: account.name,
-      adapter_version: '3.4.1',
-      categories: ['Electronics', 'Fashion', 'Home & Kitchen', 'Personal Care'],
-      capabilities: [
-        { key: 'inventory_push', enabled: true, risk: 'medium' },
-        { key: 'price_push', enabled: true, risk: 'medium' },
-        { key: 'order_sync', enabled: true, risk: 'low' },
-        { key: 'catalog_ingestion', enabled: true, risk: 'low' },
-        { key: 'return_reversal', enabled: true, risk: 'high' }
-      ]
-    });
+    setAdapterModalAccount(null);
+    showToast(`Unable to load adapter details for ${account.name}.`);
   };
 
   // Open Connect Modal for an unconnected marketplace
