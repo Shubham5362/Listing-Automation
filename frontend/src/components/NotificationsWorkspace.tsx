@@ -1710,7 +1710,7 @@ export default function NotificationsWorkspace({
                 <label className="block text-slate-700 font-semibold mb-1">Contains SKU / Order ID</label>
                 <input
                   type="text"
-                  placeholder="e.g. HM-SSB-1000 or 408-1234567"
+                  placeholder="SKU or Order ID"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                 />
               </div>
