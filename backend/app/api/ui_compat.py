@@ -21,6 +21,7 @@ from app.models.pricing import BuyBoxSnapshot, PricingRule
 from app.models.returns import ReturnRequest
 from app.services.advanced_analytics import AdvancedAnalyticsService
 from app.services.personal_marketplace import personal_seller_id
+from app.services.action_control import create_personal_action
 
 router = APIRouter(tags=["ui-compat"])
 
@@ -644,21 +645,25 @@ def get_personal_products(user: User = Depends(get_current_user), db: Session = 
 @router.post("/personal/listing-automation/runs")
 async def create_listing_automation_run(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     sellers = _seller_ids(db, user)
-    seller_id = sellers[0] if sellers else 1
+    if not sellers:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     body = await request.json()
-    job = Job(
-        seller_account_id=seller_id,
-        name=f"Bulk Listing Automation ({body.get('templateId', 'ai-copilot')})",
-        status="running",
-        payload=json.dumps(body),
-        attempts=1,
-        created_at=datetime.utcnow(),
-        started_at=datetime.utcnow()
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    return {"id": job.id, "status": "running", "message": "Automation execution active"}
+    try:
+        action = create_personal_action(
+            db,
+            action="automation_run",
+            payload=body,
+            reason="AI Seller Copilot requested a listing automation run",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "id": action.job_id or action.id,
+        "action_request_id": action.id,
+        "status": action.status,
+        "risk": action.risk,
+        "message": "Automation request accepted by the action-control pipeline.",
+    }
 
 
 @router.post("/catalog")
