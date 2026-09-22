@@ -541,17 +541,8 @@ export default function App() {
 
               {activeTab === 'Inventory' && (
                 <div className="space-y-3">
-                  <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-rose-700 text-sm">Critical: SKU ABC123 Stockout in 2 Days</div>
-                      <div className="text-xs text-rose-600 mt-0.5">18 units available. Velocity: 9/day. Lead time: 5 days.</div>
-                    </div>
-                    <button
-                      onClick={handleCreatePurchasePlan}
-                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs"
-                    >
-                      Reorder 75 Units
-                    </button>
+                  <div className="p-6 bg-white border border-slate-200 rounded-xl text-center text-sm text-slate-400">
+                    No inventory alert data available yet.
                   </div>
                 </div>
               )}
