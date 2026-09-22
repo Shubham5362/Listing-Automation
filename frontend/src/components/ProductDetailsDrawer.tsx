@@ -417,7 +417,7 @@ export default function ProductDetailsDrawer({
               <div className="text-xs text-slate-500 space-y-1">
                 <div>FSN: <span className="font-mono text-slate-800">BOTG99XYZA</span></div>
                 <div>Listed Price: <span className="font-semibold text-slate-900">₹{product.price}</span></div>
-                <div>F-Assured Badge: <span className="font-semibold text-blue-600">Verified</span></div>
+                <div>F-Assured Badge: <span className="font-semibold text-blue-600">{(product as any).assuredBadge || 'Not available'}</span></div>
               </div>
             </div>
           </div>
