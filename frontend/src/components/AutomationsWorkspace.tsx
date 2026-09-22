@@ -41,6 +41,8 @@ import {
   Bot
 } from 'lucide-react';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
 // Marketplace Badges matching SellerHub design system
 export const AmazonBadgeIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <div className={`${className} rounded-md bg-amber-50 border border-amber-200/80 flex items-center justify-center p-0.5 shrink-0 shadow-2xs`}>
@@ -1211,7 +1213,7 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
     setAiTestingPrompt(true);
     try {
       // Call backend AI agent endpoint
-      const res = await fetch('/api/v1/personal/ai/seller-agent/chat', {
+      const res = await fetch(`${API_BASE}/api/v1/personal/ai/seller-agent/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

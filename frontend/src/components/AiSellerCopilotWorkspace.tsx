@@ -248,7 +248,7 @@ export default function AiSellerCopilotWorkspace({
     showToast('Plan approved! Creating listing automation in SellerHub...');
 
     try {
-      const response = await fetch('/api/v1/personal/listing-automation/runs', {
+      const response = await fetch(`${API_BASE}/api/v1/personal/listing-automation/runs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
