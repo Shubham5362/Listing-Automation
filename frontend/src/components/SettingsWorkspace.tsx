@@ -126,15 +126,15 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // 1. Account & Profile
-  const [fullName, setFullName] = useState(user?.name || 'Shubham');
-  const [email, setEmail] = useState(user?.email || 'shubham@example.com');
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [countryCode, setCountryCode] = useState('+91');
-  const [phoneNumber, setPhoneNumber] = useState('98765 43210');
-  const [role, setRole] = useState(user?.role || 'Seller Pro');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [role, setRole] = useState(user?.role || '');
 
   // 2. Business & Legal
-  const [businessName, setBusinessName] = useState('Shubham Retail Private Limited');
-  const [businessType, setBusinessType] = useState('Private Limited');
+  const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('');
   const [gstNumber, setGstNumber] = useState('');
   const [panNumber, setPanNumber] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
@@ -364,9 +364,9 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
 
   const handleResetToDefault = () => {
     setResetSuccess(true);
-    setFullName(user?.name || 'Shubham');
-    setEmail(user?.email || 'shubham@example.com');
-    setPhoneNumber('98765 43210');
+    setFullName(user?.name || '');
+    setEmail(user?.email || '');
+    setPhoneNumber(data.profile?.phone || data.business?.phone || '');
     setRole('Seller Pro');
     setBusinessName('Shubham Retail Private Limited');
     setBusinessType('Private Limited');
