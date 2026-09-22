@@ -452,7 +452,7 @@ export default function ReturnsWorkspace({
                   <div className="text-[11px] font-medium text-slate-500">Pending Action</div>
                   <div className="text-xl font-bold text-slate-900 mt-0.5">{returns.filter((r) => r.status === "pending").length}</div>
                   <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
-                    <span>↑ 38.5%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -466,9 +466,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Approved</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">142</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{tabCounts.approved}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 18.3%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -482,9 +482,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Refunded</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">96</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{tabCounts.refunded}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 22.0%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -498,9 +498,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Replacement</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">28</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{tabCounts.replacement}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 7.7%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
