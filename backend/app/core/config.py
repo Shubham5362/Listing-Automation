@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     backup_dir: str = "./backups"
     backup_retention_days: int = 14
 
-    personal_seller_name: str = "My Business"
+    personal_seller_name: str = ""
 
     # LLM providers. Keys are server-side only; never expose them to the browser.
     gemini_api_key: str | None = None
