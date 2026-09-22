@@ -184,14 +184,7 @@ export default function ControlCenterWorkspace({
   const [hoveredHourIndex, setHoveredHourIndex] = useState<number | null>(null);
 
   // Performance chart points across 24h (6 intervals: 12 AM, 4 AM, 8 AM, 12 PM, 4 PM, 8 PM)
-  const chartPoints = [
-    { label: '12 AM', cpu: 62, memory: 36, api: 18, queue: 10 },
-    { label: '4 AM', cpu: 71, memory: 44, api: 19, queue: 12 },
-    { label: '8 AM', cpu: 64, memory: 38, api: 17, queue: 9 },
-    { label: '12 PM', cpu: 74, memory: 46, api: 21, queue: 14 },
-    { label: '4 PM', cpu: 67, memory: 40, api: 19, queue: 11 },
-    { label: '8 PM', cpu: 75, memory: 45, api: 23, queue: 12 }
-  ];
+  const chartPoints = [];
 
   return (
     <div className="flex-1 bg-slate-50/60 min-h-screen flex flex-col font-sans">
@@ -1298,7 +1291,7 @@ export default function ControlCenterWorkspace({
                 <label className="block text-slate-700 font-semibold mb-1">Detailed Description</label>
                 <textarea
                   rows={3}
-                  defaultValue="Order #408-1234567 rate limit error reported at 10:24 AM."
+                  defaultValue=""
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
                 />
               </div>
