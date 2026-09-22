@@ -46,6 +46,7 @@ class DashboardTrendRow(BaseModel):
 
 
 class DashboardProductRow(BaseModel):
+    id: int | None = None
     product_id: int
     sku: str
     title: str

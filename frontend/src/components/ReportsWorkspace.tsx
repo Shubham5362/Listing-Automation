@@ -152,27 +152,73 @@ export default function ReportsWorkspace({
     }
   ]);
 
+  const [summary, setSummary] = useState({
+    totalSales: 428560,
+    totalOrders: 1248,
+    totalListings: 642,
+    totalProducts: 642,
+    avgOrderValue: 343,
+    netProfit: 68920,
+    salesGrowth: 12.5,
+    ordersGrowth: 18.2,
+    listingsGrowth: 8.1,
+    aovGrowth: -2.4,
+    profitGrowth: 15.6,
+  });
+
   const [topSellingProducts, setTopSellingProducts] = useState<any[]>([]);
 
+  // Revenue by Category
+  const [categoryData, setCategoryData] = useState<any[]>([
+    { name: 'Home & Kitchen', revenue: 128450, percent: 30, color: 'bg-[#3B82F6]' },
+    { name: 'Beauty & Personal Care', revenue: 86320, percent: 20, color: 'bg-[#8B5CF6]' },
+    { name: 'Electronics', revenue: 72610, percent: 17, color: 'bg-[#F43F5E]' },
+    { name: 'Fashion', revenue: 68220, percent: 16, color: 'bg-[#F59E0B]' },
+    { name: 'Health & Wellness', revenue: 42960, percent: 10, color: 'bg-[#10B981]' },
+  ]);
+
+  // Orders by Marketplace
+  const [marketplaceOrders, setMarketplaceOrders] = useState<any[]>([
+    { name: 'Amazon', count: 520, percent: 41.7, color: '#F59E0B' },
+    { name: 'Flipkart', count: 368, percent: 29.5, color: '#3B82F6' },
+    { name: 'Meesho', count: 220, percent: 17.6, color: '#EC4899' },
+    { name: 'Myntra', count: 140, percent: 11.2, color: '#A855F7' },
+  ]);
+
+  // Order Status distribution
+  const [orderStatusSegments, setOrderStatusSegments] = useState<any[]>([
+    { label: 'Delivered', count: 892, percent: 71.5, color: '#10B981' },
+    { label: 'Shipped', count: 210, percent: 16.8, color: '#3B82F6' },
+    { label: 'Processing', count: 86, percent: 6.9, color: '#8B5CF6' },
+    { label: 'Cancelled', count: 42, percent: 3.4, color: '#EF4444' },
+    { label: 'Returned', count: 18, percent: 1.4, color: '#0EA5E9' },
+  ]);
+
+  // Timeline points for Sales Trend
+  const [salesTimeline, setSalesTimeline] = useState<any[]>([
+    { day: 'Dec 01', amazon: 38200, flipkart: 26100, meesho: 12400, myntra: 8500 },
+    { day: 'Dec 03', amazon: 41200, flipkart: 28900, meesho: 13800, myntra: 9100 },
+    { day: 'Dec 05', amazon: 36800, flipkart: 25400, meesho: 11900, myntra: 7800 },
+    { day: 'Dec 07', amazon: 39500, flipkart: 29800, meesho: 14200, myntra: 9600 },
+    { day: 'Dec 09', amazon: 43200, flipkart: 32400, meesho: 15600, myntra: 10400 },
+    { day: 'Dec 11', amazon: 37900, flipkart: 27800, meesho: 12900, myntra: 8900 },
+    { day: 'Dec 13', amazon: 45600, flipkart: 35100, meesho: 16800, myntra: 11200 },
+    { day: 'Dec 15', amazon: 48900, flipkart: 38200, meesho: 17400, myntra: 12100 },
+  ]);
+
   useEffect(() => {
-    fetch('/api/v1/dashboard')
-      .then(res => res.json())
-      .then(d => {
-        if (d.top_products && Array.isArray(d.top_products)) {
-          const mapped = d.top_products.map((p: any, idx: number) => ({
-            rank: p.rank || (idx + 1),
-            name: p.name || 'Product',
-            marketplace: idx % 2 === 0 ? 'Amazon' : 'Flipkart',
-            orders: p.units || 100,
-            revenue: p.revenue || 20000,
-            trend: 10,
-            trendPositive: true,
-            imageType: 'bottle'
-          }));
-          setTopSellingProducts(mapped);
-        }
+    fetch('/api/v1/reports')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (!d) return;
+        if (d.summary) setSummary(d.summary);
+        if (d.categoryData && d.categoryData.length > 0) setCategoryData(d.categoryData);
+        if (d.marketplaceOrders && d.marketplaceOrders.length > 0) setMarketplaceOrders(d.marketplaceOrders);
+        if (d.orderStatusSegments && d.orderStatusSegments.length > 0) setOrderStatusSegments(d.orderStatusSegments);
+        if (d.salesTimeline && d.salesTimeline.length > 0) setSalesTimeline(d.salesTimeline);
+        if (d.topSellingProducts && d.topSellingProducts.length > 0) setTopSellingProducts(d.topSellingProducts);
       })
-      .catch(err => console.error('Failed to load dashboard top products:', err));
+      .catch((err) => console.error('Failed to load reports from backend:', err));
   }, []);
 
   // Detailed Reports Grid matching reference screenshot
@@ -257,44 +303,6 @@ export default function ReportsWorkspace({
       defaultFormat: 'CSV',
       sampleRowsCount: 0
     }
-  ];
-
-  // Revenue by Category matching reference screenshot
-  const categoryData = [
-    { name: 'Home & Kitchen', revenue: 128450, percent: 30, color: 'bg-[#3B82F6]' },
-    { name: 'Beauty & Personal Care', revenue: 86320, percent: 20, color: 'bg-[#8B5CF6]' },
-    { name: 'Electronics', revenue: 72610, percent: 17, color: 'bg-[#F43F5E]' },
-    { name: 'Fashion', revenue: 68220, percent: 16, color: 'bg-[#F59E0B]' },
-    { name: 'Health & Wellness', revenue: 42960, percent: 10, color: 'bg-[#10B981]' }
-  ];
-
-  // Orders by Marketplace
-  const marketplaceOrders = [
-    { name: 'Amazon', count: 520, percent: 41.7, color: '#F59E0B' },
-    { name: 'Flipkart', count: 368, percent: 29.5, color: '#3B82F6' },
-    { name: 'Meesho', count: 220, percent: 17.6, color: '#EC4899' },
-    { name: 'Myntra', count: 140, percent: 11.2, color: '#A855F7' }
-  ];
-
-  // Order Status distribution
-  const orderStatusSegments = [
-    { label: 'Delivered', count: 892, percent: 71.5, color: '#10B981' },
-    { label: 'Shipped', count: 210, percent: 16.8, color: '#3B82F6' },
-    { label: 'Processing', count: 86, percent: 6.9, color: '#8B5CF6' },
-    { label: 'Cancelled', count: 42, percent: 3.4, color: '#EF4444' },
-    { label: 'Returned', count: 18, percent: 1.4, color: '#0EA5E9' }
-  ];
-
-  // Timeline points for Sales Trend (Dec 01 to Dec 15)
-  const salesTimeline = [
-    { day: 'Dec 01', amazon: 38200, flipkart: 26100, meesho: 12400, myntra: 8500 },
-    { day: 'Dec 03', amazon: 41200, flipkart: 28900, meesho: 13800, myntra: 9100 },
-    { day: 'Dec 05', amazon: 36800, flipkart: 25400, meesho: 11900, myntra: 7800 },
-    { day: 'Dec 07', amazon: 39500, flipkart: 29800, meesho: 14200, myntra: 9600 },
-    { day: 'Dec 09', amazon: 43200, flipkart: 32400, meesho: 15600, myntra: 10400 },
-    { day: 'Dec 11', amazon: 37900, flipkart: 27800, meesho: 12900, myntra: 8900 },
-    { day: 'Dec 13', amazon: 45600, flipkart: 35100, meesho: 16800, myntra: 11200 },
-    { day: 'Dec 15', amazon: 48900, flipkart: 38200, meesho: 17400, myntra: 12100 }
   ];
 
   // SVG Chart Geometry Calculations
@@ -669,9 +677,9 @@ export default function ReportsWorkspace({
               ₹
             </div>
             <div className="text-xs text-slate-500 font-medium pt-1">Total Sales</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">₹4,28,560</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">₹{Number(summary.totalSales || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ 12.5%</span>
+              <span>↑ {summary.salesGrowth || 14.5}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -682,9 +690,9 @@ export default function ReportsWorkspace({
               <ShoppingCart className="w-4 h-4 text-amber-600" />
             </div>
             <div className="text-xs text-slate-500 font-medium pt-1">Total Orders</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">1,248</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{Number(summary.totalOrders || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ 18.2%</span>
+              <span>↑ {summary.ordersGrowth || 12.8}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -695,9 +703,9 @@ export default function ReportsWorkspace({
               <Tag className="w-4 h-4 text-blue-600" />
             </div>
             <div className="text-xs text-slate-500 font-medium pt-1">Total Listings</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">642</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{Number(summary.totalListings || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ 8.1%</span>
+              <span>↑ {summary.listingsGrowth || 8.0}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -708,9 +716,9 @@ export default function ReportsWorkspace({
               <TrendingUp className="w-4 h-4 text-rose-600" />
             </div>
             <div className="text-xs text-slate-500 font-medium pt-1">Avg. Order Value</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">₹343</div>
-            <div className="text-[11px] text-rose-500 font-semibold flex items-center gap-1">
-              <span>↓ 2.4%</span>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">₹{Math.round(Number(summary.avgOrderValue || 0)).toLocaleString('en-IN')}</div>
+            <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+              <span>↑ {summary.aovGrowth || 3.2}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -721,9 +729,9 @@ export default function ReportsWorkspace({
               <CircleDollarSign className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="text-xs text-slate-500 font-medium pt-1">Net Profit</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">₹68,920</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">₹{Number(summary.netProfit || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ 15.6%</span>
+              <span>↑ {summary.profitGrowth || 16.4}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>

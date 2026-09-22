@@ -81,12 +81,12 @@ export default function NeedsAttentionCard({
             <span>All priority issues resolved! Your catalog and inventory are healthy.</span>
           </div>
         ) : (
-          items.map((item) => {
+          items.map((item, idx) => {
             const isLoading = loadingAction === `${item.actionType}-${item.id}`;
 
             return (
               <div
-                key={item.id}
+                key={item.id ?? `attention-${idx}`}
                 className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors"
               >
                 {/* Left side: Badge + Title + Subtitle */}

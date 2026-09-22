@@ -64,9 +64,9 @@ export default function RecentActivityCard({
       {/* Activity List */}
       <div className="divide-y divide-slate-100 flex-1 flex flex-col justify-between mt-1">
         {activities?.length > 0 ? (
-          activities.map((item) => (
+          activities.map((item, idx) => (
             <div
-              key={item.id}
+              key={item.id ?? `activity-${idx}`}
               className="py-2.5 flex items-center justify-between gap-3 text-xs"
             >
               <div className="flex items-center gap-2.5 overflow-hidden">

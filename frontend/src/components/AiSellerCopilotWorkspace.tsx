@@ -200,7 +200,7 @@ export default function AiSellerCopilotWorkspace({
         id: `msg-${Date.now() + 1}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: data.reply || `Samajh gaya! Maine aapki request analyze kar li hai. Aapke seller metrics ke according ye optimum action recommendation hai.`
+        text: data.answer || data.reply || `Samajh gaya! Maine aapki request analyze kar li hai. Aapke seller metrics ke according ye optimum action recommendation hai.`
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch {

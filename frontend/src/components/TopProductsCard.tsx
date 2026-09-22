@@ -38,21 +38,24 @@ export default function TopProductsCard({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-            {products.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                <td className="py-2.5 font-bold text-slate-400">{p.rank}</td>
-                <td className="py-2.5 font-semibold text-slate-900 pr-2 truncate max-w-[150px]">
-                  {p.name}
-                </td>
-                <td className="py-2.5 text-right font-bold text-slate-900">
-                  ₹{p.revenue.toLocaleString('en-IN')}
-                </td>
-                <td className="py-2.5 text-right text-slate-600">{p.units}</td>
-                <td className="py-2.5 text-right font-bold text-emerald-600">
-                  {p.margin}%
-                </td>
-              </tr>
-            ))}
+            {products.map((p, idx) => {
+              const rowKey = p.id ?? p.product_id ?? p.sku ?? `prod-${p.rank || idx}`;
+              return (
+                <tr key={rowKey} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-2.5 font-bold text-slate-400">{p.rank}</td>
+                  <td className="py-2.5 font-semibold text-slate-900 pr-2 truncate max-w-[150px]">
+                    {p.name}
+                  </td>
+                  <td className="py-2.5 text-right font-bold text-slate-900">
+                    ₹{p.revenue.toLocaleString('en-IN')}
+                  </td>
+                  <td className="py-2.5 text-right text-slate-600">{p.units}</td>
+                  <td className="py-2.5 text-right font-bold text-emerald-600">
+                    {p.margin}%
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

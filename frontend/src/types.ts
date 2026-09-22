@@ -82,7 +82,10 @@ export interface InventoryHealthData {
 }
 
 export interface TopProductItem {
-  id: number;
+  id?: number;
+  product_id?: number;
+  sku?: string;
+  title?: string;
   rank: number;
   name: string;
   revenue: number;

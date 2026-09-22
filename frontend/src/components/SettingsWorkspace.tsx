@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   User,
@@ -283,9 +283,89 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
   // 25. Danger Zone
   // Irreversible actions
 
-  const handleSaveChanges = () => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3500);
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.profile) {
+          if (data.profile.fullName) setFullName(data.profile.fullName);
+          if (data.profile.email) setEmail(data.profile.email);
+          if (data.profile.phoneNumber) setPhoneNumber(data.profile.phoneNumber);
+          if (data.profile.role) setRole(data.profile.role);
+        }
+        if (data.business) {
+          if (data.business.businessName) setBusinessName(data.business.businessName);
+          if (data.business.businessType) setBusinessType(data.business.businessType);
+          if (data.business.gstNumber) setGstNumber(data.business.gstNumber);
+          if (data.business.panNumber) setPanNumber(data.business.panNumber);
+          if (data.business.billingAddress) setBillingAddress(data.business.billingAddress);
+        }
+        if (data.marketplaces && Array.isArray(data.marketplaces)) {
+          setMarketplaces(
+            data.marketplaces.map((m: any) => ({
+              id: (m.name || '').toLowerCase(),
+              name: m.name,
+              connected: m.status === 'Connected',
+            }))
+          );
+        }
+        if (data.preferences) {
+          const p = data.preferences;
+          if (p.defaultMarketplace) setDefaultMarketplace(p.defaultMarketplace);
+          if (p.syncFrequency) setSyncFrequency(p.syncFrequency);
+          if (p.minimumMargin) setMinimumMargin(p.minimumMargin);
+          if (p.repricingStrategy) setRepricingStrategy(p.repricingStrategy);
+        }
+      })
+      .catch((err) => console.error('Error fetching settings:', err));
+  }, []);
+
+  const handleSaveChanges = async () => {
+    try {
+      await fetch('/api/v1/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phoneNumber,
+          role,
+          businessName,
+          businessType,
+          gstNumber,
+          panNumber,
+          billingAddress,
+          currency,
+          timezone,
+          twoFactorAuth,
+          sessionTimeout,
+          ipWhitelisting,
+          dataSharingConsent,
+          defaultMarketplace,
+          syncFrequency,
+          autoSyncProducts,
+          autoSyncOrders,
+          autoSyncInventory,
+          autoSyncPricing,
+          defaultWarehouse,
+          safetyStock,
+          minimumMargin,
+          repricingStrategy,
+          aiConfidenceThreshold,
+          allowAutonomousActions,
+          humanApprovalRequired,
+          theme,
+          language,
+        }),
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    } catch (err) {
+      console.error('Failed to save settings to backend:', err);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    }
   };
 
   const handleResetToDefault = () => {

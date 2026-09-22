@@ -160,7 +160,22 @@ def dashboard(
     for row in finance_rows:
         if row.product_id in product_map and row.entry_type in expense_types:
             product_map[row.product_id]["expenses"] += float(row.amount)
-    top_products = [DashboardProductRow(product_id=pid, sku=d["sku"], title=d["title"], name=d["title"], rank=idx+1, revenue=round(d["revenue"], 2), units=d["units"], orders=len(d["orders"]), net_profit=round(d["revenue"] - d["expenses"], 2), margin=round(((d["revenue"] - d["expenses"]) / d["revenue"] * 100) if d["revenue"] > 0 else 32.0, 1)) for idx, (pid, d) in enumerate(sorted(product_map.items(), key=lambda x: x[1]["revenue"], reverse=True)[:10])]
+    top_products = [
+        DashboardProductRow(
+            id=pid,
+            product_id=pid,
+            sku=d["sku"],
+            title=d["title"],
+            name=d["title"],
+            rank=idx + 1,
+            revenue=round(d["revenue"], 2),
+            units=d["units"],
+            orders=len(d["orders"]),
+            net_profit=round(d["revenue"] - d["expenses"], 2),
+            margin=round(((d["revenue"] - d["expenses"]) / d["revenue"] * 100) if d["revenue"] > 0 else 32.0, 1),
+        )
+        for idx, (pid, d) in enumerate(sorted(product_map.items(), key=lambda x: x[1]["revenue"], reverse=True)[:10])
+    ]
 
     alerts: list[DashboardAlert] = []
     if low_stock_items:

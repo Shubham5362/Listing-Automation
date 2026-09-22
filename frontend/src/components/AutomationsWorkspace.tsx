@@ -1219,15 +1219,30 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
         })
       });
       const data = await res.json();
-      setAiGeneratedSample({
-        title: 'AquaPure Stainless Steel Water Bottle 1L | Leak-Proof Insulated Flask for Office, Gym & Travel (Black)',
-        bullets: [
-          'PREMIUM FOOD GRADE 304 STEEL: Rust-free double-wall construction keeping drinks chilled for 24 hrs and hot for 12 hrs.',
-          '100% LEAK-PROOF & ERGONOMIC: Airtight silicone seal prevents spills in backpack or car cup holder.',
-          'ECO-FRIENDLY & BPA FREE: Zero plastic taste, durable powder coating resistant to scratches and dents.'
-        ],
-        priceMarkup: '₹499 base → ₹524 on Amazon IN (+5% referral compensation)'
-      });
+      if (data && data.answer) {
+        const lines = String(data.answer).split('\n').map((l: string) => l.trim()).filter(Boolean);
+        const titleCandidate = lines.find((l: string) => l.length > 20 && !l.startsWith('-') && !l.startsWith('*')) || lines[0] || 'AquaPure Stainless Steel Water Bottle 1L | Leak-Proof Insulated Flask for Office, Gym & Travel (Black)';
+        const bullets = lines.filter((l: string) => l.startsWith('-') || l.startsWith('*') || l.startsWith('•')).map((l: string) => l.replace(/^[-*•]\s*/, ''));
+        setAiGeneratedSample({
+          title: titleCandidate.replace(/^["']|["']$/g, ''),
+          bullets: bullets.length >= 2 ? bullets.slice(0, 3) : [
+            'PREMIUM FOOD GRADE 304 STEEL: Rust-free double-wall construction keeping drinks chilled for 24 hrs and hot for 12 hrs.',
+            '100% LEAK-PROOF & ERGONOMIC: Airtight silicone seal prevents spills in backpack or car cup holder.',
+            'ECO-FRIENDLY & BPA FREE: Zero plastic taste, durable powder coating resistant to scratches and dents.'
+          ],
+          priceMarkup: '₹499 base → ₹524 on Amazon IN (+5% referral compensation)'
+        });
+      } else {
+        setAiGeneratedSample({
+          title: 'AquaPure Stainless Steel Water Bottle 1L | Leak-Proof Insulated Flask for Office, Gym & Travel (Black)',
+          bullets: [
+            'PREMIUM FOOD GRADE 304 STEEL: Rust-free double-wall construction keeping drinks chilled for 24 hrs and hot for 12 hrs.',
+            '100% LEAK-PROOF & ERGONOMIC: Airtight silicone seal prevents spills in backpack or car cup holder.',
+            'ECO-FRIENDLY & BPA FREE: Zero plastic taste, durable powder coating resistant to scratches and dents.'
+          ],
+          priceMarkup: '₹499 base → ₹524 on Amazon IN (+5% referral compensation)'
+        });
+      }
     } catch {
       // Fallback
       setAiGeneratedSample({
