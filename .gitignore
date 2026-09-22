@@ -17,3 +17,9 @@ frontend/dist/
 # Runtime data
 *.log
 backups/
+
+# Local database/runtime artifacts
+*.db
+*.sqlite
+*.sqlite3
+test_venv/
