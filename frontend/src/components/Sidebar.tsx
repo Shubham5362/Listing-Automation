@@ -65,7 +65,7 @@ export default function Sidebar({
   onSelectTab,
   mobileOpen = false,
   onCloseMobile,
-  ordersBadge = 12,
+  ordersBadge = 0,
   notificationsBadge = 0,
   marketplaceHealth = [],
 }: SidebarProps) {
@@ -225,8 +225,8 @@ export default function Sidebar({
                   <AmazonLogo className="w-3.5 h-3.5" />
                   <span className="font-medium text-[12px]">Amazon</span>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-600 font-medium text-[11px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <div className={`flex items-center gap-1 font-medium text-[11px] ${amazon?.connected ? "text-emerald-600" : "text-amber-600"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${amazon?.connected ? "bg-emerald-500" : "bg-amber-500"}`} />
                   {marketplaceStatus(amazon)}
                 </div>
               </div>
@@ -236,8 +236,8 @@ export default function Sidebar({
                   <FlipkartLogo className="w-3.5 h-3.5" />
                   <span className="font-medium text-[12px]">Flipkart</span>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-600 font-medium text-[11px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <div className={`flex items-center gap-1 font-medium text-[11px] ${flipkart?.connected ? "text-emerald-600" : "text-amber-600"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${flipkart?.connected ? "bg-emerald-500" : "bg-amber-500"}`} />
                   {marketplaceStatus(flipkart)}
                 </div>
               </div>
