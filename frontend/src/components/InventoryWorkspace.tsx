@@ -828,7 +828,7 @@ export default function InventoryWorkspace({
                         <td className="py-3 px-4 text-center">
                           <span
                             className={`font-semibold ${
-                              (item.id === 4 || item.id === 7 || item.id === 8)
+                              item.reservedStock > 0
                                 ? 'text-rose-600 font-bold'
                                 : 'text-slate-700'
                             }`}
@@ -952,7 +952,7 @@ export default function InventoryWorkspace({
                 await fetch('/api/v1/actions/reorder', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ sku: it.sku, quantity: 50 })
+                  body: JSON.stringify({ sku: it.sku, quantity: Math.max(it.reorderPoint - it.availableStock, 1) })
                 });
                 showToast(`Restock Purchase Order created for ${it.sku}`);
               } else {
@@ -1034,12 +1034,12 @@ export default function InventoryWorkspace({
                     <button
                       onClick={async () => {
                         setModalAction(null);
-                        showToast('Generating PO for 100 units...');
+                        showToast('Generating reorder plan...');
                         try {
                           await fetch('/api/v1/actions/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ sku: 'IT-500-002', quantity: 100 })
+                            body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })
                           });
                           showToast('PO for 100 units drafted with supplier');
                         } catch (e) {
@@ -1059,16 +1059,16 @@ export default function InventoryWorkspace({
                     <button
                       onClick={async () => {
                         setModalAction(null);
-                        showToast('Generating PO for 75 units...');
+                        showToast('Generating reorder plan...');
                         try {
                           await fetch('/api/v1/actions/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ sku: 'KB-500-006', quantity: 75 })
+                            body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })
                           });
-                          showToast('PO for 75 units drafted with supplier');
+                          showToast('Reorder plan drafted with supplier');
                         } catch (e) {
-                          showToast('PO for 75 units drafted');
+                          showToast('Reorder plan drafted');
                         }
                       }}
                       className="px-2.5 py-1 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-700"
