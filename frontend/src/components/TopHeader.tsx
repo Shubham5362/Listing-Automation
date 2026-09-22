@@ -190,7 +190,7 @@ export default function TopHeader({
             <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-900 flex items-center justify-center text-white text-xs font-bold">
               <img
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="Shubham"
+                alt="Seller avatar"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -213,7 +213,7 @@ export default function TopHeader({
                 <div className="font-bold text-slate-900">—</div>
                 <div className="text-[11px] text-slate-500">—</div>
               </div>
-              <div className="px-3 py-1.5 text-slate-600 font-medium">Plan: Seller Pro (Active)</div>
+              <div className="px-3 py-1.5 text-slate-600 font-medium">Plan: {profile.role || 'Plan not configured'}</div>
               <div className="pt-1 border-t border-slate-100">
                 <button
                   type="button"
