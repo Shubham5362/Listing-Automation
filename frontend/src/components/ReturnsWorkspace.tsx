@@ -132,7 +132,7 @@ export default function ReturnsWorkspace({
       replacement: returnsList.filter(r => r.status === 'Replacement').length,
       rejected: returnsList.filter(r => r.status === 'Rejected').length,
     };
-  }, []);
+  }, [returnsList]);
 
   // Filtered Returns
   const filteredReturns = useMemo(() => {
@@ -433,10 +433,10 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Total Returns</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returns.length}</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returnsList.length}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 12.5%</span>
-                    <span className="text-slate-400 font-normal">vs last 30 days</span>
+                    <span>—</span>
+                    <span className="text-slate-400 font-normal">No comparison data</span>
                   </div>
                 </div>
               </div>
@@ -450,7 +450,7 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Pending Action</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returns.filter((r) => r.status === "pending").length}</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returnsList.filter(r => r.status === "Pending").length}</div>
                   <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
                     <span>—</span>
                   </div>
@@ -924,7 +924,7 @@ export default function ReturnsWorkspace({
             {/* 7. Pagination Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-1">
               <div>
-                Showing 1 to {Math.min(10, filteredReturns.length)} of {returns.length} returns
+                Showing 1 to {Math.min(10, filteredReturns.length)} of {returnsList.length} returns
               </div>
 
               <div className="flex items-center gap-1">
