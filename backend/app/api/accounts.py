@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.security import CredentialEncryptionError, encrypt_credentials
 from app.db.session import get_db
-from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
+from app.models.core import MarketplaceAccount, SellerAccount, User\nfrom app.marketplaces.catalog import get_channel_catalog_item
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -17,7 +17,7 @@ class SellerAccountCreate(BaseModel):
 
 class MarketplaceAccountCreate(BaseModel):
     seller_account_id: int
-    marketplace: str = Field(min_length=1, max_length=30)
+    marketplace: str = Field(min_length=1, max_length=80)
     display_name: str = Field(min_length=1, max_length=200)
     external_account_id: str | None = None
     credentials: dict[str, object] | None = None
