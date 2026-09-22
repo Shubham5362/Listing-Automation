@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -49,7 +49,7 @@ def dashboard(
     start: datetime | None = None,
     end: datetime | None = None,
     marketplace_account_id: int | None = None,
-    marketplace: str | None = Query(default=None),
+    marketplace: str | None = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DashboardRead:
@@ -172,7 +172,7 @@ def dashboard(
             units=d["units"],
             orders=len(d["orders"]),
             net_profit=round(d["revenue"] - d["expenses"], 2),
-            margin=round(((d["revenue"] - d["expenses"]) / d["revenue"] * 100) if d["revenue"] > 0 else 32.0, 1),
+            margin=round(((d["revenue"] - d["expenses"]) / d["revenue"] * 100) if d["revenue"] > 0 else 0.0, 1),
         )
         for idx, (pid, d) in enumerate(sorted(product_map.items(), key=lambda x: x[1]["revenue"], reverse=True)[:10])
     ]
@@ -194,37 +194,37 @@ def dashboard(
     # Compute UI extended objects
     primary_seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == user.id).order_by(SellerAccount.id.asc()))
     user_info = {
-        "name": user.full_name or "Shubham Gupta",
-        "role": "Founder & Owner",
-        "store": primary_seller.name if primary_seller else "Shubham Enterprises",
+        "name": user.full_name or "",
+        "role": "",
+        "store": primary_seller.name if primary_seller else "",
         "email": user.email,
     }
 
-    inv_value_calc = sum(float(all_products[i.product_id].cost_price or 250) * i.quantity for i in inventory if i.product_id in all_products)
+    inv_value_calc = sum(float(all_products[i.product_id].cost_price or 0) * i.quantity for i in inventory if i.product_id in all_products)
     profit_margin_val = round(((revenue - expenses) / revenue * 100) if revenue > 0 else 0.0, 1)
 
     kpis = DashboardKpis(
         revenue=round(revenue, 2),
-        revenue_growth=14.2,
+        revenue_growth=0,
         expenses=round(expenses, 2),
         net_profit=round(revenue - expenses, 2),
-        net_profit_growth=16.8,
+        net_profit_growth=0,
         orders=len(orders),
-        orders_growth=9.5,
+        orders_growth=0,
         units=units,
         average_order_value=round(revenue / len(orders), 2) if orders else 0,
         inventory_units=inventory_units,
         low_stock_items=low_stock_items,
         returns=len(returns),
-        returns_growth=-2.4,
+        returns_growth=0,
         cancellations=cancellations,
         active_listings=active_listings,
         buy_box_rate=round(buy_box_rate, 2),
         profit_margin=profit_margin_val,
-        profit_margin_growth=2.1,
+        profit_margin_growth=0,
         inventory_value=f"₹{int(inv_value_calc):,}",
         inventory_value_numeric=round(inv_value_calc, 2),
-        inventory_value_growth=5.0,
+        inventory_value_growth=0,
     )
 
     timeline_points = []
@@ -246,14 +246,14 @@ def dashboard(
         mkt_breakdown.append({
             "name": m.marketplace.capitalize(),
             "revenue": m.revenue,
-            "growth": 12.0,
+            "growth": 0.0,
             "share_percent": round((m.revenue / revenue * 100), 1) if revenue else 0.0,
             "orders": m.orders,
         })
 
     sales_trend_obj = {
         "total": round(revenue, 2),
-        "growth": 14.2,
+        "growth": 0.0,
         "timeline": timeline_points,
         "marketplaces": mkt_breakdown,
     }

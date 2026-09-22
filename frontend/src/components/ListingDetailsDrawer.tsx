@@ -248,22 +248,22 @@ export default function ListingDetailsDrawer({
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Brand</span>
-                  <span className="font-semibold text-slate-900">{listing.brand || 'AquaPure'}</span>
+                  <span className="font-semibold text-slate-900">{listing.brand || ''}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Category</span>
-                  <span className="font-semibold text-slate-900">{listing.category || 'Home & Kitchen'}</span>
+                  <span className="font-semibold text-slate-900">{listing.category || '—'}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Manufacturing</span>
-                  <span className="font-semibold text-slate-900">{listing.manufacturing || 'AquaPure Industries'}</span>
+                  <span className="font-semibold text-slate-900">{listing.manufacturing || ''}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">HSN Code</span>
-                  <span className="font-semibold text-slate-900 font-mono">{listing.hsnCode || '7323'}</span>
+                  <span className="font-semibold text-slate-900 font-mono">{listing.hsnCode || '—'}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -579,23 +579,15 @@ export default function ListingDetailsDrawer({
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
               <div className="font-semibold text-slate-800">Bullet Points</div>
               <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[11px]">
-                <li>Grade 304 food-grade stainless steel construction.</li>
-                <li>Vacuum insulated double-wall keeps liquids cold 24h / hot 12h.</li>
-                <li>100% leak-proof lid with silicone airtight gasket.</li>
-                <li>Sweat-free exterior finish with non-slip powder coating.</li>
-                <li>BPA-free, eco-friendly reusable design.</li>
+                <li className="text-slate-400 list-none">No product bullet data available.</li>
               </ul>
             </div>
           </div>
         ) : activeTab === 'Images' ? (
           <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3 text-xs">
-            <h3 className="font-semibold text-slate-900">Listing Image Assets (6)</h3>
+            <h3 className="font-semibold text-slate-900">Listing Image Assets</h3>
             <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3, 4, 5, 6].map((idx) => (
-                <div key={idx} className="aspect-square bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center p-2">
-                  <ProductCatalogGraphic type={listing.imageType || listing.sku} className="w-8 h-8" />
-                </div>
-              ))}
+              <div className="text-slate-400 py-6 text-center">No listing image assets available.</div>
             </div>
           </div>
         ) : activeTab === 'Pricing' ? (
@@ -608,11 +600,11 @@ export default function ListingDetailsDrawer({
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span>Lowest Competitor</span>
-                <span className="font-medium text-slate-700">₹{listing.price - 20}</span>
+                <span className="font-medium text-slate-700">—</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span>Target Margin</span>
-                <span className="font-semibold text-emerald-600">28.4%</span>
+                <span className="font-semibold text-slate-500">—</span>
               </div>
             </div>
           </div>
@@ -623,11 +615,7 @@ export default function ListingDetailsDrawer({
               Quality score is <span className="font-bold text-emerald-600">{listing.listingQuality}%</span>. All primary keywords indexed on Amazon A9 & Flipkart search algorithm.
             </p>
             <div className="flex flex-wrap gap-1.5 pt-1">
-              {['stainless bottle 1l', 'insulated flask', 'sports water bottle', 'gym shaker', 'thermo bottle'].map((kw) => (
-                <span key={kw} className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[11px] font-medium border border-slate-200">
-                  {kw}
-                </span>
-              ))}
+              <span className="text-slate-400">No search keywords available.</span>
             </div>
           </div>
         ) : (
@@ -635,8 +623,8 @@ export default function ListingDetailsDrawer({
             <h3 className="font-semibold text-slate-900">Listing Revision History</h3>
             <div className="space-y-2 text-xs text-slate-600">
               <div className="border-l-2 border-indigo-400 pl-3 py-1">
-                <div className="font-semibold text-slate-800">Dec 15, 2024 • 14:22</div>
-                <div>Price updated to ₹{listing.price} via automated repricer</div>
+                <div className="font-semibold text-slate-800">{listing.lastUpdated || '—'}</div>
+                <div>Latest listing data available from the connected source.</div>
               </div>
               <div className="border-l-2 border-slate-200 pl-3 py-1">
                 <div className="font-semibold text-slate-800">Dec 10, 2024 • 09:10</div>

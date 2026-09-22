@@ -75,13 +75,13 @@ export default function ListingsWorkspace({
 
               return {
                 id: l.id,
-                name: l.title || l.product_name || `Product Listing #${l.id}`,
-                category: l.category || 'Home & Kitchen',
+                name: l.title || l.product_name || '',
+                category: l.category || '',
                 sku: l.sku,
-                asin: `B0${l.id}A8Y7Z`,
+                asin: l.asin || l.external_listing_id || '',
                 marketplace: (l.marketplace || 'amazon').toLowerCase().includes('flipkart') ? 'flipkart' : 'amazon',
-                price: l.price || 499,
-                mrp: l.mrp || 999,
+                price: l.price ?? 0,
+                mrp: l.mrp ?? 0,
                 stock: stock,
                 stockStatus: isStockOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock',
                 status: statusStr,
@@ -89,7 +89,7 @@ export default function ListingsWorkspace({
                 listingQuality: l.status === 'suppressed' ? 68 : 94,
                 buyBoxWon: l.status === 'active',
                 buyBoxRate: l.status === 'active' ? 94 : 0,
-                lastUpdated: l.updated_at ? l.updated_at.split(' ')[0] : 'Dec 15, 2024',
+                lastUpdated: l.updated_at ? l.updated_at.split(' ')[0] : '',
                 imageType: l.sku?.includes('TUM') ? 'tumbler' : l.sku?.includes('MUG') ? 'mug' : 'bottle-black',
               };
             });
@@ -119,14 +119,14 @@ export default function ListingsWorkspace({
   // Tab counts
   const tabCounts = useMemo(() => {
     return {
-      all: 1284,
-      active: 892,
-      inactive: 124,
-      suppressed: 36,
-      needsFix: 48,
-      drafts: 184,
+      all: listings.length,
+      active: listings.filter((l) => l.status === 'Active').length,
+      inactive: listings.filter((l) => l.status === 'Inactive').length,
+      suppressed: listings.filter((l) => l.status === 'Suppressed').length,
+      needsFix: listings.filter((l) => l.status === 'Needs Fix').length,
+      drafts: listings.filter((l) => l.status === 'Draft').length,
     };
-  }, []);
+  }, [listings]);
 
   // Filter listings
   const filteredListings = useMemo(() => {
@@ -456,9 +456,9 @@ export default function ListingsWorkspace({
                 <span className="text-xs font-medium text-slate-500">Total Listings</span>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold tracking-tight text-slate-900">1,284</div>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{tabCounts.all}</div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                  <span>↑ 8.3%</span>
+                  <span>—</span>
                   <span className="text-slate-400 font-normal">vs last 30 days</span>
                 </div>
               </div>
@@ -474,10 +474,10 @@ export default function ListingsWorkspace({
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-bold tracking-tight text-slate-900">
-                  892 <span className="text-xs font-normal text-slate-400">(69%)</span>
+                  {tabCounts.active}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                  <span>↑ 12.5%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -492,10 +492,10 @@ export default function ListingsWorkspace({
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-bold tracking-tight text-slate-900">
-                  124 <span className="text-xs font-normal text-slate-400">(10%)</span>
+                  {tabCounts.inactive}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                  <span>↓ 5.2%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -510,10 +510,10 @@ export default function ListingsWorkspace({
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-bold tracking-tight text-slate-900">
-                  36 <span className="text-xs font-normal text-slate-400">(3%)</span>
+                  {tabCounts.suppressed}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                  <span>↓ 14.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -528,10 +528,10 @@ export default function ListingsWorkspace({
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-bold tracking-tight text-slate-900">
-                  48 <span className="text-xs font-normal text-slate-400">(4%)</span>
+                  {tabCounts.needsFix}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                  <span>↓ 20.0%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -546,10 +546,10 @@ export default function ListingsWorkspace({
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-bold tracking-tight text-slate-900">
-                  184 <span className="text-xs font-normal text-slate-400">(14%)</span>
+                  {tabCounts.drafts}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                  <span>↑ 6.1%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -571,7 +571,7 @@ export default function ListingsWorkspace({
                   activeTab === 'All' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
                 }`}
               >
-                1,284
+                {tabCounts.all}
               </span>
             </button>
 
@@ -585,7 +585,7 @@ export default function ListingsWorkspace({
             >
               <span>Active</span>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                892
+                {tabCounts.active}
               </span>
             </button>
 
@@ -599,7 +599,7 @@ export default function ListingsWorkspace({
             >
               <span>Inactive</span>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                124
+                {tabCounts.inactive}
               </span>
             </button>
 
@@ -613,7 +613,7 @@ export default function ListingsWorkspace({
             >
               <span>Suppressed</span>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                36
+                {tabCounts.suppressed}
               </span>
             </button>
 
@@ -627,7 +627,7 @@ export default function ListingsWorkspace({
             >
               <span>Needs Fix</span>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                48
+                {tabCounts.needsFix}
               </span>
             </button>
 
@@ -641,7 +641,7 @@ export default function ListingsWorkspace({
             >
               <span>Drafts</span>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                184
+                {tabCounts.drafts}
               </span>
             </button>
           </div>
@@ -1060,7 +1060,7 @@ export default function ListingsWorkspace({
             {/* 7. Pagination Footer */}
             <div className="py-3 px-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
               <div className="font-normal text-slate-500">
-                Showing 1 to 10 of 1,284 listings
+                Showing {filteredListings.length} listings
               </div>
 
               <div className="flex items-center gap-2">

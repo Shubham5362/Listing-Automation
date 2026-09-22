@@ -326,16 +326,16 @@ export default function MarketplacesWorkspace({
               id: rawName.includes('amazon') ? 'amazon' : rawName.includes('flipkart') ? 'flipkart' : rawName.includes('meesho') ? 'meesho' : 'myntra',
               numericId: d.id,
               name: name,
-              sellerId: d.external_account_id || 'SELLER-ID',
+              sellerId: d.external_account_id || '',
               region: 'IN (India)',
-              connectedOn: d.created_at ? new Date(d.created_at).toLocaleString('en-IN') : 'Active',
-              status: d.connected ? 'Active' : 'Active',
-              lastSync: '2 min ago',
+              connectedOn: d.created_at ? new Date(d.created_at).toLocaleString('en-IN') : '',
+              status: d.connected ? 'Active' : 'Paused',
+              lastSync: d.last_sync_at ? new Date(d.last_sync_at).toLocaleString('en-IN') : '',
               tagline: 'Multi-channel marketplace connection',
-              orders30d: rawName.includes('amazon') ? 114 : 70,
-              revenue30d: rawName.includes('amazon') ? '₹1,48,220' : '₹93,600',
-              listings: rawName.includes('amazon') ? 1284 : 892,
-              syncStatus: 'Synced',
+              orders30d: d.orders30d ?? 0,
+              revenue30d: d.revenue30d ?? '₹0',
+              listings: d.listings ?? 0,
+              syncStatus: 'Pending',
               lastSyncFormatted: d.last_sync_at
                 ? new Date(d.last_sync_at).toLocaleString('en-IN', {
                     month: 'short',
@@ -344,7 +344,7 @@ export default function MarketplacesWorkspace({
                     hour: '2-digit',
                     minute: '2-digit'
                   })
-                : 'Just now'
+                : ''
             };
           });
           setConnectedAccounts(mapped);
@@ -478,7 +478,7 @@ export default function MarketplacesWorkspace({
     }
     setConnectModalAccount(item);
     setConnectForm({
-      sellerId: `${item.name.substring(0, 3).toUpperCase()}${Math.floor(100000 + Math.random() * 900000)}`,
+      sellerId: '',
       apiKey: '',
       apiSecret: '',
       region: 'IN (India)',
@@ -504,9 +504,9 @@ export default function MarketplacesWorkspace({
 
       const newConnected: ConnectedMarketplace = {
         id: connectModalAccount.id,
-        numericId: Math.floor(10 + Math.random() * 90),
+        numericId: 0,
         name: connectModalAccount.name,
-        sellerId: connectForm.sellerId || `${connectModalAccount.name.toUpperCase()}99214`,
+        sellerId: connectForm.sellerId || '',
         region: connectForm.region,
         connectedOn: connectedDate,
         status: 'Active',
@@ -515,7 +515,7 @@ export default function MarketplacesWorkspace({
         orders30d: 0,
         revenue30d: '₹0',
         listings: 0,
-        syncStatus: 'Synced',
+        syncStatus: 'Pending',
         lastSyncFormatted: connectedDate
       };
 
@@ -998,12 +998,12 @@ export default function MarketplacesWorkspace({
             <div className="p-3.5 bg-slate-50/60 border-t border-slate-100 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
               <div>
                 Total GMV (30d):{' '}
-                <strong className="text-slate-800 font-bold">₹10,46,260</strong> across{' '}
-                <strong className="text-slate-800 font-bold">649 orders</strong>
+                <strong className="text-slate-800 font-bold">{connectedAccounts.reduce((sum, account) => sum + Number(String(account.revenue30d).replace(/[^0-9.-]/g, '') || 0), 0).toLocaleString('en-IN')}</strong> across{' '}
+                <strong className="text-slate-800 font-bold">{connectedAccounts.reduce((sum, account) => sum + account.orders30d, 0)}</strong> orders
               </div>
               <div className="flex items-center gap-1 text-emerald-600 font-semibold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span>All 4 channels operating with 99.98% API uptime</span>
+                <span>{connectedAccounts.length} connected channel{connectedAccounts.length === 1 ? '' : 's'}</span>
               </div>
             </div>
           </div>
@@ -1593,7 +1593,7 @@ export default function MarketplacesWorkspace({
               <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-1.5 text-[11px]">
                 <div className="font-bold text-indigo-900">Direct Support Channels:</div>
                 <div className="text-slate-600">Email: support@sellerhub.ai</div>
-                <div className="text-slate-600">Priority WhatsApp: +91 98765 43210 (9 AM - 8 PM IST)</div>
+                <div className="text-slate-600">Priority support contact is available after connection.</div>
               </div>
             </div>
 

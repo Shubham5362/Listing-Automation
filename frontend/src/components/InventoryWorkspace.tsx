@@ -77,12 +77,12 @@ export default function InventoryWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: InventoryItem[] = json.items.map((i: any, idx: number) => {
-              const stock = i.quantity !== undefined ? i.quantity : 50;
+              const stock = i.quantity ?? 0;
               const reserved = i.reserved_quantity || 0;
-              const reorder = i.reorder_level || 15;
-              const price = i.price || 499;
-              const cost = i.cost_price || 250;
-              const margin = Math.round(((price - cost) / price) * 100);
+              const reorder = i.reorder_level ?? 0;
+              const price = i.price ?? 0;
+              const cost = i.cost_price ?? 0;
+              const margin = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
 
               let status: 'In Stock' | 'Low Stock' | 'Out of Stock' = 'In Stock';
               if (stock === 0) status = 'Out of Stock';
@@ -90,28 +90,28 @@ export default function InventoryWorkspace({
 
               return {
                 id: i.id || idx + 1,
-                name: i.title || i.sku || `Product SKU ${i.sku}`,
-                category: i.category || 'Home & Kitchen',
+                name: i.title || i.sku || '',
+                category: i.category || '',
                 sku: i.sku,
-                asin: `B0${i.id || idx + 1}A8Y7Z`,
-                marketplaces: ['amazon', 'flipkart'],
+                asin: i.asin || '',
+                marketplaces: i.marketplaces || [],
                 currentStock: stock,
                 availableStock: Math.max(0, stock - reserved),
                 reservedStock: reserved,
                 reorderPoint: reorder,
-                maxStockLevel: 250,
+                maxStockLevel: i.maxStockLevel ?? 0,
                 status,
                 imageType: i.sku?.includes('TUM') ? 'tumbler' : i.sku?.includes('MUG') ? 'mug' : 'bottle-black',
                 price,
-                mrp: price * 1.5,
+                mrp: i.mrp ?? price,
                 costPrice: cost,
                 margin,
                 totalStockValue: stock * price,
-                avgDailySales: 12,
-                estimatedDays: Math.round(stock / 12),
-                demandTrend: '↑ 14.2%',
-                aiForecast30d: 360,
-                lastUpdated: i.updated_at || 'Just now',
+                avgDailySales: i.avgDailySales ?? 0,
+                estimatedDays: i.estimatedDays ?? 0,
+                demandTrend: '',
+                aiForecast30d: 0,
+                lastUpdated: i.updated_at || '',
               };
             });
             setItems(mapped);
@@ -418,10 +418,10 @@ export default function InventoryWorkspace({
                 <span className="text-xs font-medium text-slate-500">Total SKUs</span>
               </div>
               <div className="mt-2.5 flex items-baseline gap-1.5">
-                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">245</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">{items.length}</span>
               </div>
               <div className="mt-1 text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
-                <span>↑ 12.5%</span>
+                <span>—</span>
                 <span className="font-normal text-slate-400">vs last 30 days</span>
               </div>
             </div>
@@ -435,11 +435,11 @@ export default function InventoryWorkspace({
                 <span className="text-xs font-medium text-slate-500">In Stock</span>
               </div>
               <div className="mt-2.5 flex items-baseline gap-1">
-                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">184</span>
-                <span className="text-xs font-normal text-slate-500">(75%)</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">{items.filter((i) => i.availableStock > 0).length}</span>
+                <span className="text-xs font-normal text-slate-500">{items.length ? `${Math.round((items.filter((i) => i.availableStock > 0).length / items.length) * 100)}%` : '0%'}</span>
               </div>
               <div className="mt-1 text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
-                <span>↑ 8.3%</span>
+                <span>—</span>
               </div>
             </div>
 
@@ -452,11 +452,11 @@ export default function InventoryWorkspace({
                 <span className="text-xs font-medium text-slate-500">Low Stock</span>
               </div>
               <div className="mt-2.5 flex items-baseline gap-1">
-                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">28</span>
-                <span className="text-xs font-normal text-slate-500">(11%)</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">{items.filter((i) => i.status === 'Low Stock').length}</span>
+                <span className="text-xs font-normal text-slate-500">{items.length ? `${Math.round((items.filter((i) => i.status === 'Low Stock').length / items.length) * 100)}%` : '0%'}</span>
               </div>
               <div className="mt-1 text-[11px] font-semibold text-amber-600 flex items-center gap-0.5">
-                <span>↑ 27.3%</span>
+                <span>—</span>
               </div>
             </div>
 
@@ -469,11 +469,11 @@ export default function InventoryWorkspace({
                 <span className="text-xs font-medium text-slate-500">Out of Stock</span>
               </div>
               <div className="mt-2.5 flex items-baseline gap-1">
-                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">18</span>
-                <span className="text-xs font-normal text-slate-500">(7%)</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">{items.filter((i) => i.availableStock <= 0).length}</span>
+                <span className="text-xs font-normal text-slate-500">{items.length ? `${Math.round((items.filter((i) => i.availableStock <= 0).length / items.length) * 100)}%` : '0%'}</span>
               </div>
               <div className="mt-1 text-[11px] font-semibold text-rose-600 flex items-center gap-0.5">
-                <span>↓ 10.0%</span>
+                <span>—</span>
               </div>
             </div>
 
@@ -486,11 +486,11 @@ export default function InventoryWorkspace({
                 <span className="text-xs font-medium text-slate-500">Reserved</span>
               </div>
               <div className="mt-2.5 flex items-baseline gap-1">
-                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">12</span>
-                <span className="text-xs font-normal text-slate-500">(5%)</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">{items.filter((i) => i.reservedStock > 0).length}</span>
+                <span className="text-xs font-normal text-slate-500">{items.length ? `${Math.round((items.filter((i) => i.reservedStock > 0).length / items.length) * 100)}%` : '0%'}</span>
               </div>
               <div className="mt-1 text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
-                <span>↑ 9.1%</span>
+                <span>—</span>
               </div>
             </div>
 
@@ -503,10 +503,10 @@ export default function InventoryWorkspace({
                 <span className="text-xs font-medium text-slate-500">Total Value</span>
               </div>
               <div className="mt-2.5 flex items-baseline gap-1">
-                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">₹4,28,450</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">₹{items.reduce((sum, i) => sum + (i.price * i.availableStock), 0).toLocaleString('en-IN')}</span>
               </div>
               <div className="mt-1 text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
-                <span>↑ 14.2%</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -514,13 +514,13 @@ export default function InventoryWorkspace({
           {/* Sub-Tabs Bar */}
           <div className="flex items-center border-b border-slate-200 gap-6 overflow-x-auto scrollbar-none text-xs font-semibold">
             {[
-              { id: 'All SKUs', label: 'All SKUs', count: 245 },
-              { id: 'In Stock', label: 'In Stock', count: 184 },
-              { id: 'Low Stock', label: 'Low Stock', count: 28 },
-              { id: 'Out of Stock', label: 'Out of Stock', count: 18 },
-              { id: 'Reserved', label: 'Reserved', count: 12 },
-              { id: 'Incoming', label: 'Incoming', count: 9 },
-              { id: 'Outgoing', label: 'Outgoing', count: 6 },
+              { id: 'All SKUs', label: 'All SKUs', count: items.length },
+              { id: 'In Stock', label: 'In Stock', count: items.filter((i) => i.availableStock > 0).length },
+              { id: 'Low Stock', label: 'Low Stock', count: items.filter((i) => i.status === 'Low Stock').length },
+              { id: 'Out of Stock', label: 'Out of Stock', count: items.filter((i) => i.availableStock <= 0).length },
+              { id: 'Reserved', label: 'Reserved', count: items.filter((i) => i.reservedStock > 0).length },
+              { id: 'Incoming', label: 'Incoming', count: items.filter((i) => i.maxStockLevel > i.currentStock).length },
+              { id: 'Outgoing', label: 'Outgoing', count: items.filter((i) => i.reservedStock > 0).length },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -875,7 +875,7 @@ export default function InventoryWorkspace({
               <div>
                 Showing <span className="font-bold text-slate-900">1</span> to{' '}
                 <span className="font-bold text-slate-900">{filteredItems.length}</span> of{' '}
-                <span className="font-bold text-slate-900">245</span> SKUs
+                <span className="font-bold text-slate-900">{filteredItems.length}</span> SKUs
               </div>
 
               {/* Numbered Pagination */}

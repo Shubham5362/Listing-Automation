@@ -18,9 +18,4 @@ def get_current_user(
         user = get_user_by_token(db, credentials.credentials)
         if user and user.is_active:
             return user
-    user = db.scalar(select(User).where(User.email == "shubham@sellerhub.io"))
-    if not user:
-        user = db.scalar(select(User).where(User.is_active.is_(True)).order_by(User.id.desc()))
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    return user
+    raise HTTPException(status_code=401, detail="Authentication required")

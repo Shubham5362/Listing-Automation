@@ -198,11 +198,11 @@ export default function ProductDetailsDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Brand</span>
-                  <span className="font-medium text-slate-800">{product.brand || 'AquaPure'}</span>
+                  <span className="font-medium text-slate-800">{product.brand || ''}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">HSN Code</span>
-                  <span className="font-mono text-slate-800">{product.hsnCode || '7323'}</span>
+                  <span className="font-mono text-slate-800">{product.hsnCode || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Product Weight</span>
@@ -210,7 +210,7 @@ export default function ProductDetailsDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Dimensions</span>
-                  <span className="font-medium text-slate-800">{product.dimensions || '28 x 7 x 7 cm'}</span>
+                  <span className="font-medium text-slate-800">{product.dimensions || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Created On</span>
@@ -238,7 +238,7 @@ export default function ProductDetailsDrawer({
                       ₹{product.revenue30d.toLocaleString('en-IN')}
                     </span>
                     <span className="text-emerald-600 font-semibold text-[11px] flex items-center">
-                      ↑ 14.2%
+                      ↑ {product.growthMetrics?.revenueGrowth ?? 0}%
                     </span>
                   </div>
                 </div>
@@ -247,10 +247,10 @@ export default function ProductDetailsDrawer({
                   <span className="text-slate-500">Units Sold</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-slate-900">
-                      {product.growthMetrics?.unitsSold || product.stock || 184}
+                      {product.growthMetrics?.unitsSold ?? product.stock ?? 0}
                     </span>
                     <span className="text-emerald-600 font-semibold text-[11px] flex items-center">
-                      ↑ 12.8%
+                      —
                     </span>
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function ProductDetailsDrawer({
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">Active</span>
               </div>
               <div className="text-xs text-slate-500 space-y-1">
-                <div>ASIN: <span className="font-mono text-slate-800">B09X8Y7Z1A</span></div>
+                <div>ASIN: <span className="font-mono text-slate-800">{product.asin || '—'}</span></div>
                 <div>Listed Price: <span className="font-semibold text-slate-900">₹{product.price}</span></div>
                 <div>Buy Box Share: <span className="font-semibold text-emerald-600">94%</span></div>
               </div>
@@ -504,7 +504,7 @@ export default function ProductDetailsDrawer({
                 value={newPriceVal}
                 onChange={(e) => setNewPriceVal(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
-                placeholder="499"
+                placeholder="Price"
               />
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -540,7 +540,7 @@ export default function ProductDetailsDrawer({
                 value={newStockVal}
                 onChange={(e) => setNewStockVal(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
-                placeholder="184"
+                placeholder="Stock"
               />
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">

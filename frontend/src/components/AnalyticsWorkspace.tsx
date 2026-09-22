@@ -54,14 +54,7 @@ export interface ProductAnalyticsRow {
 
 const initialProductAnalytics: ProductAnalyticsRow[] = [];
 
-const categoryDistribution = [
-  { name: 'Home & Kitchen', percent: 28.5 },
-  { name: 'Sports & Fitness', percent: 18.3 },
-  { name: 'Beauty & Personal Care', percent: 14.2 },
-  { name: 'Electronics', percent: 12.6 },
-  { name: 'Fashion', percent: 9.8 },
-  { name: 'Others', percent: 16.6 },
-];
+const categoryDistribution: { name: string; value: number; percent: number }[] = [];
 
 interface AnalyticsWorkspaceProps {
   onOpenAiCopilot?: () => void;
@@ -79,7 +72,7 @@ export default function AnalyticsWorkspace({
     'Product Performance' | 'Marketplace Performance' | 'Category Performance' | 'Search Terms' | 'Customer Insights'
   >('Product Performance');
 
-  const [dateRange, setDateRange] = useState('Dec 1, 2024 - Dec 15, 2024');
+  const [dateRange, setDateRange] = useState('');
   const [marketplaceFilter, setMarketplaceFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [timeframeFilter, setTimeframeFilter] = useState('Last 30 Days');
@@ -93,13 +86,13 @@ export default function AnalyticsWorkspace({
 
   const [productAnalytics, setProductAnalytics] = useState<ProductAnalyticsRow[]>(initialProductAnalytics);
   const [analyticsKpis, setAnalyticsKpis] = useState({
-    revenue: 1248350,
-    orders: 2845,
-    units: 3124,
-    conversion_rate: 4.8,
-    average_order_value: 438,
-    returns_rate: 2.1,
-    profit_est: 248670,
+    revenue: 0,
+    orders: 0,
+    units: 0,
+    conversion_rate: 0,
+    average_order_value: 0,
+    returns_rate: 0,
+    profit_est: 0,
   });
 
   // Sync with backend advanced-analytics API
@@ -111,27 +104,27 @@ export default function AnalyticsWorkspace({
           const data = await res.json();
           if (data.kpis) {
             setAnalyticsKpis({
-              revenue: data.kpis.revenue || 1248350,
-              orders: data.kpis.orders || 2845,
-              units: data.kpis.units || 3124,
-              conversion_rate: 4.8,
-              average_order_value: Math.round(data.kpis.average_order_value || 438),
-              returns_rate: 2.1,
-              profit_est: Math.round(data.kpis.net_profit || 248670),
+              revenue: data.kpis.revenue ?? 0,
+              orders: data.kpis.orders ?? 0,
+              units: data.kpis.units ?? 0,
+              conversion_rate: data.kpis.conversion_rate ?? 0,
+              average_order_value: Math.round(data.kpis.average_order_value ?? 0),
+              returns_rate: data.kpis.returns_rate ?? 0,
+              profit_est: Math.round(data.kpis.net_profit ?? 0),
             });
           }
           if (data.products && data.products.length > 0) {
             const mapped: ProductAnalyticsRow[] = data.products.map((p: any, idx: number) => {
-              const sku = p.sku || `SKU-${idx + 1}`;
+              const sku = p.sku || '';
               const s = sku.toLowerCase();
               const imgType = s.includes('tum') || s.includes('shk') ? 'tumbler' : s.includes('mug') ? 'mug' : s.includes('gla') ? 'bottle-glass' : s.includes('cop') ? 'bottle-copper' : 'bottle-black';
-              const units = p.units || 10;
-              const rev = p.revenue || units * 499;
+              const units = p.units ?? 0;
+              const rev = p.revenue ?? 0;
               const profit = Math.round(rev * ((p.margin_percent || 25) / 100));
-              const views = units * 18;
+              const views = p.views ?? 0;
               return {
                 id: String(p.product_id || idx + 1),
-                name: p.title || 'Stainless Steel Bottle',
+                name: p.title || '',
                 sku: sku,
                 marketplace: idx % 2 === 0 ? 'amazon' : 'flipkart',
                 unitsSold: units,
@@ -139,10 +132,10 @@ export default function AnalyticsWorkspace({
                 salesDisplay: `₹${Math.round(rev).toLocaleString('en-IN')}`,
                 profitEst: profit,
                 profitEstDisplay: `₹${Math.round(profit).toLocaleString('en-IN')}`,
-                roi: Math.round(p.margin_percent || 28),
+                roi: Math.round(p.roi ?? p.margin_percent ?? 0),
                 views: views,
                 viewsDisplay: views.toLocaleString('en-IN'),
-                conversion: 5.6,
+                conversion: p.conversion ?? 0,
                 imageType: imgType,
               };
             });
@@ -287,7 +280,7 @@ export default function AnalyticsWorkspace({
                 ₹{Math.round(analyticsKpis.revenue).toLocaleString('en-IN')}
               </div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                <span>↑ 18.3%</span>
+                <span>—</span>
                 <span className="text-slate-400 font-normal">vs last 30 days</span>
               </div>
             </div>
@@ -306,7 +299,7 @@ export default function AnalyticsWorkspace({
                 {analyticsKpis.orders.toLocaleString('en-IN')}
               </div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                <span>↑ 12.6%</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -324,7 +317,7 @@ export default function AnalyticsWorkspace({
                 {analyticsKpis.units.toLocaleString('en-IN')}
               </div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                <span>↑ 15.8%</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -342,7 +335,7 @@ export default function AnalyticsWorkspace({
                 ₹{Math.round(analyticsKpis.average_order_value).toLocaleString('en-IN')}
               </div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                <span>↑ 5.1%</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -360,7 +353,7 @@ export default function AnalyticsWorkspace({
                 ₹{Math.round(analyticsKpis.profit_est).toLocaleString('en-IN')}
               </div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                <span>↑ 22.4%</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -375,10 +368,10 @@ export default function AnalyticsWorkspace({
             </div>
             <div className="mt-2.5">
               <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                2.8%
+                {analyticsKpis.returns_rate.toFixed(1)}%
               </div>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 mt-1">
-                <span>↑ 0.4%</span>
+                <span>—</span>
               </div>
             </div>
           </div>
@@ -673,7 +666,7 @@ export default function AnalyticsWorkspace({
                 <div>
                   Showing <span className="font-semibold text-slate-700">1</span> to{' '}
                   <span className="font-semibold text-slate-700">5</span> of{' '}
-                  <span className="font-semibold text-slate-700">245</span> products
+                  <span className="font-semibold text-slate-700">{filteredProducts.length}</span> products
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -749,17 +742,17 @@ export default function AnalyticsWorkspace({
               </div>
 
               <div className="space-y-4">
-                {/* Insight 1: Sales are up 18.3% */}
+                {/* Insight 1: Sales trend unavailable */}
                 <div className="flex items-start gap-3">
                   <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
                     <TrendingUp className="w-4 h-4 stroke-[2.5]" />
                   </div>
                   <div>
                     <div className="text-xs font-bold text-slate-900">
-                      Sales are up 18.3%
+                      Sales trend unavailable
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Your sales have increased by 18.3% compared to the previous period.
+                      Connect analytics data to compare sales periods.
                     </div>
                   </div>
                 </div>
@@ -774,7 +767,7 @@ export default function AnalyticsWorkspace({
                       Profit margin improved
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Your profit margin has increased by 5.2%.
+                      Connect analytics data to compare profit periods.
                     </div>
                   </div>
                 </div>
@@ -789,7 +782,7 @@ export default function AnalyticsWorkspace({
                       Return rate is higher
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Your return rate is 0.4% higher than last month.
+                      Connect analytics data to compare return periods.
                     </div>
                   </div>
                 </div>
@@ -804,7 +797,7 @@ export default function AnalyticsWorkspace({
                       Top performing category
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Home & Kitchen accounts for 28.5% of your total sales.
+                      Connect analytics data to identify top categories.
                     </div>
                   </div>
                 </div>
@@ -819,7 +812,7 @@ export default function AnalyticsWorkspace({
                       Opportunity
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Consider increasing ads spend on Sports & Fitness category.
+                      Connect advertising and category data to generate opportunities.
                     </div>
                   </div>
                 </div>
@@ -847,11 +840,11 @@ export default function AnalyticsWorkspace({
                 <div className="space-y-1.5">
                   <div className="text-xs font-medium text-slate-600">Monthly Sales Goal</div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-900">₹12,48,350 / ₹15,00,000</span>
-                    <span className="font-bold text-slate-900">83%</span>
+                    <span className="font-bold text-slate-900">₹0 / ₹0</span>
+                    <span className="font-bold text-slate-900">0%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: '83%' }} />
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: '0%' }} />
                   </div>
                 </div>
 
@@ -859,11 +852,11 @@ export default function AnalyticsWorkspace({
                 <div className="space-y-1.5">
                   <div className="text-xs font-medium text-slate-600">Orders Goal</div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-900">2,845 / 3,500</span>
-                    <span className="font-bold text-slate-900">81%</span>
+                    <span className="font-bold text-slate-900">0 / 0</span>
+                    <span className="font-bold text-slate-900">0%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '81%' }} />
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }} />
                   </div>
                 </div>
 
@@ -871,11 +864,11 @@ export default function AnalyticsWorkspace({
                 <div className="space-y-1.5">
                   <div className="text-xs font-medium text-slate-600">Profit Goal</div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-900">₹2,48,670 / ₹3,00,000</span>
-                    <span className="font-bold text-slate-900">83%</span>
+                    <span className="font-bold text-slate-900">₹0 / ₹0</span>
+                    <span className="font-bold text-slate-900">0%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: '83%' }} />
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: '0%' }} />
                   </div>
                 </div>
               </div>

@@ -491,15 +491,11 @@ export default function CampaignDetailsDrawer({
           <div className="space-y-3">
             <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="font-bold text-slate-900">Ad Groups (3)</span>
+                <span className="font-bold text-slate-900">Ad Groups</span>
                 <span className="text-[11px] text-indigo-600 font-semibold cursor-pointer hover:underline">+ New Group</span>
               </div>
               <div className="space-y-2">
-                {[
-                  { name: 'Brand Exact - Steel Bottle', defaultBid: '₹14.50', status: 'Active', clicks: 1240, spend: '₹12,400' },
-                  { name: 'Category Broad - Drinkware', defaultBid: '₹11.20', status: 'Active', clicks: 820, spend: '₹7,800' },
-                  { name: 'Competitor Targeting', defaultBid: '₹16.00', status: 'Active', clicks: 420, spend: '₹4,380' },
-                ].map((ag, idx) => (
+                {campaign.topKeywords.length === 0 ? null : campaign.topKeywords.map((kw, idx) => ({ name: kw.keyword, defaultBid: '—', status: '—', clicks: kw.clicks, spend: '—' })).map((ag, idx) => (
                   <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-white space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-900">{ag.name}</span>
@@ -524,9 +520,7 @@ export default function CampaignDetailsDrawer({
               </div>
               <div className="space-y-2">
                 {campaign.topKeywords.concat([
-                  { keyword: 'hot cold flask', clicks: 240, acos: 17.4 },
-                  { keyword: 'sipper bottle 1 litre', clicks: 210, acos: 21.0 },
-                  { keyword: 'metal water bottle', clicks: 195, acos: 19.2 },
+                  ...campaign.topKeywords,
                 ]).map((kw, idx) => (
                   <div key={idx} className="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center justify-between">
                     <div>
@@ -551,10 +545,7 @@ export default function CampaignDetailsDrawer({
               </div>
               <div className="space-y-2">
                 {[
-                  { query: 'stainless steel water bottle 1 litre', orders: 48, ctr: '5.2%', acos: '14.2%' },
-                  { query: 'best thermos bottle office', orders: 36, ctr: '4.8%', acos: '16.5%' },
-                  { query: 'insulated gym bottle leak proof', orders: 28, ctr: '4.1%', acos: '18.1%' },
-                  { query: 'black steel flask for tea', orders: 19, ctr: '3.6%', acos: '19.8%' },
+                  ...campaign.topKeywords.map((kw) => ({ query: kw.keyword, orders: 0, ctr: '', acos: String(kw.acos ?? '') })),
                 ].map((st, idx) => (
                   <div key={idx} className="p-2.5 rounded-lg border border-slate-200 bg-white space-y-1">
                     <div className="font-semibold text-slate-900 text-xs">"{st.query}"</div>
@@ -577,10 +568,7 @@ export default function CampaignDetailsDrawer({
               </div>
               <div className="space-y-2.5">
                 {[
-                  { date: 'Today, 02:15 AM', user: 'AI Optimizer', action: 'Increased daily budget from ₹800 to ₹1,000 based on ROAS > 5.0' },
-                  { date: 'Dec 12, 2024', user: 'Shubham', action: 'Added negative keywords: "plastic bottle", "cheap glass"' },
-                  { date: 'Dec 08, 2024', user: 'AI Optimizer', action: 'Optimized 14 keyword bids to match top of search impressions' },
-                  { date: 'Nov 01, 2024', user: 'Shubham', action: 'Campaign created and launched on Amazon Sponsored Brands' },
+                  ...([] as { user: string; date: string; action: string }[]),
                 ].map((log, idx) => (
                   <div key={idx} className="p-2.5 rounded-lg border border-slate-200 bg-white space-y-0.5">
                     <div className="flex items-center justify-between text-[11px]">

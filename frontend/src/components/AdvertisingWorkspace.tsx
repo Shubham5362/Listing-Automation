@@ -69,7 +69,7 @@ export default function AdvertisingWorkspace({
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const totalCampaignsCount = 48; // Matches screenshot "1 to 10 of 48 campaigns"
+  const totalCampaignsCount = campaigns.length;
 
   // Feedback notification
   const [bannerAlert, setBannerAlert] = useState<string | null>(null);
@@ -83,42 +83,38 @@ export default function AdvertisingWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: CampaignRecord[] = json.items.map((c: any, idx: number) => {
-              const spend = c.spend !== undefined ? c.spend : (c.ad_spend !== undefined ? c.ad_spend : 12450);
-              const sales = c.sales !== undefined ? c.sales : (c.sales_ad !== undefined ? c.sales_ad : Math.round(spend * 4.8));
-              const acos = c.acos !== undefined ? c.acos : (spend > 0 && sales > 0 ? parseFloat(((spend / sales) * 100).toFixed(1)) : 19.8);
-              const roas = c.roas !== undefined ? c.roas : (spend > 0 && sales > 0 ? parseFloat((sales / spend).toFixed(2)) : 5.06);
+              const spend = c.spend ?? c.ad_spend ?? 0;
+              const sales = c.sales ?? c.sales_ad ?? 0;
+              const acos = c.acos ?? 0;
+              const roas = c.roas ?? 0;
 
               return {
                 id: c.id || idx + 1,
-                campaignName: c.campaign_name || c.name || `Campaign-${c.id || idx + 1}`,
-                productName: c.product_name || 'Stainless Steel Bottle 1L',
-                type: (c.campaign_type || c.type || 'Sponsored Products') as any,
-                marketplace: (c.marketplace || 'amazon').toLowerCase().includes('flipkart') ? 'flipkart' : 'amazon',
-                status: (c.status || 'Active') as any,
-                dailyBudget: c.daily_budget || c.dailyBudget || 1000,
+                campaignName: c.campaign_name || c.name || '',
+                productName: c.product_name || '',
+                type: (c.campaign_type || c.type || '') as any,
+                marketplace: c.marketplace || '',
+                status: (c.status || '') as any,
+                dailyBudget: c.daily_budget ?? c.dailyBudget ?? 0,
                 adSpend: spend,
                 salesAd: sales,
                 acos,
                 roas,
                 imageType: c.sku?.includes('TUM') ? 'tumbler' : c.sku?.includes('MUG') ? 'mug' : 'bottle-black',
-                startDate: c.created_at ? c.created_at.split(' ')[0] : (c.start_date || 'Nov 1, 2024'),
-                endDate: c.end_date || 'No end date',
-                clicks: c.clicks || Math.round(spend / 10),
-                clicksGrowth: '12.3%',
-                impressions: c.impressions || Math.round((spend / 10) * 24),
-                impressionsGrowth: '8.7%',
-                ctr: c.ctr || 4.2,
-                ctrGrowth: '3.1%',
-                cpc: c.cpc || 9.9,
-                cpcGrowth: '-5.2%',
-                ordersAd: c.orders || c.orders_ad || Math.round(sales / 500),
-                ordersAdGrowth: '18.6%',
-                salesAdGrowth: '18.3%',
-                topKeywords: c.top_keywords || [
-                  { keyword: 'water bottle', clicks: 650, acos: 18.2 },
-                  { keyword: 'steel bottle', clicks: 420, acos: 16.5 },
-                  { keyword: 'gym bottle', clicks: 380, acos: 20.1 },
-                ],
+                startDate: c.created_at ? c.created_at.split(' ')[0] : (c.start_date || ''),
+                endDate: c.end_date || '',
+                clicks: c.clicks ?? 0,
+                clicksGrowth: '',
+                impressions: c.impressions ?? 0,
+                impressionsGrowth: '',
+                ctr: c.ctr ?? 0,
+                ctrGrowth: '',
+                cpc: c.cpc ?? 0,
+                cpcGrowth: '',
+                ordersAd: c.orders ?? c.orders_ad ?? 0,
+                ordersAdGrowth: '',
+                salesAdGrowth: '',
+                topKeywords: Array.isArray(c.top_keywords) ? c.top_keywords : [],
               };
             });
             setCampaigns(mapped);
@@ -283,7 +279,7 @@ export default function AdvertisingWorkspace({
               {/* Date range picker button */}
               <button className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-semibold text-slate-700 shadow-2xs transition-colors">
                 <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>Dec 1, 2024 - Dec 15, 2024</span>
+                <span>—</span>
               </button>
 
               {/* Create Campaign ▾ button */}
@@ -329,9 +325,9 @@ export default function AdvertisingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-lg font-bold text-slate-900 tracking-tight">₹24,580</div>
+                <div className="text-lg font-bold text-slate-900 tracking-tight">₹{campaigns.reduce((sum, c) => sum + c.adSpend, 0).toLocaleString('en-IN')}</div>
                 <div className="text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                  <span>↑ 12.5%</span>
+                  <span>—</span>
                   <span className="text-slate-400 font-normal">vs last 30 days</span>
                 </div>
               </div>
@@ -346,9 +342,9 @@ export default function AdvertisingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-lg font-bold text-slate-900 tracking-tight">₹1,24,350</div>
+                <div className="text-lg font-bold text-slate-900 tracking-tight">₹{campaigns.reduce((sum, c) => sum + c.salesAd, 0).toLocaleString('en-IN')}</div>
                 <div className="text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                  <span>↑ 18.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -362,9 +358,9 @@ export default function AdvertisingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-lg font-bold text-slate-900 tracking-tight">19.8%</div>
+                <div className="text-lg font-bold text-slate-900 tracking-tight">{(() => { const spend = campaigns.reduce((sum, c) => sum + c.adSpend, 0); const sales = campaigns.reduce((sum, c) => sum + c.salesAd, 0); return sales > 0 ? `${((spend / sales) * 100).toFixed(1)}%` : '0%'; })()}</div>
                 <div className="text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                  <span>↓ 4.2%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -378,9 +374,9 @@ export default function AdvertisingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-lg font-bold text-slate-900 tracking-tight">5.06</div>
+                <div className="text-lg font-bold text-slate-900 tracking-tight">{(() => { const spend = campaigns.reduce((sum, c) => sum + c.adSpend, 0); const sales = campaigns.reduce((sum, c) => sum + c.salesAd, 0); return spend > 0 ? (sales / spend).toFixed(2) : '0'; })()}</div>
                 <div className="text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                  <span>↑ 16.7%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -394,9 +390,9 @@ export default function AdvertisingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-lg font-bold text-slate-900 tracking-tight">12,480</div>
+                <div className="text-lg font-bold text-slate-900 tracking-tight">{campaigns.reduce((sum, c) => sum + c.clicks, 0).toLocaleString('en-IN')}</div>
                 <div className="text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                  <span>↑ 14.1%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
@@ -410,9 +406,9 @@ export default function AdvertisingWorkspace({
                 </div>
               </div>
               <div className="mt-2">
-                <div className="text-lg font-bold text-slate-900 tracking-tight">2,45,680</div>
+                <div className="text-lg font-bold text-slate-900 tracking-tight">{campaigns.reduce((sum, c) => sum + c.impressions, 0).toLocaleString('en-IN')}</div>
                 <div className="text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                  <span>↑ 11.3%</span>
+                  <span>—</span>
                 </div>
               </div>
             </div>
