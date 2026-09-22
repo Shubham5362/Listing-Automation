@@ -37,6 +37,7 @@ export default function FinanceFeeBreakdownDonut() {
       .catch(() => setFeeSegments([]));
   }, []);
 
+  const totalFeeAmount = feeSegments.reduce((sum, seg) => sum + Number(seg.amount.replace(/[₹,]/g, '')), 0);
   const radius = 68;
   const strokeWidth = 24;
   const circumference = 2 * Math.PI * radius;
@@ -96,7 +97,7 @@ export default function FinanceFeeBreakdownDonut() {
           {/* Center Callout */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
             <span className="text-base font-extrabold text-slate-900 tracking-tight">
-              {hoveredIdx !== null ? feeSegments[hoveredIdx].amount : '₹2,48,920'}
+              {hoveredIdx !== null ? feeSegments[hoveredIdx].amount : `₹${totalFeeAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
             </span>
             <span className="text-[11px] font-medium text-slate-500 mt-0.5">
               {hoveredIdx !== null ? feeSegments[hoveredIdx].name : 'Total Fees'}
