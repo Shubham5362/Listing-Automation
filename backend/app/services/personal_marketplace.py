@@ -87,8 +87,6 @@ def ensure_personal_marketplaces(db: Session, settings: Settings | None = None) 
 
 def personal_seller_id(db: Session) -> int | None:
     seller = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id.is_(None), SellerAccount.is_active.is_(True)).order_by(SellerAccount.id.desc()))
-    if seller is None:
-        seller = db.scalar(select(SellerAccount.id).order_by(SellerAccount.id.desc()))
     return int(seller) if seller is not None else None
 
 
