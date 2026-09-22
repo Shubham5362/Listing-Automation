@@ -295,789 +295,125 @@ export default function AiSellerCopilotWorkspace({
   const selectedAffectedCount = affectedProducts.filter(p => p.selected).length;
 
   return (
-    <div className="flex-1 bg-slate-50/60 min-h-screen flex flex-col">
-      {/* Toast Notification */}
+    <div className="flex-1 min-h-screen bg-slate-50/60 flex flex-col">
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-medium border border-slate-700 animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-5 right-5 z-[70] bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-medium border border-slate-700">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
-          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white ml-2">
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white ml-2"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
 
-      <main className="p-4 sm:p-6 lg:p-7 max-w-[1600px] w-full mx-auto space-y-5">
-        {/* Top Header */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-            <Bot className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-tight">
-              AI Seller Copilot
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-              Your AI partner to plan, analyze, and execute across your seller business.
-            </p>
-          </div>
-        </div>
-
-        {/* 4 Feature Capability Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-          {/* Card 1: Ask Anything */}
-          <div
-            onClick={() => handleQuickPrompt('How is my overall seller health and sales performance today?')}
-            className="p-3.5 bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all cursor-pointer flex items-center gap-3 group"
-          >
-            <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100/80 flex items-center justify-center shrink-0 text-amber-600 group-hover:scale-105 transition-transform">
-              <MessageSquare className="w-4 h-4 text-amber-600 fill-amber-600/20" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors truncate">
-                Ask Anything
+      <div className="flex-1 min-h-0 max-w-[1500px] w-full mx-auto p-3 sm:p-5 lg:p-6">
+        <div className="h-[calc(100vh-110px)] min-h-[620px] bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          {/* SellerHub-branded WhatsApp-style header */}
+          <header className="h-16 shrink-0 px-4 sm:px-5 bg-white border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-indigo-600" />
+                </div>
+                <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
               </div>
-              <div className="text-[11px] text-slate-400 truncate">Get instant answers</div>
-            </div>
-          </div>
-
-          {/* Card 2: Take Action */}
-          <div
-            onClick={() => handleQuickPrompt('Create listings, update prices, and sync catalog now')}
-            className="p-3.5 bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 hover:shadow-xs transition-all cursor-pointer flex items-center gap-3 group"
-          >
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100/80 flex items-center justify-center shrink-0 text-emerald-600 group-hover:scale-105 transition-transform">
-              <Package className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
-                Take Action
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">AI Seller Copilot</h1>
+                <p className="text-[11px] text-emerald-600 font-medium">Online • SellerHub AI</p>
               </div>
-              <div className="text-[11px] text-slate-400 truncate">Create listings, update prices, etc.</div>
             </div>
-          </div>
+            <div className="flex items-center gap-1">
+              <button type="button" title="Search chat" className="p-2 rounded-full text-slate-500 hover:bg-slate-100"><Search className="w-4 h-4" /></button>
+              <button type="button" title="Chat options" className="p-2 rounded-full text-slate-500 hover:bg-slate-100"><Sliders className="w-4 h-4" /></button>
+            </div>
+          </header>
 
-          {/* Card 3: Get Insights */}
-          <div
-            onClick={() => handleQuickPrompt('Find high ROI sales opportunities and solve low conversion items')}
-            className="p-3.5 bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-purple-300 hover:shadow-xs transition-all cursor-pointer flex items-center gap-3 group"
-          >
-            <div className="w-9 h-9 rounded-lg bg-purple-50 border border-purple-100/80 flex items-center justify-center shrink-0 text-purple-600 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-4 h-4 text-purple-600 fill-purple-600/20" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors truncate">
-                Get Insights
+          {/* Chat body */}
+          <div className="flex-1 min-h-0 relative bg-slate-50/60 overflow-y-auto">
+            <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.07),transparent_28%),radial-gradient(circle_at_80%_80%,rgba(15,23,42,0.035),transparent_30%)]" />
+            <div className="relative max-w-4xl mx-auto px-3 sm:px-6 py-5">
+              <div className="flex justify-center mb-5">
+                <span className="px-3 py-1 rounded-lg bg-white/90 border border-slate-200 text-[10px] font-semibold text-slate-500 shadow-sm">Today</span>
               </div>
-              <div className="text-[11px] text-slate-400 truncate">Find opportunities & solve issues</div>
-            </div>
-          </div>
 
-          {/* Card 4: Automate */}
-          <div
-            onClick={() => handleQuickPrompt('Set up a recurring automation to optimize listing keywords daily')}
-            className="p-3.5 bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-indigo-300 hover:shadow-xs transition-all cursor-pointer flex items-center gap-3 group"
-          >
-            <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100/80 flex items-center justify-center shrink-0 text-indigo-600 group-hover:scale-105 transition-transform">
-              <Zap className="w-4 h-4 text-indigo-600 fill-indigo-600/20" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">
-                Automate
-              </div>
-              <div className="text-[11px] text-slate-400 truncate">Turn your ideas into automation</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* ========================================================
-              LEFT COLUMN: Chat & Action Plan Workspace (8 cols)
-          ======================================================== */}
-          <div className="lg:col-span-8 flex flex-col space-y-4">
-            {/* Conversation Box */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs min-h-[560px] flex flex-col justify-between">
-              {/* Chat Thread */}
-              <div className="space-y-6 flex-1 overflow-y-auto pr-1">
-                {messages.map(msg => (
-                  <div key={msg.id} className="space-y-2">
-                    {/* Message Sender Header + Bubble */}
-                    {msg.sender === 'user' ? (
-                      /* USER MESSAGE: Right aligned */
-                      <div className="flex flex-col items-end space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 font-medium">{msg.timestamp}</span>
-                        </div>
-                        <div className="flex items-start gap-2.5 max-w-[85%]">
-                          <div className="bg-indigo-50/80 border border-indigo-100/80 text-slate-800 text-xs sm:text-[13px] font-medium p-3.5 rounded-2xl rounded-tr-xs leading-relaxed shadow-2xs">
-                            {msg.text}
-                          </div>
-                          <div className="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                            S
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* ASSISTANT MESSAGE: Left aligned */
-                      <div className="flex flex-col items-start space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 font-medium">{msg.timestamp}</span>
-                        </div>
-                        <div className="flex items-start gap-2.5 w-full">
-                          <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-200/80 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                            <Bot className="w-4 h-4 text-indigo-600" />
-                          </div>
-                          <div className="space-y-3 flex-1">
-                            {/* Text part */}
-                            <div className="text-xs sm:text-[13px] text-slate-800 font-normal leading-relaxed whitespace-pre-line">
-                              {msg.text}
-                            </div>
-
-                            {/* Plan Card embedded in message if present */}
-                            {msg.plan && (
-                              <div className="border border-slate-200/90 rounded-xl bg-white shadow-2xs overflow-hidden">
-                                {/* Plan Header */}
-                                <div className="p-3.5 sm:p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5 bg-slate-50/40">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                                      <Zap className="w-4 h-4 fill-indigo-600/20 text-indigo-600" />
-                                    </div>
-                                    <span className="font-bold text-slate-900 text-xs sm:text-sm">
-                                      {activePlan.title}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                      {activePlan.status}
-                                    </span>
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsEditPlanModalOpen(true)}
-                                    className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
-                                  >
-                                    <Edit3 className="w-3 h-3 text-slate-500" />
-                                    <span>Edit Plan</span>
-                                  </button>
-                                </div>
-
-                                {/* Plan Key-Value Specifications */}
-                                <div className="p-3.5 sm:p-4 text-xs space-y-2.5">
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Package className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Total Products</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.totalProducts} products
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Layers className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Marketplaces</span>
-                                    </span>
-                                    <div className="sm:col-span-8 flex items-center gap-1.5 font-semibold text-slate-800">
-                                      <span>{activePlan.marketplaces.join(', ')}</span>
-                                      <div className="flex items-center gap-1 ml-1">
-                                        <AmazonBadgeIcon />
-                                        <FlipkartBadgeIcon />
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Daily Limit</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.dailyLimit}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Estimated Duration</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.estimatedDuration}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <FileText className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Product Selection</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.productSelection}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Sparkles className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Keyword Strategy</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.keywordStrategy}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <FileText className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Content</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.content}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Eye className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Images</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.images}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1 border-b border-slate-100/80">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Schedule</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.schedule}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 py-1">
-                                    <span className="sm:col-span-4 text-slate-500 font-medium flex items-center gap-2">
-                                      <Zap className="w-3.5 h-3.5 text-slate-400" />
-                                      <span>Automation</span>
-                                    </span>
-                                    <span className="sm:col-span-8 font-semibold text-slate-800">
-                                      {activePlan.automation}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Next Step Notification Subcard */}
-                                <div className="mx-3.5 mb-3.5 sm:mx-4 sm:mb-4 p-3 bg-indigo-50/50 border border-indigo-100/90 rounded-xl flex items-start gap-2.5 text-xs text-slate-700">
-                                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span className="font-bold text-[11px]">i</span>
-                                  </div>
-                                  <div>
-                                    <div className="font-bold text-indigo-900 text-xs">Next Step</div>
-                                    <div className="text-[11px] text-slate-600 leading-relaxed mt-0.5">
-                                      {activePlan.nextStep}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Action Buttons Bar */}
-                                <div className="p-3.5 sm:p-4 bg-slate-50/70 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={handleApprovePlan}
-                                    disabled={activePlan.status === 'Approved'}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-emerald-600 text-white font-bold text-xs rounded-lg transition-colors shadow-sm flex items-center gap-1.5 active:scale-[0.99]"
-                                  >
-                                    <Zap className="w-3.5 h-3.5 fill-white" />
-                                    <span>
-                                      {activePlan.status === 'Approved'
-                                        ? 'Plan Approved & Active'
-                                        : 'Approve & Create Automation'}
-                                    </span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsEditPlanModalOpen(true)}
-                                    className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors shadow-2xs flex items-center gap-1.5"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                                    <span>Modify Plan</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsAffectedProductsOpen(true)}
-                                    className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors shadow-2xs flex items-center gap-1.5"
-                                  >
-                                    <FileText className="w-3.5 h-3.5 text-slate-500" />
-                                    <span>View Affected Products ({activePlan.totalProducts})</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsAskChangesOpen(true)}
-                                    className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors shadow-2xs flex items-center gap-1.5"
-                                  >
-                                    <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
-                                    <span>Ask Changes</span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+              {messages.map(msg => (
+                <div key={msg.id} className={`flex mb-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex items-end gap-2 max-w-[88%] sm:max-w-[75%] ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                    {msg.sender === 'assistant' && (
+                      <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                        <Bot className="w-3.5 h-3.5 text-indigo-600" />
                       </div>
                     )}
-                  </div>
-                ))}
-
-                {/* Live Typing indicator */}
-                {isTyping && (
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4 animate-bounce" />
+                    <div>
+                      <div className={`px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm border ${msg.sender === 'user'
+                        ? 'bg-indigo-600 text-white border-indigo-600 rounded-2xl rounded-br-md'
+                        : 'bg-white text-slate-800 border-slate-200 rounded-2xl rounded-bl-md'}`}>
+                        <div className="whitespace-pre-line">{msg.text}</div>
+                      </div>
+                      <div className={`mt-1 text-[9px] text-slate-400 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                        {msg.timestamp}{msg.sender === 'user' ? '  ✓✓' : ''}
+                      </div>
+                      {msg.plan && (
+                        <div className="mt-2 bg-white border border-slate-200 rounded-xl shadow-sm p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Zap className="w-4 h-4 text-indigo-600" />
+                            <span className="text-xs font-bold text-slate-900">{activePlan.title}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                            <span>Products: <b>{activePlan.totalProducts}</b></span>
+                            <span>Status: <b>{activePlan.status}</b></span>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button type="button" onClick={handleApprovePlan} className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-bold">Approve</button>
+                            <button type="button" onClick={() => setIsAskChangesOpen(true)} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[11px] font-semibold">Ask changes</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="bg-slate-100 rounded-2xl px-4 py-2.5 text-xs text-slate-500 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse delay-150" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse delay-300" />
-                      <span className="ml-1 text-[11px]">Analyzing catalog data & seller rules...</span>
-                    </div>
                   </div>
-                )}
-                <div ref={chatScrollRef} />
-              </div>
-
-              {/* Quick Suggestion Pills matching screenshot */}
-              <div className="pt-4 border-t border-slate-100 space-y-3">
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPrompt('Show me low stock products')}
-                    className="px-3 py-1.5 bg-white hover:bg-indigo-50/60 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 text-[11px] font-medium rounded-full shadow-2xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3 h-3 text-slate-400" />
-                    <span>Show me low stock products</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPrompt('Find best selling products in last 30 days')}
-                    className="px-3 py-1.5 bg-white hover:bg-indigo-50/60 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 text-[11px] font-medium rounded-full shadow-2xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3 h-3 text-slate-400" />
-                    <span>Find best selling products in last 30 days</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPrompt('Analyze my competitors')}
-                    className="px-3 py-1.5 bg-white hover:bg-indigo-50/60 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 text-[11px] font-medium rounded-full shadow-2xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3 h-3 text-slate-400" />
-                    <span>Analyze my competitors</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPrompt('Suggest new product opportunities')}
-                    className="px-3 py-1.5 bg-white hover:bg-indigo-50/60 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 text-[11px] font-medium rounded-full shadow-2xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3 h-3 text-slate-400" />
-                    <span>Suggest new product opportunities</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleQuickPrompt('Show me failed listings')}
-                    className="px-3 py-1.5 bg-white hover:bg-indigo-50/60 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 text-[11px] font-medium rounded-full shadow-2xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3 h-3 text-slate-400" />
-                    <span>Show me failed listings</span>
-                  </button>
                 </div>
+              ))}
 
-                {/* Natural Language Prompt Input Bar */}
-                <div className="relative flex items-center gap-2 p-1.5 bg-slate-50 border border-slate-200 rounded-2xl focus-within:border-indigo-500 focus-within:bg-white transition-all shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-200/60 transition-colors"
-                    title="Upload catalog or Excel sheet"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={e => setInputText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder="Ask me anything... (e.g. create listings, update prices, analyze sales, fix errors, etc.)"
-                    className="flex-1 bg-transparent border-none text-xs text-slate-800 placeholder:text-slate-400 font-medium focus:outline-hidden px-1"
-                  />
-
-                  {/* Mic action */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsListeningMic(!isListeningMic);
-                      if (!isListeningMic) {
-                        showToast('Voice input activated. Speak now...');
-                      }
-                    }}
-                    className={`p-2 rounded-xl transition-colors ${
-                      isListeningMic
-                        ? 'bg-rose-100 text-rose-600 animate-pulse'
-                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/60'
-                    }`}
-                    title="Voice search"
-                  >
-                    <Mic className="w-4 h-4" />
-                  </button>
-
-                  {/* Send Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage()}
-                    disabled={!inputText.trim()}
-                    className="p-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-xl transition-colors shadow-2xs active:scale-95 shrink-0 cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
+              {isTyping && (
+                <div className="flex items-end gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center"><Bot className="w-3.5 h-3.5 text-indigo-600" /></div>
+                  <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                    <div className="flex gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" /><span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:120ms]" /><span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:240ms]" /></div>
+                  </div>
                 </div>
-
-                {/* Footer Tagline */}
-                <div className="text-center pt-1">
-                  <span className="text-[11px] text-slate-400 inline-flex items-center gap-1.5 font-medium">
-                    <Sparkles className="w-3 h-3 text-indigo-500 fill-indigo-500/20" />
-                    <span>Powered by SellerHub AI</span>
-                  </span>
-                </div>
-              </div>
+              )}
+              <div ref={chatScrollRef} />
             </div>
           </div>
 
-          {/* ========================================================
-              RIGHT COLUMN: Sidebar Action Hub Widgets (4 cols)
-          ======================================================== */}
-          <div className="lg:col-span-4 space-y-4">
-            {/* Widget 1: Suggested for You */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs space-y-3.5">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-slate-900 text-xs sm:text-sm">Suggested for You</h3>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPrompt('Show all prioritized suggestions and opportunities')}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-                >
-                  View All
-                </button>
+          {/* WhatsApp-style Add section + composer */}
+          <div className="shrink-0 border-t border-slate-200 bg-white">
+            <div className="max-w-4xl mx-auto px-3 sm:px-5 pt-2.5">
+              <div className="flex items-center gap-1.5 mb-2 overflow-x-auto">
+                <button type="button" onClick={() => setIsAffectedProductsOpen(true)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-semibold text-slate-600 hover:bg-slate-100"><Plus className="w-3 h-3" /> Add Product</button>
+                <button type="button" onClick={() => handleSendMessage('Use my current listing context and help me with this listing.')} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-semibold text-slate-600 hover:bg-slate-100"><Layers className="w-3 h-3" /> Listing</button>
+                <button type="button" onClick={() => setIsUploadModalOpen(true)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-semibold text-slate-600 hover:bg-slate-100"><Paperclip className="w-3 h-3" /> File</button>
+                <button type="button" onClick={() => setIsUploadModalOpen(true)} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-semibold text-slate-600 hover:bg-slate-100"><Upload className="w-3 h-3" /> Image / CSV</button>
+                <button type="button" onClick={() => handleSendMessage('Give me the latest SellerHub business report and key issues.')} className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-semibold text-slate-600 hover:bg-slate-100"><FileText className="w-3 h-3" /> Report</button>
               </div>
 
-              <div className="space-y-2.5">
-                {/* Item 1: List Pending Products */}
-                <div className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                      <ShoppingBag className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 text-xs truncate">List Pending Products</div>
-                      <div className="text-[10px] text-slate-400 truncate">You have 28 products ready to list.</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickPrompt('List my 28 pending products across Amazon and Flipkart with AI content')
-                    }
-                    className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold shadow-2xs shrink-0 transition-colors"
-                  >
-                    List Now
-                  </button>
+              <div className="flex items-end gap-2 pb-3">
+                <button type="button" onClick={() => setIsUploadModalOpen(true)} title="Attach" className="w-10 h-10 shrink-0 rounded-full text-slate-500 hover:bg-slate-100 flex items-center justify-center"><Paperclip className="w-5 h-5" /></button>
+                <div className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2 flex items-end gap-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+                  <textarea
+                    value={inputText}
+                    onChange={e => setInputText(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                    rows={1}
+                    placeholder="Type a message"
+                    className="flex-1 bg-transparent resize-none outline-none text-[13px] text-slate-800 placeholder:text-slate-400 max-h-28"
+                  />
+                  <button type="button" onClick={() => setIsListeningMic(v => !v)} title="Voice input" className={`w-8 h-8 rounded-full flex items-center justify-center ${isListeningMic ? 'bg-indigo-100 text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}><Mic className="w-4 h-4" /></button>
                 </div>
-
-                {/* Item 2: Improve Low Performing Listings */}
-                <div className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                      <Flame className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 text-xs truncate">Improve Low Performing Listings</div>
-                      <div className="text-[10px] text-slate-400 truncate">15 listings have low conversion.</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickPrompt('Optimize titles and search terms for my 15 low performing listings')
-                    }
-                    className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold shadow-2xs shrink-0 transition-colors"
-                  >
-                    Optimize
-                  </button>
-                </div>
-
-                {/* Item 3: Update Prices */}
-                <div className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                      <DollarSign className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 text-xs truncate">Update Prices</div>
-                      <div className="text-[10px] text-slate-400 truncate">7 products can be repriced for better Buy Box chance.</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickPrompt('Review repricing strategy for 7 products to win the Buy Box')
-                    }
-                    className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold shadow-2xs shrink-0 transition-colors"
-                  >
-                    Review
-                  </button>
-                </div>
-
-                {/* Item 4: Create Seasonal Campaign */}
-                <div className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                      <PartyPopper className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 text-xs truncate">Create Seasonal Campaign</div>
-                      <div className="text-[10px] text-slate-400 truncate">Prepare listings for upcoming festival season.</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickPrompt('Create seasonal festival campaign discounts and bundle recommendations')
-                    }
-                    className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold shadow-2xs shrink-0 transition-colors"
-                  >
-                    Plan Now
-                  </button>
-                </div>
-
-                {/* Item 5: Fix Listing Errors */}
-                <div className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 text-xs truncate">Fix Listing Errors</div>
-                      <div className="text-[10px] text-slate-400 truncate">5 listings need your attention.</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickPrompt('Help me fix the 5 listing rejection errors on Flipkart and Amazon')
-                    }
-                    className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-semibold shadow-2xs shrink-0 transition-colors"
-                  >
-                    Fix Now
-                  </button>
-                </div>
+                <button type="button" disabled={!inputText.trim() || isTyping} onClick={() => handleSendMessage()} className="w-10 h-10 shrink-0 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-sm hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"><Send className="w-4 h-4" /></button>
               </div>
-            </div>
-
-            {/* Widget 2: Quick Actions (6 Grid Buttons) */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-              <h3 className="font-bold text-slate-900 text-xs sm:text-sm">Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab?.('AI Listing Studio')}
-                  className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:text-indigo-600 flex items-center gap-2 transition-colors shadow-2xs text-left"
-                >
-                  <Package className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                  <span className="truncate text-[11px]">Create Listings</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab?.('Pricing')}
-                  className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:text-indigo-600 flex items-center gap-2 transition-colors shadow-2xs text-left"
-                >
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate text-[11px]">Update Prices</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab?.('Inventory')}
-                  className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:text-indigo-600 flex items-center gap-2 transition-colors shadow-2xs text-left"
-                >
-                  <Package className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span className="truncate text-[11px]">Check Inventory</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab?.('Analytics')}
-                  className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:text-indigo-600 flex items-center gap-2 transition-colors shadow-2xs text-left"
-                >
-                  <TrendingUp className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                  <span className="truncate text-[11px]">Analyze Sales</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickPrompt('Find high-growth category product opportunities')}
-                  className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:text-indigo-600 flex items-center gap-2 transition-colors shadow-2xs text-left"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate text-[11px]">Find Opportunities</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab?.('Automations')}
-                  className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:text-indigo-600 flex items-center gap-2 transition-colors shadow-2xs text-left"
-                >
-                  <Zap className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                  <span className="truncate text-[11px]">Create Automation</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Widget 3: Recent Conversations */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-slate-900 text-xs sm:text-sm">Recent Conversations</h3>
-                <button
-                  type="button"
-                  onClick={() => showToast('Displaying 5 recent conversations')}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-                >
-                  View All
-                </button>
-              </div>
-
-              <div className="space-y-2.5 text-xs">
-                {/* Conv 1 */}
-                <div
-                  onClick={() =>
-                    handleQuickPrompt('Review progress on the automation for 50 listings daily')
-                  }
-                  className="p-2 rounded-lg hover:bg-slate-50 flex items-start gap-2.5 cursor-pointer group transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 group-hover:text-indigo-600 truncate">
-                      Create automation for 50 listings daily
-                    </div>
-                    <div className="text-[10px] text-slate-400">Today, 10:24 AM</div>
-                  </div>
-                </div>
-
-                {/* Conv 2 */}
-                <div
-                  onClick={() =>
-                    handleQuickPrompt('Why is my listing not live on Flipkart? Check catalog sync logs.')
-                  }
-                  className="p-2 rounded-lg hover:bg-slate-50 flex items-start gap-2.5 cursor-pointer group transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 group-hover:text-indigo-600 truncate">
-                      Why my listing is not live on Flipkart?
-                    </div>
-                    <div className="text-[10px] text-slate-400">Today, 09:18 AM</div>
-                  </div>
-                </div>
-
-                {/* Conv 3 */}
-                <div
-                  onClick={() =>
-                    handleQuickPrompt('Suggest high search volume keywords for stainless steel water bottles')
-                  }
-                  className="p-2 rounded-lg hover:bg-slate-50 flex items-start gap-2.5 cursor-pointer group transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 group-hover:text-indigo-600 truncate">
-                      Suggest keywords for water bottles
-                    </div>
-                    <div className="text-[10px] text-slate-400">Yesterday, 06:45 PM</div>
-                  </div>
-                </div>
-
-                {/* Conv 4 */}
-                <div
-                  onClick={() =>
-                    handleQuickPrompt('Analyze last month sales performance across Amazon and Flipkart')
-                  }
-                  className="p-2 rounded-lg hover:bg-slate-50 flex items-start gap-2.5 cursor-pointer group transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 group-hover:text-indigo-600 truncate">
-                      Analyze last month's sales performance
-                    </div>
-                    <div className="text-[10px] text-slate-400">Yesterday, 12:30 PM</div>
-                  </div>
-                </div>
-
-                {/* Conv 5 */}
-                <div
-                  onClick={() =>
-                    handleQuickPrompt('Find trending products in kitchen and dining category')
-                  }
-                  className="p-2 rounded-lg hover:bg-slate-50 flex items-start gap-2.5 cursor-pointer group transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-800 group-hover:text-indigo-600 truncate">
-                      Find trending products in kitchen category
-                    </div>
-                    <div className="text-[10px] text-slate-400">Sep 14, 2024, 04:20 PM</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Widget 4: Pro Tip Box */}
-            <div className="bg-indigo-50/40 border border-indigo-100/90 rounded-xl p-4 shadow-2xs space-y-3">
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Lightbulb className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-xs">Pro Tip</h4>
-                  <p className="text-[11px] text-slate-600 leading-relaxed mt-0.5">
-                    You can also upload a file (Excel/CSV) and ask me to create listings from it.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsUploadModalOpen(true)}
-                className="w-full py-2 bg-white hover:bg-slate-50 border border-indigo-200 text-indigo-600 font-semibold text-xs rounded-lg transition-colors shadow-2xs flex items-center justify-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Upload File</span>
-              </button>
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* ========================================================
           MODAL 1: View Affected Products (100)
