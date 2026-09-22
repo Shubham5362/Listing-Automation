@@ -10,7 +10,8 @@ from app.core.security import CredentialEncryptionError, decrypt_credentials
 from app.db.session import get_db
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
-from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User\nfrom app.marketplaces.catalog import list_channel_catalog
+from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
+from app.marketplaces.catalog import list_channel_catalog
 from app.models.marketplace_sync import MarketplaceSyncRun
 from app.services.jobs import enqueue_job
 
