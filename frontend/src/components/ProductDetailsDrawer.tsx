@@ -214,11 +214,11 @@ export default function ProductDetailsDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Created On</span>
-                  <span className="font-medium text-slate-800">{product.createdOn || 'Aug 12, 2024'}</span>
+                  <span className="font-medium text-slate-800">{product.createdOn || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Last Updated</span>
-                  <span className="font-medium text-slate-800">{product.lastUpdated || 'Dec 15, 2024'}</span>
+                  <span className="font-medium text-slate-800">{product.lastUpdated || '—'}</span>
                 </div>
               </div>
             </div>
