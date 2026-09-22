@@ -514,7 +514,7 @@ export default function InventoryDetailsDrawer({
               <div className="pt-2 border-t border-indigo-200/60 flex items-center justify-between">
                 <span className="text-indigo-900 font-semibold">Recommended Reorder Date:</span>
                 <span className="font-bold text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200">
-                  {item.updatedAt || 'Date not available'}
+                  {item.lastUpdated || 'Date not available'}
                 </span>
               </div>
             </div>
