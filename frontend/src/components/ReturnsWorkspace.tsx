@@ -72,12 +72,12 @@ export default function ReturnsWorkspace({
               const reqDate = r.requested_at ? new Date(r.requested_at) : (r.created_at ? new Date(r.created_at) : new Date());
               return {
                 id: r.id || idx + 1,
-                returnId: r.external_return_id || r.return_number || `RET-2024-${String(r.id || idx + 1).padStart(3, '0')}`,
-                orderId: `#${r.order_id ? (String(r.order_id).length > 5 ? r.order_id : `408-${r.order_id}92817`) : (r.order_number || '408-1234567')}`,
-                orderDisplayId: r.order_id ? (String(r.order_id).length > 5 ? String(r.order_id) : `408-${r.order_id}92817`) : (r.order_number || '408-1234567'),
+                returnId: r.external_return_id || r.return_number || '',
+                orderId: r.order_id ? `#${String(r.order_id)}` : (r.order_number ? `#${r.order_number}` : ''),
+                orderDisplayId: r.order_id ? String(r.order_id) : (r.order_number || ''),
                 marketplace: mkt,
                 product: {
-                  name: r.product?.name || r.product_title || 'Stainless Steel Bottle 1L',
+                  name: r.product?.name || r.product_title || '',
                   sku: r.product?.sku || r.sku || 'SB-1L-001',
                   imageType: r.product?.imageType || (r.sku?.includes('TUM') ? 'tumbler' : r.sku?.includes('MUG') ? 'mug' : 'bottle-black'),
                   price: r.refund_amount || 499,
@@ -85,7 +85,7 @@ export default function ReturnsWorkspace({
                 customer: {
                   name: r.customer?.name || r.customer_name || 'Verified Buyer',
                   email: r.customer?.email || `${(r.customer_name || 'buyer').toLowerCase().replace(/\s+/g, '.')}@example.com`,
-                  phone: r.customer?.phone || '+91 98765 43210',
+                  phone: r.customer?.phone || '',
                   initials: (r.customer?.initials) || (r.customer_name || 'VB').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
                 },
                 reason: r.reason || 'Item not as described',
@@ -125,8 +125,7 @@ export default function ReturnsWorkspace({
   // Tab counts
   const tabCounts = useMemo(() => {
     return {
-      all: 284,
-      pending: 36,
+      all: 0, pending: 0,
       approved: 142,
       refunded: 96,
       replacement: 28,
@@ -433,7 +432,7 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Total Returns</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">284</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returns.length}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
                     <span>↑ 12.5%</span>
                     <span className="text-slate-400 font-normal">vs last 30 days</span>
@@ -450,7 +449,7 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Pending Action</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">36</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returns.filter((r) => r.status === "pending").length}</div>
                   <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
                     <span>↑ 38.5%</span>
                   </div>
@@ -924,7 +923,7 @@ export default function ReturnsWorkspace({
             {/* 7. Pagination Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-1">
               <div>
-                Showing 1 to {Math.min(10, filteredReturns.length)} of 284 returns
+                Showing 1 to {Math.min(10, filteredReturns.length)} of {returns.length} returns
               </div>
 
               <div className="flex items-center gap-1">
