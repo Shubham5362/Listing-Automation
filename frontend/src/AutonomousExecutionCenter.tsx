@@ -2,7 +2,7 @@ import React from 'react';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
-export default function AutonomousExecutionCenter({ sellerAccountId = 1 }: { sellerAccountId?: number }) {
+export default function AutonomousExecutionCenter({ sellerAccountId }: { sellerAccountId: number }) {
   const [dashboard, setDashboard] = React.useState<any>(null);
   const [opportunities, setOpportunities] = React.useState<any[]>([]);
   const [error, setError] = React.useState('');
