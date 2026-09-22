@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export default function FinalSellerOSWorkspace({ sellerAccountId = 1 }: { sellerAccountId?: number }) {
+export default function FinalSellerOSWorkspace({ sellerAccountId }: { sellerAccountId: number }) {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
 
