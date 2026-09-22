@@ -409,7 +409,7 @@ export default function InventoryDetailsDrawer({
               <h3 className="font-bold text-slate-900 text-xs">Warehouse Distribution</h3>
               <div className="space-y-2 pt-1">
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-600">{item.warehouse || 'Warehouse not specified'}</span>
+                  <span className="text-slate-600">{(item as any).warehouse || 'Warehouse not specified'}</span>
                   <span className="font-bold text-slate-900">{Math.round(item.currentStock * 0.65)} units</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
