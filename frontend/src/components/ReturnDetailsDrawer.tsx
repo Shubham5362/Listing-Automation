@@ -64,7 +64,7 @@ export default function ReturnDetailsDrawer({
     if (!newNoteText.trim()) return;
     const note = {
       id: `n-${Date.now()}`,
-      author: 'Shubham',
+      author: 'You',
       date: 'Just now',
       text: newNoteText.trim(),
     };
