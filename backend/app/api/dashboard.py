@@ -259,8 +259,8 @@ def dashboard(
     }
 
     profit_trend_list = [
-        {"day": p["day"], "profit": round(p["total"] * 0.88, 2)}
-        for p in timeline_points
+        {"day": (datetime.fromisoformat(key).strftime("%b %d") if "T" in key else key), "profit": round(v["revenue"] - v["expenses"], 2)}
+        for key, v in sorted(trend.items())
     ]
 
     status_counts = defaultdict(int)
@@ -302,9 +302,9 @@ def dashboard(
             "sync_status": "Synced" if acc.is_connected else "Sync Failed",
             "listings": int(l_cnt),
             "listings_count": int(l_cnt),
-            "health_score": 96 if acc.is_connected else 40,
+            "health_score": 100 if acc.is_connected else 0,
             "issues_count": 0 if acc.is_connected else 1,
-            "last_sync": "Synced 15m ago" if acc.is_connected else "Not connected",
+            "last_sync": acc.last_sync_at.isoformat() if acc.last_sync_at else None,
             "api_status": "Operational" if acc.is_connected else "Action Required",
             "connected": bool(acc.is_connected),
         })
@@ -379,7 +379,7 @@ def dashboard(
             "subtitle": f"Reason: {r.reason}. Refund amount: ₹{r.refund_amount}",
             "badge": "Action Required",
             "badgeColor": "bg-orange-50 text-orange-700 border border-orange-200",
-            "riskText": "SLA countdown: 24h remaining to verify or dispute",
+            "riskText": "Review the return request and available evidence.",
             "primaryAction": "Approve Refund",
             "secondaryAction": "Inspect Details",
             "actionType": "review_return",
@@ -394,7 +394,7 @@ def dashboard(
             "id": idx + 1,
             "type": "order",
             "title": f"Order #{o.external_order_id} ({mkt_name}) for ₹{int(o.total_amount)} - {o.status.capitalize()}",
-            "time": "Today",
+            "time": o.ordered_at.isoformat(),
             "icon": "Package",
         })
 
@@ -402,7 +402,7 @@ def dashboard(
         "alert": f"Inventory Reorder Alert: {low_stock_items} SKUs below reorder safety stock",
         "context": f"Sales velocity on Amazon & Flipkart is tracking at {units} units/month with {round(buy_box_rate, 1)}% Buy Box retention.",
         "finding": f"Stockout detected for {inv_oos} SKU(s). Supplier lead time is ~7 days.",
-        "why": "Immediate reordering will protect your Prime/Assured badges and prevent revenue loss of up to ₹18,500 over the next week.",
+        "why": "Low-stock items are at or below their configured reorder level.",
         "recommendation": "Review suggested purchase orders in Inventory or trigger automated supplier procurement.",
         "status": "Action Needed",
     }
