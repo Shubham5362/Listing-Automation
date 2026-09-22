@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
@@ -97,7 +97,7 @@ def upsert_inventory(payload: InventoryUpsertRequest, user: User = Depends(get_c
 @router.post("/sync")
 def sync_inventory(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, Any]:
     seller_ids = select(SellerAccount.id).where(SellerAccount.user_id == user.id)
-    synced_skus = db.scalar(select(__import__('sqlalchemy', fromlist=['func']).func.count(InventoryItem.id)).where(InventoryItem.seller_account_id.in_(seller_ids))) or 0
+    synced_skus = db.scalar(select(func.count(InventoryItem.id)).where(InventoryItem.seller_account_id.in_(seller_ids))) or 0
     return {"success": True, "message": "Inventory sync scope verified from seller inventory records.", "synced_at": datetime.utcnow().isoformat(), "synced_skus": int(synced_skus)}
 
 
