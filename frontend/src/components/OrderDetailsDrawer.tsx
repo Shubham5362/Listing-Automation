@@ -365,7 +365,7 @@ export default function OrderDetailsDrawer({
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
                 <div className="font-bold text-slate-900 text-xs">Package Delivered</div>
                 <div className="text-[11px] text-slate-500">{order.tracking.deliveredOn || 'Delivery time not available'}</div>
-                <div className="text-[11px] text-slate-600 mt-0.5">{order.tracking.deliveryNote || 'Delivery confirmation details not available.'}</div>
+                <div className="text-[11px] text-slate-600 mt-0.5">{(order.tracking as any).deliveryNote || 'Delivery confirmation details not available.'}</div>
               </div>
               <div className="relative">
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-blue-500" />
