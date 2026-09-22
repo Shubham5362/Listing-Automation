@@ -116,7 +116,7 @@ export default function ListingDetailsDrawer({
   };
 
   // Circular gauge score calculation for listing quality
-  const quality = listing.listingQuality || 92;
+  const quality = listing.listingQuality ?? 0;
   const circumference = 2 * Math.PI * 34; // radius 34 -> circumference ~ 213.6
   const strokeDashoffset = circumference - (circumference * quality) / 100;
   const qualityRatingText =
@@ -332,7 +332,7 @@ export default function ListingDetailsDrawer({
                 {/* MRP */}
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">MRP</span>
-                  <span className="font-medium text-slate-600">₹{listing.mrp || 799}</span>
+                  <span className="font-medium text-slate-600">₹{listing.mrp ?? '—'}</span>
                 </div>
 
                 {/* Discount */}
@@ -404,7 +404,7 @@ export default function ListingDetailsDrawer({
                 {/* Fulfilled By */}
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Fulfilled By</span>
-                  <span className="font-semibold text-slate-900">{listing.fulfilledBy || 'Amazon (FBA)'}</span>
+                  <span className="font-semibold text-slate-900">{listing.fulfilledBy || 'Not specified'}</span>
                 </div>
               </div>
             </div>
