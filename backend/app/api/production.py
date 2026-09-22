@@ -56,7 +56,7 @@ def set_policy(payload: PolicyIn, user: User = Depends(get_current_user), db: Se
 
 @router.post("/decision")
 def decision(payload: DecisionIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    p = policy_for(db, seller_id())
+    p = policy_for(db, seller_id(db, user))
     switch = db.scalar(select(AutonomousKillSwitch).where(AutonomousKillSwitch.seller_account_id == seller_id(db, user)))
     paused = bool(switch and switch.enabled)
     allowed = should_auto_execute(mode=p.mode, risk=payload.risk, confidence=payload.confidence, financial_impact=payload.financial_impact, policy=p, daily_actions=payload.daily_actions, execution_paused=paused)
