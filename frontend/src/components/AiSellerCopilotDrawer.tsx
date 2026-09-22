@@ -46,14 +46,7 @@ export default function AiSellerCopilotDrawer({
   const [activeTab, setActiveTab] = useState<'Insight' | 'Ask' | 'Actions'>('Insight');
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'assistant',
-      text: 'Good morning Shubham! I have reviewed today’s operations. You are tracking **₹2,41,820** in sales. I flagged an urgent stockout risk on **SKU ABC123** (only 2.1 days cover remaining). How can I assist you right now?',
-      timestamp: 'Just now',
-    },
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
