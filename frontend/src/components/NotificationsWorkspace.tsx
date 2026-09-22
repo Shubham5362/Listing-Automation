@@ -98,7 +98,7 @@ export default function NotificationsWorkspace({
               title: n.title || 'System Notification',
               description: n.message || n.description || '',
               category: category,
-              marketplace: idx % 2 === 0 ? 'Amazon' : 'Flipkart',
+              marketplace: n.marketplace || null,
               time: n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today',
               status: n.read_at ? 'Read' : 'Unread',
               iconType: iconType,
@@ -182,13 +182,13 @@ export default function NotificationsWorkspace({
 
     return {
       unreadTotal,
-      critical: 1,
-      orders: 2,
-      listings: 3,
-      inventory: 1,
-      finance: 2,
-      system: 2,
-      promotions: 1
+      critical,
+      orders,
+      listings,
+      inventory,
+      finance,
+      system,
+      promotions
     };
   }, [notifications]);
 
@@ -481,7 +481,7 @@ export default function NotificationsWorkspace({
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
               activeCategoryTab === 'All' ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
             }`}>
-              3
+              {notifications.length}
             </span>
           </button>
 
@@ -1606,7 +1606,7 @@ export default function NotificationsWorkspace({
                 <label className="block text-slate-700 font-semibold mb-1">Primary Email for Alerts</label>
                 <input
                   type="email"
-                  defaultValue="shubham@sellerhub.io"
+                  defaultValue=""
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
                 />
               </div>
@@ -1615,7 +1615,7 @@ export default function NotificationsWorkspace({
                 <label className="block text-slate-700 font-semibold mb-1">SMS / WhatsApp Mobile Number</label>
                 <input
                   type="tel"
-                  defaultValue="+91 98765 43210"
+                  defaultValue=""
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
                 />
               </div>
