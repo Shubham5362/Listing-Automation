@@ -78,22 +78,22 @@ export default function ReturnsWorkspace({
                 marketplace: mkt,
                 product: {
                   name: r.product?.name || r.product_title || '',
-                  sku: r.product?.sku || r.sku || 'SB-1L-001',
-                  imageType: r.product?.imageType || (r.sku?.includes('TUM') ? 'tumbler' : r.sku?.includes('MUG') ? 'mug' : 'bottle-black'),
-                  price: r.refund_amount || 499,
+                  sku: r.product?.sku || r.sku || '',
+                  imageType: r.product?.imageType || undefined,
+                  price: r.refund_amount ?? 0,
                 },
                 customer: {
-                  name: r.customer?.name || r.customer_name || 'Verified Buyer',
-                  email: r.customer?.email || `${(r.customer_name || 'buyer').toLowerCase().replace(/\s+/g, '.')}@example.com`,
+                  name: r.customer?.name || r.customer_name || '',
+                  email: r.customer?.email || '',
                   phone: r.customer?.phone || '',
-                  initials: (r.customer?.initials) || (r.customer_name || 'VB').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+                  initials: r.customer?.initials || '',
                 },
-                reason: r.reason || 'Item not as described',
+                reason: r.reason || '',
                 status: status,
-                requestedOn: reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                requestedOnFull: reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-                returnWindow: 'Within policy',
-                refundAmount: r.refund_amount || 499,
+                requestedOn: r.requested_at || r.created_at ? reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+                requestedOnFull: r.requested_at || r.created_at ? reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
+                returnWindow: r.return_window || '',
+                refundAmount: r.refund_amount ?? 0,
               };
             });
             setReturnsList(mapped);
