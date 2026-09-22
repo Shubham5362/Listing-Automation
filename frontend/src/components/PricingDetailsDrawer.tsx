@@ -489,7 +489,7 @@ export default function PricingDetailsDrawer({
           <div className="space-y-3">
             <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="font-bold text-slate-900">8 Active Competitors</span>
+                <span className="font-bold text-slate-900">{(((item as any).competitors || []) as any[]).length} Active Competitors</span>
                 <span className="text-[11px] text-slate-500">Sorted by Price (Low to High)</span>
               </div>
 
@@ -565,25 +565,15 @@ export default function PricingDetailsDrawer({
               </div>
 
               <div className="space-y-2">
-                <div className="p-3 rounded-lg border border-indigo-200 bg-indigo-50/40 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900">Buy Box Maximizer (Default)</span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-600 text-white font-bold">Active</span>
+                {(((item as any).pricingRules || []) as any[]).length ? (((item as any).pricingRules || []) as any[]).map((rule: any, idx: number) => (
+                  <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-white space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900">{rule.name || rule.title || 'Pricing rule'}</span>
+                      <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-200 text-slate-700 font-bold">{rule.status || 'Configured'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">{rule.description || rule.reason || 'No rule description available.'}</p>
                   </div>
-                  <p className="text-[11px] text-slate-600">
-                    Stay ₹1 lower than the Buy Box price as long as price is above Min Price (₹{item.minPrice}).
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-lg border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900">Margin Guard Floor</span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-200 text-slate-700 font-bold">Enforced</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    Never discount below 20% gross margin (Min Price ₹{item.minPrice}).
-                  </p>
-                </div>
+                )) : <p className="text-[11px] text-slate-500">No pricing rules available.</p>}
               </div>
             </div>
           </div>
