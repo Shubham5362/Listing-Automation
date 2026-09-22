@@ -34,6 +34,8 @@ import {
   Sliders,
   CheckSquare
 } from 'lucide-react';
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 import { AmazonBadgeIcon, FlipkartBadgeIcon, MeeshoBadgeIcon, MyntraBadgeIcon } from './AutomationsWorkspace';
 
 // Pre-defined catalog items for "Import from Catalog"
@@ -187,7 +189,7 @@ export default function AiListingStudioWorkspace({
   const handleGenerateWithAi = async () => {
     setIsGeneratingAi(true);
     try {
-      const res = await fetch('/api/v1/personal/ai/seller-agent/chat', {
+      const res = await fetch(`${API_BASE}/api/v1/personal/ai/seller-agent/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

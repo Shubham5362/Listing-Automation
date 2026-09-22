@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { CopilotInsight } from '../types';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
 interface AiSellerCopilotDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -80,7 +82,7 @@ export default function AiSellerCopilotDrawer({
     setIsSending(true);
 
     try {
-      const response = await fetch('/api/v1/personal/ai/seller-agent/chat', {
+      const response = await fetch(`${API_BASE}/api/v1/personal/ai/seller-agent/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -260,7 +262,7 @@ export default function AiSellerCopilotDrawer({
                       Pricing Opportunity
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      5 SKUs can increase margin by 3–6%
+                      Review live pricing data for margin opportunities
                     </div>
                   </div>
                 </div>
@@ -350,7 +352,7 @@ export default function AiSellerCopilotDrawer({
                 Sync Suppressed Listings
               </div>
               <p className="text-slate-600 text-[11px]">
-                Auto-fix 3 Amazon suppressed listings with validated HSN codes and image tags.
+                Review suppressed listings using the current Seller Hub listing data.
               </p>
               <button
                 onClick={() => onSelectSecondaryInsight('fix_listings')}
@@ -366,7 +368,7 @@ export default function AiSellerCopilotDrawer({
                 Apply Dynamic Pricing
               </div>
               <p className="text-slate-600 text-[11px]">
-                Raise prices by 3–6% on 5 products with 100% buy box dominance.
+                Review dynamic pricing opportunities using current pricing and margin data.
               </p>
               <button
                 onClick={() => onSelectSecondaryInsight('review_pricing')}
