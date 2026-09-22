@@ -885,15 +885,6 @@ export default function ControlCenterWorkspace({
               <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs text-slate-400">
                 No detailed system metrics available yet.
               </div>
-                <div className="flex justify-between text-[11px] text-slate-600">
-                  <span>Amazon SP-API North America / India</span>
-                  <span className="font-mono font-bold text-slate-900">—</span>
-                </div>
-                <div className="flex justify-between text-[11px] text-slate-600">
-                  <span>Flipkart Seller Edge Gateway</span>
-                  <span className="font-mono font-bold text-slate-900">—</span>
-                </div>
-              </div>
             </div>
 
             <div className="flex justify-end pt-3 border-t border-slate-100">
@@ -929,7 +920,7 @@ export default function ControlCenterWorkspace({
 
             <div className="space-y-3 text-xs">
               <p className="text-slate-600 leading-relaxed">
-                Need urgent assistance with a marketplace sync timeout or automation job failure? Our engineering escalation team is on standby 24/7.
+                Need assistance with a marketplace sync or automation issue? Submit the details below and the support workflow will handle the request.
               </p>
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">Issue Subject</label>
@@ -960,7 +951,7 @@ export default function ControlCenterWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                  showToast('Support ticket #TKT-9912 created. Engineer dispatched.');
+                  showToast('Support request submitted successfully.');
                   setIsSupportModalOpen(false);
                 }}
                 className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold"
