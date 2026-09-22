@@ -33,13 +33,15 @@ def test_personal_agent_context_and_inventory_recommendation(db_session):
     assert brief["no_unapproved_actions_executed"] is True
 
 
-def test_personal_agent_chat_routes_inventory_intent(db_session):
+def test_personal_agent_chat_uses_conservative_fallback_without_llm(db_session):
     seller = SellerAccount(name="My Business", user_id=None, is_active=True)
     db_session.add(seller)
     db_session.commit()
 
     result = PersonalAISellerAgentService(db_session).chat("Which inventory needs attention?")
 
-    assert result["intent"] == "inventory"
+    # Semantic routing belongs to the configured LLM/tool planner. Without an LLM,
+    # the fallback must not pretend to infer intent from keywords.
+    assert result["intent"] == "business_health"
     assert result["approval_required"] is True
     assert result["created_actions"] == []
