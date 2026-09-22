@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.security import CredentialEncryptionError, encrypt_credentials
 from app.db.session import get_db
-from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
+from app.models.core import MarketplaceAccount, SellerAccount, User
+from app.marketplaces.catalog import get_channel_catalog_item
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -17,7 +18,7 @@ class SellerAccountCreate(BaseModel):
 
 class MarketplaceAccountCreate(BaseModel):
     seller_account_id: int
-    marketplace: str = Field(min_length=1, max_length=30)
+    marketplace: str = Field(min_length=1, max_length=80)
     display_name: str = Field(min_length=1, max_length=200)
     external_account_id: str | None = None
     credentials: dict[str, object] | None = None
@@ -48,7 +49,7 @@ def create_marketplace_account(payload: MarketplaceAccountCreate, user: User = D
     if not seller:
         raise HTTPException(status_code=404, detail="Seller account not found")
     marketplace_value = payload.marketplace.strip().lower()
-    if marketplace_value not in {marketplace.value for marketplace in Marketplace}:
+    if get_channel_catalog_item(marketplace_value) is None:
         raise HTTPException(status_code=422, detail="Unsupported marketplace")
     credentials_ref = None
     if payload.credentials is not None:

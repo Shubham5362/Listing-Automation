@@ -17,6 +17,7 @@ from app.models.inventory import InventoryItem as CentralInventoryItem
 from app.models.inventory import InventoryMovement, InventoryMovementType
 from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunStatus
 from app.models.orders import Order, OrderItem, OrderStatus
+from app.marketplaces.catalog import get_channel_catalog_item
 
 
 class MarketplaceSyncError(RuntimeError):
@@ -179,6 +180,11 @@ def _finish(db: Session, run: MarketplaceSyncRun, status: MarketplaceSyncRunStat
 
 def sync_marketplace_account(db: Session, account: MarketplaceAccount) -> dict[str, Any]:
     """Run a resilient, idempotent marketplace sync and persist execution history."""
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise MarketplaceSyncError("Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise MarketplaceSyncError("No live adapter is registered for this marketplace")
     run = _new_run(db, account)
     result: dict[str, Any] = {"run_id": run.id, "account_id": account.id, "marketplace": account.marketplace, "products": 0, "inventory": 0, "orders": 0, "prices": 0, "errors": {}}
     try:

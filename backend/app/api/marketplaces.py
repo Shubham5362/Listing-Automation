@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
 from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
+from app.marketplaces.catalog import get_channel_catalog_item, list_channel_catalog
 from app.models.marketplace_sync import MarketplaceSyncRun
 from app.services.jobs import enqueue_job
 
@@ -23,7 +24,7 @@ class ConnectionTestRequest(BaseModel):
 
 @router.get("", response_model=list[str])
 def supported_marketplaces() -> list[str]:
-    return [marketplace.value for marketplace in Marketplace]
+    return [str(item["id"]) for item in list_channel_catalog()]
 
 
 def _owned_account(db: Session, account_id: int, user_id: int) -> MarketplaceAccount:
@@ -45,10 +46,15 @@ def _credentials(account: MarketplaceAccount) -> dict[str, object] | None:
 @router.post("/connection-test")
 def connection_test(payload: ConnectionTestRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict[str, object]:
     account = _owned_account(db, payload.marketplace_account_id, current_user.id)
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise HTTPException(status_code=422, detail="Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise HTTPException(status_code=422, detail="No live adapter is registered for this marketplace")
     try:
         marketplace = Marketplace(account.marketplace)
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail="Unsupported marketplace") from exc
+        raise HTTPException(status_code=422, detail="No live adapter is registered for this marketplace") from exc
     client = build_marketplace_client(marketplace, credentials=_credentials(account))
     context = MarketplaceAccountContext(account_id=account.id, marketplace=marketplace, external_account_id=account.external_account_id)
     try:
@@ -69,6 +75,11 @@ def connection_test(payload: ConnectionTestRequest, db: Session = Depends(get_db
 @router.post("/{marketplace_account_id}/sync", status_code=202)
 def sync_account(marketplace_account_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict[str, object]:
     account = _owned_account(db, marketplace_account_id, current_user.id)
+    catalog_item = get_channel_catalog_item(account.marketplace)
+    if catalog_item is None:
+        raise HTTPException(status_code=422, detail="Unsupported marketplace")
+    if catalog_item["integration_status"] != "connected_adapter":
+        raise HTTPException(status_code=422, detail="No live adapter is registered for this marketplace")
     try:
         job = enqueue_job(
             db,
