@@ -125,11 +125,12 @@ export default function ReturnsWorkspace({
   // Tab counts
   const tabCounts = useMemo(() => {
     return {
-      all: 0, pending: 0,
-      approved: 142,
-      refunded: 96,
-      replacement: 28,
-      rejected: 18,
+      all: returnsList.length,
+      pending: returnsList.filter(r => r.status === 'Pending').length,
+      approved: returnsList.filter(r => r.status === 'Approved').length,
+      refunded: returnsList.filter(r => r.status === 'Refunded').length,
+      replacement: returnsList.filter(r => r.status === 'Replacement').length,
+      rejected: returnsList.filter(r => r.status === 'Rejected').length,
     };
   }, []);
 
