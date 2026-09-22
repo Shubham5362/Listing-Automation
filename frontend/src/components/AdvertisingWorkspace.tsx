@@ -78,7 +78,7 @@ export default function AdvertisingWorkspace({
   React.useEffect(() => {
     const fetchBackendCampaigns = async () => {
       try {
-        const res = await fetch('/api/v1/advertising');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/advertising');
         if (res.ok) {
           const json = await res.json();
           if (json.items && json.items.length > 0) {
@@ -163,7 +163,7 @@ export default function AdvertisingWorkspace({
     try {
       await Promise.all(
         ids.map((id) =>
-          fetch(`/api/v1/advertising/${id}`, {
+          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Paused' })
@@ -189,7 +189,7 @@ export default function AdvertisingWorkspace({
     try {
       await Promise.all(
         ids.map((id) =>
-          fetch(`/api/v1/advertising/${id}`, {
+          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Active' })
@@ -846,7 +846,7 @@ export default function AdvertisingWorkspace({
             );
             showAlert(`Campaign ${newStatus.toLowerCase()} successfully.`);
             try {
-              await fetch(`/api/v1/advertising/${id}`, {
+              await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -864,7 +864,7 @@ export default function AdvertisingWorkspace({
             );
             showAlert(`Daily budget updated to ₹${newBudget}`);
             try {
-              await fetch(`/api/v1/advertising/${id}`, {
+              await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ daily_budget: newBudget })

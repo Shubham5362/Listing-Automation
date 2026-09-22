@@ -72,7 +72,7 @@ export default function InventoryWorkspace({
   useEffect(() => {
     const fetchBackendInventory = async () => {
       try {
-        const res = await fetch('/api/v1/inventory');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/inventory');
         if (res.ok) {
           const json = await res.json();
           if (json.items && json.items.length > 0) {
@@ -256,7 +256,7 @@ export default function InventoryWorkspace({
       });
     }
     try {
-      await fetch(`/api/v1/inventory/${targetItem.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newStock })
@@ -281,7 +281,7 @@ export default function InventoryWorkspace({
       setSelectedItem({ ...targetItem, reorderPoint: newPoint, status: newStatus });
     }
     try {
-      await fetch(`/api/v1/inventory/${targetItem.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reorder_level: newPoint })
@@ -314,7 +314,7 @@ export default function InventoryWorkspace({
       });
     }
     try {
-      await fetch(`/api/v1/catalog/${targetItem.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mrp: newPrice })
@@ -354,7 +354,7 @@ export default function InventoryWorkspace({
                 onClick={async () => {
                   showToast('Synchronizing inventory with Amazon & Flipkart...');
                   try {
-                    const res = await fetch('/api/v1/inventory/sync', { method: 'POST' });
+                    const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/inventory/sync', { method: 'POST' });
                     const d = await res.json();
                     showToast(d.message || 'Inventory synchronized successfully!');
                   } catch (e) {
@@ -949,7 +949,7 @@ export default function InventoryWorkspace({
             showToast(`${action} initiated for ${it.sku}...`);
             try {
               if (action.toLowerCase().includes('reorder') || action.toLowerCase().includes('po')) {
-                await fetch('/api/v1/actions/reorder', {
+                await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ sku: it.sku, quantity: Math.max(it.reorderPoint - it.availableStock, 1) })
@@ -1036,7 +1036,7 @@ export default function InventoryWorkspace({
                         setModalAction(null);
                         showToast('Generating reorder plan...');
                         try {
-                          await fetch('/api/v1/actions/reorder', {
+                          await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })
@@ -1061,7 +1061,7 @@ export default function InventoryWorkspace({
                         setModalAction(null);
                         showToast('Generating reorder plan...');
                         try {
-                          await fetch('/api/v1/actions/reorder', {
+                          await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })

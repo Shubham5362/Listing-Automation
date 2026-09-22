@@ -73,7 +73,7 @@ export default function OrdersWorkspace({
   useEffect(() => {
     const fetchBackendOrders = async () => {
       try {
-        const res = await fetch('/api/v1/orders');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/orders');
         if (res.ok) {
           const data = await res.json();
           const list = Array.isArray(data) ? data : (data.items || []);
@@ -159,7 +159,7 @@ export default function OrdersWorkspace({
   const handleSyncNow = async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch('/api/v1/orders');
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/orders');
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.items || []);
@@ -296,7 +296,7 @@ export default function OrdersWorkspace({
       URL.revokeObjectURL(url);
     } else if (action === 'shipped') {
       try {
-        await fetch('/api/v1/orders/bulk-action', {
+        await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/orders/bulk-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'shipped', order_ids: selectedOrderIds })
@@ -311,7 +311,7 @@ export default function OrdersWorkspace({
       setSelectedOrderIds([]);
     } else if (action === 'cancel') {
       try {
-        await fetch('/api/v1/orders/bulk-action', {
+        await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/orders/bulk-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'cancel', order_ids: selectedOrderIds })
@@ -1103,7 +1103,7 @@ export default function OrdersWorkspace({
             } else if (actionName === 'buy_again') {
               showToast(`Restock PO initiated for items in #${o.orderNumber}...`);
               try {
-                await fetch('/api/v1/actions/reorder', {
+                await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ sku: o.products[0]?.sku || 'SKU-001', quantity: 50 })
@@ -1115,7 +1115,7 @@ export default function OrdersWorkspace({
             } else if (actionName === 'create_return') {
               showToast(`Initiating return process for #${o.orderNumber}...`);
               try {
-                await fetch(`/api/v1/orders/${o.orderNumber}/return`, {
+                await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/orders/${o.orderNumber}/return`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ reason: 'Buyer requested return', refundAmount: o.amount })

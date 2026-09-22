@@ -60,7 +60,7 @@ export default function ReturnsWorkspace({
   React.useEffect(() => {
     const fetchBackendReturns = async () => {
       try {
-        const res = await fetch('/api/v1/returns');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/returns');
         if (res.ok) {
           const json = await res.json();
           const list = Array.isArray(json) ? json : (json.items || []);
@@ -202,7 +202,7 @@ export default function ReturnsWorkspace({
       setSelectedReturn((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
     try {
-      await fetch(`/api/v1/returns/${id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -229,7 +229,7 @@ export default function ReturnsWorkspace({
     try {
       await Promise.all(
         idsToUpdate.map((id) =>
-          fetch(`/api/v1/returns/${id}`, {
+          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })

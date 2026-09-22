@@ -105,7 +105,7 @@ export default function DiagnosticsWorkspace({
   const [diagnosticActivity, setDiagnosticActivity] = useState<DiagnosticActivity[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/diagnostics-overview')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/diagnostics-overview')
       .then(res => res.json())
       .then(data => {
         if (data.healthChecks) setHealthChecks(data.healthChecks);

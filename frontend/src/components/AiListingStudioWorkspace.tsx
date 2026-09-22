@@ -74,7 +74,7 @@ export default function AiListingStudioWorkspace({
   const [catalogSources, setCatalogSources] = useState<CatalogSourceItem[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/products')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/products')
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data) ? data : (data.items || []);

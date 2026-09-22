@@ -7,7 +7,7 @@ export default function ProductionAutonomyCenter() {
   const [health, setHealth] = useState<Health | null>(null)
   const [policy, setPolicy] = useState<Policy | null>(null)
   useEffect(() => {
-    Promise.all([fetch('/api/v1/production/health'), fetch('/api/v1/production/policy')])
+    Promise.all([fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/production/health'), fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/production/policy')])
       .then(async ([h, p]) => { setHealth(await h.json()); setPolicy(await p.json()) })
       .catch(() => undefined)
   }, [])

@@ -273,7 +273,7 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
   // Irreversible actions
 
   useEffect(() => {
-    fetch('/api/v1/settings')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/settings')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
@@ -312,7 +312,7 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
 
   const handleSaveChanges = async () => {
     try {
-      await fetch('/api/v1/settings', {
+      await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
