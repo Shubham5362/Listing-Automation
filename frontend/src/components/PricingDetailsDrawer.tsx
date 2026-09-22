@@ -405,11 +405,10 @@ export default function PricingDetailsDrawer({
                 </div>
                 <div className="space-y-1">
                   <div className="font-bold text-slate-900 text-xs">
-                    Price is well positioned!
+                    {item.aiInsightText ? 'AI pricing insight' : 'No AI pricing insight available'}
                   </div>
                   <p className="text-slate-600 text-[11px] leading-relaxed font-normal">
-                    {item.aiInsightText ||
-                      "You're 8% above the minimum price and winning the Buy Box. Consider a small discount to increase sales volume."}
+                    {item.aiInsightText || 'Connect pricing data to generate an AI insight.'}
                   </p>
                 </div>
               </div>
