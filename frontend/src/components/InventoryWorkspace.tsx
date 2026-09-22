@@ -1028,8 +1028,8 @@ export default function InventoryWorkspace({
                 <div className="space-y-2">
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
                     <div>
-                      <div className="font-bold text-slate-900">Insulated Tumbler 500ml</div>
-                      <div className="text-[11px] text-slate-500">Runway: 1.3 days left</div>
+                      <div className="font-bold text-slate-900">Selected SKU</div>
+                      <div className="text-[11px] text-slate-500">Current stock: live data</div>
                     </div>
                     <button
                       onClick={async () => {
@@ -1041,20 +1041,20 @@ export default function InventoryWorkspace({
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ sku: selectedItem?.sku, quantity: selectedItem ? Math.max(selectedItem.reorderPoint - selectedItem.availableStock, 1) : 1 })
                           });
-                          showToast('PO for 100 units drafted with supplier');
+                          showToast('PO for recommended quantity drafted with supplier');
                         } catch (e) {
-                          showToast('PO for 100 units drafted');
+                          showToast('PO for recommended quantity drafted');
                         }
                       }}
                       className="px-2.5 py-1 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-700"
                     >
-                      Reorder 100
+                      Create Reorder
                     </button>
                   </div>
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
                     <div>
-                      <div className="font-bold text-slate-900">Kids Bottle 500ml</div>
-                      <div className="text-[11px] text-slate-500">Runway: 1.6 days left</div>
+                      <div className="font-bold text-slate-900">Selected SKU</div>
+                      <div className="text-[11px] text-slate-500">Reorder point: live data</div>
                     </div>
                     <button
                       onClick={async () => {
