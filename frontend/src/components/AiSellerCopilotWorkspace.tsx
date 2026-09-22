@@ -243,7 +243,7 @@ export default function AiSellerCopilotWorkspace({
           templateId: 'ai-copilot-bulk-listing',
           marketplaces: activePlan.marketplaces,
           totalProducts: activePlan.totalProducts,
-          dailyLimit: activePlan.dailyLimit
+          dailyLimit: Number.parseInt(activePlan.dailyLimit, 10) || 0
         })
       });
     } catch {
