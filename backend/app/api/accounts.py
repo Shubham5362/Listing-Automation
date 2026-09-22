@@ -49,7 +49,7 @@ def create_marketplace_account(payload: MarketplaceAccountCreate, user: User = D
     if not seller:
         raise HTTPException(status_code=404, detail="Seller account not found")
     marketplace_value = payload.marketplace.strip().lower()
-    if marketplace_value not in {marketplace.value for marketplace in Marketplace}:
+    if get_channel_catalog_item(marketplace_value) is None:
         raise HTTPException(status_code=422, detail="Unsupported marketplace")
     credentials_ref = None
     if payload.credentials is not None:
