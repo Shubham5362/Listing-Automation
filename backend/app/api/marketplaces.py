@@ -10,7 +10,7 @@ from app.core.security import CredentialEncryptionError, decrypt_credentials
 from app.db.session import get_db
 from app.integrations.base import MarketplaceAccountContext, MarketplaceIntegrationError
 from app.integrations.factory import build_marketplace_client
-from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User
+from app.models.core import Marketplace, MarketplaceAccount, SellerAccount, User\nfrom app.marketplaces.catalog import list_channel_catalog
 from app.models.marketplace_sync import MarketplaceSyncRun
 from app.services.jobs import enqueue_job
 
@@ -23,7 +23,7 @@ class ConnectionTestRequest(BaseModel):
 
 @router.get("", response_model=list[str])
 def supported_marketplaces() -> list[str]:
-    return [marketplace.value for marketplace in Marketplace]
+    return [str(item["id"]) for item in list_channel_catalog()]
 
 
 def _owned_account(db: Session, account_id: int, user_id: int) -> MarketplaceAccount:
