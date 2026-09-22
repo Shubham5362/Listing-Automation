@@ -17,7 +17,7 @@ export default function FinanceFeeBreakdownDonut() {
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (!data) return;
-        const rows = [
+        const rows: Array<[string, number]> = [
           ['Marketplace Fees', Number(data.marketplace_fees || 0)],
           ['Shipping', Number(data.shipping || 0)],
           ['Advertising', Number(data.advertising || 0)],

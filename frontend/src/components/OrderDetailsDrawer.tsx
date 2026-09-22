@@ -370,12 +370,12 @@ export default function OrderDetailsDrawer({
               <div className="relative">
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-blue-500" />
                 <div className="font-bold text-slate-900 text-xs">Out for Delivery</div>
-                <div className="text-[11px] text-slate-500">{order.tracking.shippedOn || 'Shipment time not available'}</div>
+                <div className="text-[11px] text-slate-500">Shipment time not available</div>
               </div>
               <div className="relative">
                 <span className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-slate-300" />
-                <div className="font-bold text-slate-900 text-xs">Dispatched from Delhi Hub</div>
-                <div className="text-[11px] text-slate-500">{order.tracking.pickedUpOn || 'Pickup time not available'}</div>
+                <div className="font-bold text-slate-900 text-xs">Dispatch</div>
+                <div className="text-[11px] text-slate-500">Pickup time not available</div>
               </div>
             </div>
           </div>
