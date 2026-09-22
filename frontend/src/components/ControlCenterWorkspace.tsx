@@ -561,91 +561,11 @@ export default function ControlCenterWorkspace({
               </button>
             </div>
 
-            <div className="space-y-3">
-              {/* Amazon */}
-              <div
-                onClick={() => setSelectedMarketplaceModal('Amazon')}
-                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/70 p-1.5 rounded-xl transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  {renderMarketplaceLogo('Amazon', 'w-6 h-6')}
-                  <div>
-                    <div className="text-xs font-semibold text-slate-800">Amazon</div>
-                    <div className="text-[10px] text-slate-400">Last sync: 10:24 AM</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    ● Synced
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                </div>
-              </div>
-
-              {/* Flipkart */}
-              <div
-                onClick={() => setSelectedMarketplaceModal('Flipkart')}
-                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/70 p-1.5 rounded-xl transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  {renderMarketplaceLogo('Flipkart', 'w-6 h-6')}
-                  <div>
-                    <div className="text-xs font-semibold text-slate-800">Flipkart</div>
-                    <div className="text-[10px] text-slate-400">Last sync: 10:18 AM</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    ● Synced
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                </div>
-              </div>
-
-              {/* Meesho */}
-              <div
-                onClick={() => setSelectedMarketplaceModal('Meesho')}
-                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/70 p-1.5 rounded-xl transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  {renderMarketplaceLogo('Meesho', 'w-6 h-6')}
-                  <div>
-                    <div className="text-xs font-semibold text-slate-800">Meesho</div>
-                    <div className="text-[10px] text-slate-400">Last sync: 10:20 AM</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    ● Synced
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                </div>
-              </div>
-
-              {/* Myntra */}
-              <div
-                onClick={() => setSelectedMarketplaceModal('Myntra')}
-                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/70 p-1.5 rounded-xl transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  {renderMarketplaceLogo('Myntra', 'w-6 h-6')}
-                  <div>
-                    <div className="text-xs font-semibold text-slate-800">Myntra</div>
-                    <div className="text-[10px] text-slate-400">Last sync: 09:55 AM</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                    ● Syncing
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                </div>
-              </div>
-            </div>
+            <div className="py-8 text-center text-xs text-slate-400">No marketplace sync data available yet.</div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span>Avg webhook latency</span>
-              <span className="font-semibold text-slate-600">142ms</span>
+              <span className="font-semibold text-slate-600">—</span>
             </div>
           </div>
 
@@ -662,77 +582,11 @@ export default function ControlCenterWorkspace({
               </button>
             </div>
 
-            <div className="space-y-2.5">
-              {/* 1. Database */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-700">Database</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  ● Healthy
-                </span>
-              </div>
-
-              {/* 2. API Services */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-700">API Services</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  ● Healthy
-                </span>
-              </div>
-
-              {/* 3. File Storage */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Folder className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-700">File Storage</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  ● Healthy
-                </span>
-              </div>
-
-              {/* 4. Background Workers */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-700">Background Workers</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  ● Healthy
-                </span>
-              </div>
-
-              {/* 5. Email Service */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-700">Email Service</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  ● Healthy
-                </span>
-              </div>
-
-              {/* 6. SMS Service */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-700">SMS Service</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  ● Healthy
-                </span>
-              </div>
-            </div>
+            <div className="py-8 text-center text-xs text-slate-400">No system health data available yet.</div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span>Incident status</span>
-              <span className="text-emerald-600 font-semibold">Zero open incidents</span>
+              <span className="font-semibold">—</span>
             </div>
           </div>
         </div>
