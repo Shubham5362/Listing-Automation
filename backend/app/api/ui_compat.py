@@ -550,10 +550,7 @@ def diagnostics_overview(user: User = Depends(get_current_user), db: Session = D
     return {
         "healthChecks": health_checks,
         "criticalIssues": critical_issues,
-        "resolvedIssues": [
-            {"id": "res-1", "title": "Marketplace Webhook Verification", "resolution": "Resolved automatically", "time": "Today"},
-            {"id": "res-2", "title": "Database Connection Pool Optimization", "resolution": "System verified", "time": "Today"}
-        ],
+        "resolvedIssues": [],
         "systemStatus": "All Systems Operational" if not critical_issues else f"{len(critical_issues)} Issue(s) Require Attention"
     }
 
