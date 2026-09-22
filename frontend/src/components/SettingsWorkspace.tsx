@@ -247,12 +247,7 @@ export const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({
   const [emailDelivery, setEmailDelivery] = useState('Weekly');
 
   // 19. Integrations & Webhooks
-  const [integrations, setIntegrations] = useState([
-    { id: 'gdrive', name: 'Google Drive', connected: true },
-    { id: 'slack', name: 'Slack', connected: false },
-    { id: 'webhooks', name: 'Webhooks', connected: true },
-    { id: 'accounting', name: 'Accounting Software', connected: false },
-  ]);
+  const [integrations, setIntegrations] = useState<Array<{ id: string; name: string; connected: boolean }>>([]);
 
   // 20. Appearance & Localization
   const [theme, setTheme] = useState<'Light' | 'Dark' | 'System'>('Light');
