@@ -324,7 +324,7 @@ def finance_workspace(user: User = Depends(get_current_user), db: Session = Depe
             "created_at": r.occurred_at.strftime("%b %d, %Y, %I:%M %p") if r.occurred_at else None,
             "description": r.description or f"Marketplace {tx_type}",
             "marketplace": "Flipkart" if "flipkart" in (r.description or "").lower() else "",
-            "order_number": r.description.split("#")[-1].strip() if r.description and "#" in r.description else "408-1234567",
+            "order_number": r.description.split("#")[-1].strip() if r.description and "#" in r.description else "",
         })
 
     return {
@@ -363,9 +363,9 @@ def returns_workspace(user: User = Depends(get_current_user), db: Session = Depe
 
         items.append({
             "id": r.id,
-            "returnId": r.external_return_id or f"RET-2024-{r.id:03d}",
-            "orderId": f"#{order.external_order_id if order else '408-1234567'}",
-            "orderDisplayId": order.external_order_id if order else "408-1234567",
+            "returnId": r.external_return_id or "",
+            "orderId": f"#{order.external_order_id if order else ""}",
+            "orderDisplayId": order.external_order_id if order else "",
             "marketplace": mkt,
             "product": {
                 "name": prod.title if prod else (order_item.title if order_item else ""),
@@ -445,7 +445,7 @@ def automations_workspace(user: User = Depends(get_current_user), db: Session = 
         status_str = "Running" if r.enabled else "Paused"
         cfg = r.trigger_config or {}
         schedule_text = cfg.get("cron", "Daily") if trigger_type == "Schedule" else ("Real-time" if trigger_type == "Event" else "Manual")
-        sub_text = cfg.get("time", "10:00 AM") if trigger_type == "Schedule" else "Post action"
+        sub_text = cfg.get("time", "") if trigger_type == "Schedule" else "Post action"
 
         items.append({
             "id": f"auto-{r.id}",
@@ -458,20 +458,20 @@ def automations_workspace(user: User = Depends(get_current_user), db: Session = 
             "scheduleType": "Daily" if trigger_type == "Schedule" else "Real-time",
             "scheduleText": schedule_text,
             "scheduleSubText": sub_text,
-            "progress": {"current": 25, "total": 50, "percent": 50} if r.enabled else None,
+            "progress": None,
             "status": status_str,
             "lastRunDate": r.last_run_at.strftime("%b %d, %Y") if r.last_run_at else "",
             "lastRunTime": r.last_run_at.strftime("%I:%M %p") if r.last_run_at else "",
             "nextRunDate": "" if not r.enabled else "",
-            "nextRunTime": "10:00 AM" if r.enabled else "-",
+            "nextRunTime": cfg.get("time", "") if r.enabled else "-",
             "createdBy": user.name or "Shubham",
             "enabled": r.enabled,
-            "dailyLimit": 50,
-            "batchSize": 10,
-            "selectedProductsCount": 10,
+            "dailyLimit": 0,
+            "batchSize": 0,
+            "selectedProductsCount": 0,
             "aiPrompt": "Continuously optimize catalog metadata, inventory triggers, and pricing dynamically based on live market conditions.",
             "recentLogs": [
-                {"time": "10:00:15 AM", "message": f"Rule '{r.name}' active and monitoring triggers", "type": "info"},
+                ,
                 {"time": "10:01:42 AM", "message": f"Verified status: {'active' if r.enabled else 'paused'}", "type": "success" if r.enabled else "warning"},
             ]
         })
@@ -684,7 +684,7 @@ async def create_catalog_product(request: Request, user: User = Depends(get_curr
     title = data.get("name") or data.get("title") or "New Product"
     price = float(data.get("price") or data.get("mrp") or 0.0)
     cost = float(data.get("costPrice") or data.get("cost_price") or price * 0.5)
-    stock = int(data.get("stock") or data.get("initialStock") or 50)
+    stock = int(data.get("stock") or data.get("initialStock") or 0)
 
     prod = Product(
         seller_account_id=seller_id,
