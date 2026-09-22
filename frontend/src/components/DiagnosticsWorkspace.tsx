@@ -88,7 +88,7 @@ export default function DiagnosticsWorkspace({
   const [isRunningFullDiagnostics, setIsRunningFullDiagnostics] = useState(false);
   const [isRunningHealthCheck, setIsRunningHealthCheck] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [lastScanTimestamp, setLastScanTimestamp] = useState('Dec 15, 2024, 10:24 AM');
+  const [lastScanTimestamp, setLastScanTimestamp] = useState<string | null>(null);
 
   // Modals
   const [selectedIssueModal, setSelectedIssueModal] = useState<CriticalIssue | null>(null);
@@ -111,20 +111,13 @@ export default function DiagnosticsWorkspace({
         if (data.healthChecks) setHealthChecks(data.healthChecks);
         if (data.criticalIssues) setCriticalIssues(data.criticalIssues);
         if (data.resolvedIssues) setResolvedIssues(data.resolvedIssues);
+         if (data.componentIssues) setComponentIssues(data.componentIssues);
       })
       .catch(err => console.error('Diagnostics fetch failed:', err));
   }, []);
 
   // 5. Issues by Component counts
-  const [componentIssues, setComponentIssues] = useState([
-    { name: 'APIs', count: 3, max: 5, color: 'bg-rose-500', icon: Link2 },
-    { name: 'Automations', count: 2, max: 5, color: 'bg-amber-500', icon: Settings },
-    { name: 'Listings', count: 1, max: 5, color: 'bg-amber-500', icon: FileText },
-    { name: 'Inventory', count: 0, max: 5, color: 'bg-slate-200', icon: Folder },
-    { name: 'Orders', count: 0, max: 5, color: 'bg-slate-200', icon: ShieldCheck },
-    { name: 'Database', count: 0, max: 5, color: 'bg-slate-200', icon: Database },
-    { name: 'System', count: 1, max: 5, color: 'bg-amber-500', icon: Server }
-  ]);
+  const [componentIssues, setComponentIssues] = useState<any[]>([]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
