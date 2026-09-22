@@ -32,7 +32,7 @@ export default function TopHeader({
   selectedMarketplace = 'all',
   onSelectMarketplace,
   onNavigateTab,
-  notificationsBadge = 3,
+  notificationsBadge = 0,
 }: TopHeaderProps) {
   const [marketplaceDropdownOpen, setMarketplaceDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -186,20 +186,7 @@ export default function TopHeader({
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-slate-100 transition-colors"
           >
-            {/* Avatar */}
-            <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-900 flex items-center justify-center text-white text-xs font-bold">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="Seller avatar"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-              <span>S</span>
-            </div>
-
-            <div className="hidden md:flex flex-col text-left leading-none">
+            <div className="w-8 h-8 rounded-full ring-1 ring-slate-200 bg-slate-900 flex items-center justify-center text-white text-xs font-bold">{(profile.name || 'S').trim().charAt(0).toUpperCase()}</div>            <div className="hidden md:flex flex-col text-left leading-none">
               <span className="text-xs font-bold text-slate-900">{profile.name || 'Seller'}</span>
               <span className="text-[10px] font-medium text-slate-500 mt-0.5">{profile.role || 'Seller'}</span>
             </div>
@@ -210,8 +197,8 @@ export default function TopHeader({
           {userMenuOpen && (
             <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50 text-xs">
               <div className="px-3 py-2 border-b border-slate-100">
-                <div className="font-bold text-slate-900">—</div>
-                <div className="text-[11px] text-slate-500">—</div>
+                <div className="font-bold text-slate-900">{profile.name || 'Seller'}</div>
+                <div className="text-[11px] text-slate-500">{profile.role || 'Seller'}</div>
               </div>
               <div className="px-3 py-1.5 text-slate-600 font-medium">Plan: {profile.role || 'Plan not configured'}</div>
               <div className="pt-1 border-t border-slate-100">
