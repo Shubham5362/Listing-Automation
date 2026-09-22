@@ -471,15 +471,15 @@ export default function ReportsWorkspace({
                   </div>
                   {[
                     '',
-                    'Today (Dec 16, 2024)',
+                    'Today',
                     'Yesterday',
                     'Last 7 Days',
                     'Last 14 Days',
                     'Last 30 Days',
-                    'This Month (Dec 2024)',
-                    'Last Month (Nov 2024)',
-                    'Q4 2024',
-                    'Year to Date (2024)'
+                    'This Month',
+                    'Last Month',
+                    'This Quarter',
+                    'Year to Date'
                   ].map((range) => (
                     <button
                       key={range}
@@ -842,7 +842,7 @@ export default function ReportsWorkspace({
                   }}
                 >
                   <div className="font-bold border-b border-slate-700 pb-1 mb-1">
-                    {salesTimeline[hoveredTrendPoint].day} 2024
+                    {salesTimeline[hoveredTrendPoint].day}
                   </div>
                   <div className="flex items-center justify-between gap-3 text-amber-400">
                     <span>Amazon:</span>
