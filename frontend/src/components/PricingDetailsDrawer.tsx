@@ -44,7 +44,7 @@ export default function PricingDetailsDrawer({
   const [copiedSku, setCopiedSku] = useState(false);
   const [copiedAsin, setCopiedAsin] = useState(false);
   const [isEditingPrice, setIsEditingPrice] = useState(false);
-  const [editedPrice, setEditedPrice] = useState<number>(item?.currentPrice || 499);
+  const [editedPrice, setEditedPrice] = useState<number>(item?.currentPrice ?? 0);
   const [appliedNotice, setAppliedNotice] = useState<string | null>(null);
   const [isTracked, setIsTracked] = useState(false);
   const [isExcluded, setIsExcluded] = useState(false);
@@ -494,13 +494,7 @@ export default function PricingDetailsDrawer({
               </div>
 
               <div className="space-y-2">
-                {[
-                  { name: 'Your Store (You)', price: item.currentPrice, buyBox: item.buyBox, rating: '4.8 ★', delivery: 'Tomorrow', isYou: true },
-                  { name: 'Cloudtail Retail', price: item.lowestCompetitorPrice, buyBox: '5%', rating: '4.7 ★', delivery: 'Tomorrow', isYou: false },
-                  { name: 'Appario Retail', price: item.currentPrice + 10, buyBox: '2%', rating: '4.6 ★', delivery: '2 Days', isYou: false },
-                  { name: 'RetailEZ India', price: item.currentPrice + 25, buyBox: '1%', rating: '4.5 ★', delivery: '3 Days', isYou: false },
-                  { name: 'Supreme Traders', price: item.currentPrice + 40, buyBox: '0%', rating: '4.2 ★', delivery: '4 Days', isYou: false },
-                ].map((comp, idx) => (
+                {(((item as any).competitors || []) as any[]).map((comp: any, idx: number) => ({ ...comp, isYou: Boolean(comp.isYou) })).map((comp: any, idx: number) => (
                   <div
                     key={idx}
                     className={`p-2.5 rounded-lg border text-xs flex items-center justify-between ${
@@ -616,11 +610,11 @@ export default function PricingDetailsDrawer({
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg">
                     <div className="text-slate-500 text-[10px]">Price Elasticity</div>
-                    <div className="font-bold text-slate-800 text-xs mt-0.5">-1.42 (Elastic)</div>
+                    <div className="font-bold text-slate-800 text-xs mt-0.5">{(item as any).priceElasticity ?? '—'}</div>
                   </div>
                   <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg">
                     <div className="text-slate-500 text-[10px]">Forecast Daily Sales</div>
-                    <div className="font-bold text-slate-800 text-xs mt-0.5">24 units / day</div>
+                    <div className="font-bold text-slate-800 text-xs mt-0.5">{(item as any).forecastDailySales ?? '—'}</div>
                   </div>
                 </div>
               </div>
