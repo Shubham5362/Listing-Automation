@@ -72,28 +72,28 @@ export default function ReturnsWorkspace({
               const reqDate = r.requested_at ? new Date(r.requested_at) : (r.created_at ? new Date(r.created_at) : new Date());
               return {
                 id: r.id || idx + 1,
-                returnId: r.external_return_id || r.return_number || `RET-2024-${String(r.id || idx + 1).padStart(3, '0')}`,
-                orderId: `#${r.order_id ? (String(r.order_id).length > 5 ? r.order_id : `408-${r.order_id}92817`) : (r.order_number || '408-1234567')}`,
-                orderDisplayId: r.order_id ? (String(r.order_id).length > 5 ? String(r.order_id) : `408-${r.order_id}92817`) : (r.order_number || '408-1234567'),
+                returnId: r.external_return_id || r.return_number || '',
+                orderId: r.order_id ? `#${String(r.order_id)}` : (r.order_number ? `#${r.order_number}` : ''),
+                orderDisplayId: r.order_id ? String(r.order_id) : (r.order_number || ''),
                 marketplace: mkt,
                 product: {
-                  name: r.product?.name || r.product_title || 'Stainless Steel Bottle 1L',
-                  sku: r.product?.sku || r.sku || 'SB-1L-001',
-                  imageType: r.product?.imageType || (r.sku?.includes('TUM') ? 'tumbler' : r.sku?.includes('MUG') ? 'mug' : 'bottle-black'),
-                  price: r.refund_amount || 499,
+                  name: r.product?.name || r.product_title || '',
+                  sku: r.product?.sku || r.sku || '',
+                  imageType: r.product?.imageType || undefined,
+                  price: r.refund_amount ?? 0,
                 },
                 customer: {
-                  name: r.customer?.name || r.customer_name || 'Verified Buyer',
-                  email: r.customer?.email || `${(r.customer_name || 'buyer').toLowerCase().replace(/\s+/g, '.')}@example.com`,
-                  phone: r.customer?.phone || '+91 98765 43210',
-                  initials: (r.customer?.initials) || (r.customer_name || 'VB').split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+                  name: r.customer?.name || r.customer_name || '',
+                  email: r.customer?.email || '',
+                  phone: r.customer?.phone || '',
+                  initials: r.customer?.initials || '',
                 },
-                reason: r.reason || 'Item not as described',
+                reason: r.reason || '',
                 status: status,
-                requestedOn: reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                requestedOnFull: reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-                returnWindow: 'Within policy',
-                refundAmount: r.refund_amount || 499,
+                requestedOn: r.requested_at || r.created_at ? reqDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+                requestedOnFull: r.requested_at || r.created_at ? reqDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
+                returnWindow: r.return_window || '',
+                refundAmount: r.refund_amount ?? 0,
               };
             });
             setReturnsList(mapped);
@@ -125,14 +125,14 @@ export default function ReturnsWorkspace({
   // Tab counts
   const tabCounts = useMemo(() => {
     return {
-      all: 284,
-      pending: 36,
-      approved: 142,
-      refunded: 96,
-      replacement: 28,
-      rejected: 18,
+      all: returnsList.length,
+      pending: returnsList.filter(r => r.status === 'Pending').length,
+      approved: returnsList.filter(r => r.status === 'Approved').length,
+      refunded: returnsList.filter(r => r.status === 'Refunded').length,
+      replacement: returnsList.filter(r => r.status === 'Replacement').length,
+      rejected: returnsList.filter(r => r.status === 'Rejected').length,
     };
-  }, []);
+  }, [returnsList]);
 
   // Filtered Returns
   const filteredReturns = useMemo(() => {
@@ -433,10 +433,10 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Total Returns</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">284</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returnsList.length}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 12.5%</span>
-                    <span className="text-slate-400 font-normal">vs last 30 days</span>
+                    <span>—</span>
+                    <span className="text-slate-400 font-normal">No comparison data</span>
                   </div>
                 </div>
               </div>
@@ -450,9 +450,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Pending Action</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">36</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{returnsList.filter(r => r.status === "Pending").length}</div>
                   <div className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-0.5">
-                    <span>↑ 38.5%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -466,9 +466,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Approved</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">142</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{tabCounts.approved}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 18.3%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -482,9 +482,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Refunded</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">96</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{tabCounts.refunded}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 22.0%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -498,9 +498,9 @@ export default function ReturnsWorkspace({
                 </div>
                 <div className="mt-2.5">
                   <div className="text-[11px] font-medium text-slate-500">Replacement</div>
-                  <div className="text-xl font-bold text-slate-900 mt-0.5">28</div>
+                  <div className="text-xl font-bold text-slate-900 mt-0.5">{tabCounts.replacement}</div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
-                    <span>↑ 7.7%</span>
+                    <span>—</span>
                   </div>
                 </div>
               </div>
@@ -924,7 +924,7 @@ export default function ReturnsWorkspace({
             {/* 7. Pagination Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-1">
               <div>
-                Showing 1 to {Math.min(10, filteredReturns.length)} of 284 returns
+                Showing 1 to {Math.min(10, filteredReturns.length)} of {returnsList.length} returns
               </div>
 
               <div className="flex items-center gap-1">

@@ -205,7 +205,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
       defaultFormat: 'CSV',
-      sampleRowsCount: 84
+      sampleRowsCount: 0
     },
     {
       id: 'profit_loss',
@@ -215,7 +215,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-purple-50',
       iconColor: 'text-purple-600',
       defaultFormat: 'PDF',
-      sampleRowsCount: 36
+      sampleRowsCount: 0
     },
     {
       id: 'customer',
@@ -225,7 +225,7 @@ export default function ReportsWorkspace({
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
       defaultFormat: 'CSV',
-      sampleRowsCount: 890
+      sampleRowsCount: 0
     },
     {
       id: 'custom',
@@ -471,15 +471,15 @@ export default function ReportsWorkspace({
                   </div>
                   {[
                     '',
-                    'Today (Dec 16, 2024)',
+                    'Today',
                     'Yesterday',
                     'Last 7 Days',
                     'Last 14 Days',
                     'Last 30 Days',
-                    'This Month (Dec 2024)',
-                    'Last Month (Nov 2024)',
-                    'Q4 2024',
-                    'Year to Date (2024)'
+                    'This Month',
+                    'Last Month',
+                    'This Quarter',
+                    'Year to Date'
                   ].map((range) => (
                     <button
                       key={range}
@@ -634,7 +634,7 @@ export default function ReportsWorkspace({
             <div className="text-xs text-slate-500 font-medium pt-1">Total Listings</div>
             <div className="text-lg sm:text-xl font-bold text-slate-900">{Number(summary.totalListings || 0).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ {summary.listingsGrowth || 8.0}%</span>
+              <span>↑ {summary.listingsGrowth || 0}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -647,7 +647,7 @@ export default function ReportsWorkspace({
             <div className="text-xs text-slate-500 font-medium pt-1">Avg. Order Value</div>
             <div className="text-lg sm:text-xl font-bold text-slate-900">₹{Math.round(Number(summary.avgOrderValue || 0)).toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <span>↑ {summary.aovGrowth || 3.2}%</span>
+              <span>↑ {summary.aovGrowth || 0}%</span>
               <span className="text-slate-400 font-normal">vs previous period</span>
             </div>
           </div>
@@ -670,7 +670,7 @@ export default function ReportsWorkspace({
             4. ROW 2: CHARTS (Sales Trend + Orders by Marketplace + Revenue by Category)
         ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-          {/* 4.1. Sales Trend (Col 1: 5.5 cols) */}
+          {/* 4.1. Sales Trend */}
           <div className="lg:col-span-5.5 bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-2xs flex flex-col justify-between space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-900 text-xs sm:text-sm">Sales Trend</h3>
@@ -842,7 +842,7 @@ export default function ReportsWorkspace({
                   }}
                 >
                   <div className="font-bold border-b border-slate-700 pb-1 mb-1">
-                    {salesTimeline[hoveredTrendPoint].day} 2024
+                    {salesTimeline[hoveredTrendPoint].day}
                   </div>
                   <div className="flex items-center justify-between gap-3 text-amber-400">
                     <span>Amazon:</span>
@@ -1247,7 +1247,7 @@ export default function ReportsWorkspace({
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-slate-800">Sales opportunity</div>
                   <div className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                    Home & Kitchen category is growing 28%. Consider adding more products.
+                    No category growth data available yet.
                   </div>
                 </div>
               </div>

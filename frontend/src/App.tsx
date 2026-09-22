@@ -157,13 +157,13 @@ export default function App() {
         const res = await fetch('/api/v1/actions/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sku: 'ABC123', quantity: 75 }),
+          body: JSON.stringify({ sku: item.data?.sku, quantity: item.data?.quantity }),
         });
         const resJson = await res.json();
-        showToast(resJson.message || 'Purchase order for 75 units of SKU ABC123 created!');
+        showToast(resJson.message || 'Purchase order created successfully.');
         fetchDashboardData();
       } catch {
-        showToast('Purchase order created for 75 units of SKU ABC123');
+        showToast('Unable to create purchase order.');
       }
     } else if (actionType === 'fix_listings') {
       try {
@@ -172,7 +172,7 @@ export default function App() {
         showToast(resJson.message || 'Suppressed listings resolved.');
         fetchDashboardData();
       } catch {
-        showToast('Amazon suppressed listings updated with compliant attributes');
+        showToast('Unable to update suppressed listings.');
       }
     } else if (actionType === 'review_pricing') {
       try {
@@ -181,7 +181,7 @@ export default function App() {
         showToast(resJson.message || 'Dynamic pricing updated.');
         fetchDashboardData();
       } catch {
-        showToast('Dynamic pricing rule applied to 5 items (+4.2% margin)');
+        showToast('Unable to update pricing.');
       }
     } else if (actionType === 'optimize_ads') {
       try {
@@ -190,7 +190,7 @@ export default function App() {
         showToast(resJson.message || 'Advertising campaigns optimized.');
         fetchDashboardData();
       } catch {
-        showToast('Negative keywords added successfully.');
+        showToast('Unable to optimize advertising.');
       }
     }
   };
@@ -205,13 +205,13 @@ export default function App() {
       const res = await fetch('/api/v1/actions/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: 'ABC123', quantity: 75 }),
+        body: JSON.stringify({}),
       });
       const json = await res.json();
-      showToast(json.message || 'Purchase order for 75 units created successfully!');
+      showToast(json.message || 'Purchase order created successfully.');
       fetchDashboardData();
     } catch {
-      showToast('Purchase order for 75 units created!');
+      showToast('Unable to create purchase order.');
     }
   };
 
@@ -440,7 +440,7 @@ export default function App() {
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <span>Today</span>
                       <span className="text-slate-300">|</span>
-                      <span className="text-slate-500 font-normal">Dec 16, 2024</span>
+                      <span className="text-slate-500 font-normal"></span>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
                     </div>
 
@@ -541,17 +541,8 @@ export default function App() {
 
               {activeTab === 'Inventory' && (
                 <div className="space-y-3">
-                  <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-rose-700 text-sm">Critical: SKU ABC123 Stockout in 2 Days</div>
-                      <div className="text-xs text-rose-600 mt-0.5">18 units available. Velocity: 9/day. Lead time: 5 days.</div>
-                    </div>
-                    <button
-                      onClick={handleCreatePurchasePlan}
-                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs"
-                    >
-                      Reorder 75 Units
-                    </button>
+                  <div className="p-6 bg-white border border-slate-200 rounded-xl text-center text-sm text-slate-400">
+                    No inventory alert data available yet.
                   </div>
                 </div>
               )}

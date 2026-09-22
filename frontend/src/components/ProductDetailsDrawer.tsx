@@ -214,11 +214,11 @@ export default function ProductDetailsDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Created On</span>
-                  <span className="font-medium text-slate-800">{product.createdOn || 'Aug 12, 2024'}</span>
+                  <span className="font-medium text-slate-800">{product.createdOn || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Last Updated</span>
-                  <span className="font-medium text-slate-800">{product.lastUpdated || 'Dec 15, 2024'}</span>
+                  <span className="font-medium text-slate-800">{product.lastUpdated || '—'}</span>
                 </div>
               </div>
             </div>
@@ -482,7 +482,7 @@ export default function ProductDetailsDrawer({
                 <span>AI Catalog Recommendation</span>
               </div>
               <p className="text-xs text-violet-700 leading-relaxed">
-                Listing title quality is 94/100. Adding keywords &quot;Leakproof Stainless Steel Insulated Flask&quot; can increase organic search impressions by 14%.
+                No AI catalog recommendation is available for this product yet.
               </p>
             </div>
           </div>
