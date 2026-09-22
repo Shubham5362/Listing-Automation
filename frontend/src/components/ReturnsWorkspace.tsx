@@ -202,14 +202,13 @@ export default function ReturnsWorkspace({
       setSelectedReturn((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
-      });
-      showNotification(`Return updated to "${newStatus}" in database.`);
+      }); if (!res.ok) throw new Error(`Return update failed (${res.status})`); showNotification(`Return updated to "${newStatus}".`);
     } catch (e) {
-      showNotification(`Return updated to "${newStatus}" successfully.`);
+      showNotification(e instanceof Error ? e.message : 'Return update failed');
     }
   };
 

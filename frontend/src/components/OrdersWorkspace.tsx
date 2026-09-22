@@ -120,12 +120,12 @@ export default function OrdersWorkspace({
 
               return {
                 id: `ord-${o.id || idx + 1}`,
-                orderNumber: o.external_order_id ? (o.external_order_id.startsWith('ORD-') ? o.external_order_id : `ORD-${o.external_order_id.replace(/[^0-9]/g, '').slice(-5)}`) : `ORD-4029${idx}`,
+                orderNumber: o.external_order_id || String(o.id || `order-${idx + 1}`),
                 date: dateStr,
                 time: timeStr,
                 marketplace: mkt,
                 customer: {
-                  name: o.customer_name || 'Verified Customer',
+                  name: o.customer_name || 'Customer name unavailable',
                   cityState: cityState,
                   phone: o.customer_phone || '',
                   email: o.customer_email || '',
@@ -139,7 +139,7 @@ export default function OrdersWorkspace({
                 paymentMethod: o.payment_status === 'paid' ? 'Prepaid (UPI)' : 'Cash on Delivery',
                 deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined,
                 tracking: {
-                  courier: o.carrier || (mkt === 'Amazon' ? 'Amazon Shipping' : 'Ekart Logistics'),
+                  courier: o.carrier || 'Carrier not available',
                   trackingId: o.tracking_number || '',
                   status: status,
                   deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined
@@ -205,12 +205,12 @@ export default function OrdersWorkspace({
 
             return {
               id: `ord-${o.id || idx + 1}`,
-              orderNumber: o.external_order_id ? (o.external_order_id.startsWith('ORD-') ? o.external_order_id : `ORD-${o.external_order_id.replace(/[^0-9]/g, '').slice(-5)}`) : `ORD-4029${idx}`,
+              orderNumber: o.external_order_id || String(o.id || `order-${idx + 1}`),
               date: dateStr,
               time: timeStr,
               marketplace: mkt,
               customer: {
-                name: o.customer_name || 'Verified Customer',
+                name: o.customer_name || 'Customer name unavailable',
                 cityState: cityState,
                 phone: o.customer_phone || '',
                 email: o.customer_email || '',
@@ -224,7 +224,7 @@ export default function OrdersWorkspace({
               paymentMethod: o.payment_status === 'paid' ? 'Prepaid (UPI)' : 'Cash on Delivery',
               deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined,
               tracking: {
-                courier: o.carrier || (mkt === 'Amazon' ? 'Amazon Shipping' : 'Ekart Logistics'),
+                courier: o.carrier || 'Carrier not available',
                 trackingId: o.tracking_number || '',
                 status: status,
                 deliveredOn: o.delivered_at ? new Date(o.delivered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined
@@ -234,9 +234,9 @@ export default function OrdersWorkspace({
           setOrders(mapped);
         }
       }
-      showToast('All orders synced successfully with Amazon and Flipkart.');
+      showToast('Orders synchronized successfully.');
     } catch (err) {
-      showToast('Orders refreshed from marketplaces.');
+      showToast(err instanceof Error ? err.message : 'Order synchronization failed');
     } finally {
       setIsSyncing(false);
     }

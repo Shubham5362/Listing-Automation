@@ -68,7 +68,7 @@ export default function ListingsWorkspace({
           const json = await res.json();
           if (json.items && json.items.length > 0) {
             const mapped: ListingItem[] = json.items.map((l: any, idx: number) => {
-              const stock = l.inventory_quantity !== undefined ? l.inventory_quantity : 50;
+              const stock = l.inventory_quantity !== undefined && l.inventory_quantity !== null ? l.inventory_quantity : 0;
               const isStockOut = stock === 0;
               const isLow = stock > 0 && stock <= 15;
               const statusStr = l.status === 'active' ? 'Active' : l.status === 'suppressed' ? 'Suppressed' : 'Inactive';
@@ -79,16 +79,16 @@ export default function ListingsWorkspace({
                 category: l.category || '',
                 sku: l.sku,
                 asin: l.asin || l.external_listing_id || '',
-                marketplace: (l.marketplace || 'amazon').toLowerCase().includes('flipkart') ? 'flipkart' : 'amazon',
+                marketplace: String(l.marketplace || 'unknown').toLowerCase(),
                 price: l.price ?? 0,
                 mrp: l.mrp ?? 0,
                 stock: stock,
                 stockStatus: isStockOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock',
                 status: statusStr,
-                issuesCount: l.status === 'suppressed' ? 2 : 0,
-                listingQuality: l.status === 'suppressed' ? 68 : 94,
-                buyBoxWon: l.status === 'active',
-                buyBoxRate: l.status === 'active' ? 94 : 0,
+                issuesCount: l.issues_count ?? l.issuesCount ?? 0,
+                listingQuality: l.listing_quality ?? l.listingQuality ?? null,
+                buyBoxWon: l.buy_box_won ?? l.buyBoxWon ?? null,
+                buyBoxRate: l.buy_box_rate ?? l.buyBoxRate ?? null,
                 lastUpdated: l.updated_at ? l.updated_at.split(' ')[0] : '',
                 imageType: l.sku?.includes('TUM') ? 'tumbler' : l.sku?.includes('MUG') ? 'mug' : 'bottle-black',
               };
@@ -200,14 +200,13 @@ export default function ListingsWorkspace({
       prev.map((l) => (l.id === target.id ? { ...l, price: newPrice } : l))
     );
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price: newPrice })
-      });
-      showToast(`Updated price to ₹${newPrice} for ${target.name} in database`);
+      }); if (!res.ok) throw new Error(`Listing price update failed (${res.status})`); setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, price: newPrice } : l)); showToast(`Updated price to ₹${newPrice} for ${target.name}`);
     } catch (e) {
-      showToast(`Updated price to ₹${newPrice}`);
+      showToast(e instanceof Error ? e.message : 'Listing price update failed');
     }
   };
 
@@ -226,20 +225,19 @@ export default function ListingsWorkspace({
       )
     );
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inventory_quantity: newStock })
-      });
-      showToast(`Updated stock to ${newStock} units for ${target.name} in database`);
+      }); if (!res.ok) throw new Error(`Listing stock update failed (${res.status})`); setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, stock: newStock, stockStatus: newStatus } : l)); showToast(`Updated stock to ${newStock} units for ${target.name}`);
     } catch (e) {
-      showToast(`Updated stock to ${newStock} units`);
+      showToast(e instanceof Error ? e.message : 'Listing stock update failed');
     }
   };
 
   const handleFixIssues = async (target: ListingItem) => {
     try {
-      await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/fix-listings', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/fix-listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'fix_all' }),
@@ -268,7 +266,7 @@ export default function ListingsWorkspace({
       prev.map((l) => (l.id === target.id ? { ...l, status: 'Inactive' } : l))
     );
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'inactive' })

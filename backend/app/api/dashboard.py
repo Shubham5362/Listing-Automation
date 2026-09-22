@@ -400,8 +400,8 @@ def dashboard(
 
     copilot_insight_obj = {
         "alert": f"Inventory Reorder Alert: {low_stock_items} SKUs below reorder safety stock",
-        "context": f"Sales velocity on Amazon & Flipkart is tracking at {units} units/month with {round(buy_box_rate, 1)}% Buy Box retention.",
-        "finding": f"Stockout detected for {inv_oos} SKU(s). Supplier lead time is ~7 days.",
+        "context": f"Sales velocity is tracking at {units} units/month with {round(buy_box_rate, 1)}% Buy Box retention.",
+        "finding": f"Stockout detected for {inv_oos} SKU(s). Review supplier lead time and replenishment coverage before reordering.",
         "why": "Low-stock items are at or below their configured reorder level.",
         "recommendation": "Review suggested purchase orders in Inventory or trigger automated supplier procurement.",
         "status": "Action Needed",

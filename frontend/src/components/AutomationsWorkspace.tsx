@@ -1007,7 +1007,7 @@ export default function AutomationsWorkspace({
                   const updatedCurrent = Math.min(item.progress.current + 5, item.progress.total);
                   const updatedPercent = Math.round((updatedCurrent / item.progress.total) * 100);
                   const updatedLogs = [
-                    { time: 'Just now', message: `Manual batch triggered: 5 items processed`, type: 'success' as const },
+                    { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), message: 'Manual batch requested; awaiting backend execution result.', type: 'info' as const },
                     ...(item.recentLogs || [])
                   ];
                   return {

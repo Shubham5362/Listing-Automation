@@ -240,14 +240,13 @@ export default function ProductsWorkspace({
       prev.map((p) => (p.id === targetProduct.id ? { ...p, price: newPrice } : p))
     );
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetProduct.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mrp: newPrice })
-      });
-      showToast(`Updated price for ${targetProduct.name} to ₹${newPrice}`);
+      }); if (!res.ok) throw new Error(`Product price update failed (${res.status})`); showToast(`Updated price for ${targetProduct.name} to ₹${newPrice}`);
     } catch (err) {
-      console.warn(err);
+      showToast(err instanceof Error ? err.message : 'Product price update failed');
     }
   };
 
@@ -266,14 +265,13 @@ export default function ProductsWorkspace({
       )
     );
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetProduct.id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newStock })
-      });
-      showToast(`Stock updated for ${targetProduct.name} to ${newStock} units`);
+      }); if (!res.ok) throw new Error(`Product stock update failed (${res.status})`); showToast(`Stock updated for ${targetProduct.name} to ${newStock} units`);
     } catch (err) {
-      console.warn(err);
+      showToast(err instanceof Error ? err.message : 'Product stock update failed');
     }
   };
 
@@ -282,7 +280,7 @@ export default function ProductsWorkspace({
       prev.map((p) => (p.id === targetProduct.id ? { ...p, listingStatus: 'Archived' } : p))
     );
     try {
-      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetProduct.id}`, { method: 'DELETE' });
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetProduct.id}`, { method: 'DELETE' });
     } catch (err) {
       console.warn(err);
     }
