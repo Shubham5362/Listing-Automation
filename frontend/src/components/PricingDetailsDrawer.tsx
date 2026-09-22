@@ -609,7 +609,7 @@ export default function PricingDetailsDrawer({
                 <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 space-y-1">
                   <div className="font-bold text-emerald-900 text-xs">Optimal Price Point: ₹{item.suggestedPrice}</div>
                   <p className="text-emerald-700 text-[11px]">
-                    Expected +{item.estProfitLift}% monthly profit lift with 94% Buy Box win probability.
+                    Expected +{item.estProfitLift}% monthly profit lift with {((item as any).buyBoxProbability != null ? String((item as any).buyBoxProbability) + '%' : 'an unavailable')} Buy Box win probability.
                   </p>
                 </div>
 
