@@ -97,7 +97,7 @@ export default function AiSellerCopilotWorkspace({
       id: 'msg-welcome',
       sender: 'assistant',
       timestamp: 'Just now',
-      text: 'Hello! I am your AI Seller Copilot. I can prepare bulk listings, optimize titles & keywords, manage inventory alerts, and run multichannel automations across Amazon and Flipkart. How can I assist your store today?'
+      text: 'AI Seller Copilot is ready. Ask me to analyze your Seller Hub, plan an operation, or prepare an approved action.'
     }
   ]);
 
@@ -200,22 +200,18 @@ export default function AiSellerCopilotWorkspace({
         id: `msg-${Date.now() + 1}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: data.answer || data.reply || `Samajh gaya! Maine aapki request analyze kar li hai. Aapke seller metrics ke according ye optimum action recommendation hai.`
+        text: data.answer || data.reply || 'No response was returned by the Seller Hub agent.'
       };
       setMessages(prev => [...prev, assistantMessage]);
-    } catch {
-      // Graceful conversational response
-      setTimeout(() => {
-        const fallbackMessage: ChatMessage = {
-          id: `msg-${Date.now() + 1}`,
-          sender: 'assistant',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: `Ji haan! Maine aapke catalog aur sales trends check kar liye hain. Aapka request process ho chuka hai aur automated execution pipeline me add kar diya gaya hai.`
-        };
-        setMessages(prev => [...prev, fallbackMessage]);
-        setIsTyping(false);
-      }, 700);
-      return;
+    } catch (error) {
+      const fallbackMessage: ChatMessage = {
+        id: `msg-${Date.now() + 1}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: 'Seller Hub agent is temporarily unavailable. No action was executed.'
+      };
+      setMessages(prev => [...prev, fallbackMessage]);
+      console.error('Seller agent request failed:', error);
     } finally {
       setIsTyping(false);
     }
@@ -236,7 +232,7 @@ export default function AiSellerCopilotWorkspace({
     showToast('Plan approved! Creating listing automation in SellerHub...');
 
     try {
-      await fetch('/api/v1/personal/listing-automation/runs', {
+      const response = await fetch('/api/v1/personal/listing-automation/runs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -246,20 +242,27 @@ export default function AiSellerCopilotWorkspace({
           dailyLimit: Number.parseInt(activePlan.dailyLimit, 10) || 0
         })
       });
-    } catch {
-      // Handled gracefully
-    }
-
-    setTimeout(() => {
-      const successMsg: ChatMessage = {
+      if (!response.ok) throw new Error('Automation request failed');
+      const result = await response.json();
+      setMessages(prev => [...prev, {
         id: `msg-approved-${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `🎉 **Automation Active!** "Bulk Product Listing Automation" shuru ho chuki hai.\n- 20 products/day schedule set at 10:00 AM.\n- Status: Running\n- You can monitor execution under Automations tab.`
-      };
-      setMessages(prev => [...prev, successMsg]);
-      showToast('Automation activated successfully!');
-    }, 1000);
+        text: `Automation request accepted by Seller Hub (job #${result.id}). The worker will report the actual execution status.`
+      }]);
+      showToast('Automation request queued.');
+    } catch (error) {
+      setActivePlan(prev => ({ ...prev, status: 'Ready for Approval' }));
+      setMessages(prev => [...prev, {
+        id: `msg-approval-error-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: 'Automation was not activated. No execution was claimed.'
+      }]);
+      console.error('Automation approval failed:', error);
+    }
+
+    }
   };
 
   // Submit modification
