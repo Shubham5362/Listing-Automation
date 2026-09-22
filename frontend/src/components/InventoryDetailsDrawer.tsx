@@ -56,7 +56,7 @@ export default function InventoryDetailsDrawer({
 
   useEffect(() => {
     if (!isOpen || !item?.id) return;
-    fetch(`/api/v1/inventory/${item.id}/movements`)
+    fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${item.id}/movements`)
       .then((res) => res.ok ? res.json() : [])
       .then((data) => setMovements(Array.isArray(data) ? data : []))
       .catch(() => setMovements([]));

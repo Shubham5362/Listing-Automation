@@ -80,7 +80,7 @@ export default function FinanceWorkspace({
   React.useEffect(() => {
     const fetchBackendFinance = async () => {
       try {
-        const res = await fetch('/api/v1/finance');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/finance');
         if (res.ok) {
           const json = await res.json();
           if (json.summary) {

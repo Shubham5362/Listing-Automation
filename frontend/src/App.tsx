@@ -129,7 +129,7 @@ export default function App() {
   // Load live data from the backend
   const fetchDashboardData = async () => {
     try {
-      const res = await fetch(`/api/v1/dashboard?marketplace=${selectedMarketplace}`);
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/dashboard?marketplace=${selectedMarketplace}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -154,7 +154,7 @@ export default function App() {
   const handleAction = async (actionType: string, item: AttentionItem) => {
     if (actionType === 'reorder') {
       try {
-        const res = await fetch('/api/v1/actions/reorder', {
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sku: item.data?.sku, quantity: item.data?.quantity }),
@@ -167,7 +167,7 @@ export default function App() {
       }
     } else if (actionType === 'fix_listings') {
       try {
-        const res = await fetch('/api/v1/actions/fix-listings', { method: 'POST' });
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/fix-listings', { method: 'POST' });
         const resJson = await res.json();
         showToast(resJson.message || 'Suppressed listings resolved.');
         fetchDashboardData();
@@ -176,7 +176,7 @@ export default function App() {
       }
     } else if (actionType === 'review_pricing') {
       try {
-        const res = await fetch('/api/v1/actions/review-pricing', { method: 'POST' });
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/review-pricing', { method: 'POST' });
         const resJson = await res.json();
         showToast(resJson.message || 'Dynamic pricing updated.');
         fetchDashboardData();
@@ -185,7 +185,7 @@ export default function App() {
       }
     } else if (actionType === 'optimize_ads') {
       try {
-        const res = await fetch('/api/v1/actions/optimize-ads', { method: 'POST' });
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/optimize-ads', { method: 'POST' });
         const resJson = await res.json();
         showToast(resJson.message || 'Advertising campaigns optimized.');
         fetchDashboardData();
@@ -202,7 +202,7 @@ export default function App() {
 
   const handleCreatePurchasePlan = async () => {
     try {
-      const res = await fetch('/api/v1/actions/reorder', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -217,7 +217,7 @@ export default function App() {
 
   const handleIgnoreInsight = async () => {
     try {
-      await fetch('/api/v1/actions/dismiss-insight', { method: 'POST' });
+      await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/dismiss-insight', { method: 'POST' });
       setData((prev) => ({
         ...prev,
         copilot_insight: { ...prev.copilot_insight, status: 'dismissed' },

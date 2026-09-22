@@ -60,7 +60,7 @@ export default function PricingWorkspace({
   React.useEffect(() => {
     const fetchBackendPricing = async () => {
       try {
-        const res = await fetch('/api/v1/pricing');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/pricing');
         if (res.ok) {
           const json = await res.json();
           if (json.items && json.items.length > 0) {
@@ -204,7 +204,7 @@ export default function PricingWorkspace({
       );
     }
     try {
-      await fetch(`/api/v1/pricing/${id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price })
@@ -223,7 +223,7 @@ export default function PricingWorkspace({
       setSelectedProduct((prev) => (prev ? { ...prev, currentPrice: price } : null));
     }
     try {
-      await fetch(`/api/v1/pricing/${id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price })
@@ -249,7 +249,7 @@ export default function PricingWorkspace({
       try {
         await Promise.all(
           pricingItems.map((item) =>
-            fetch(`/api/v1/pricing/${item.id}`, {
+            fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${item.id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ price: item.suggestedPrice })
@@ -273,7 +273,7 @@ export default function PricingWorkspace({
         await Promise.all(
           selectedIds.map((id) => {
             const it = pricingItems.find((p) => p.id === id);
-            return fetch(`/api/v1/pricing/${id}`, {
+            return fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/pricing/${id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ price: it?.suggestedPrice ?? 0 })

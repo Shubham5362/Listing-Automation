@@ -141,7 +141,7 @@ export default function ReportsWorkspace({
   const [salesTimeline, setSalesTimeline] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/reports')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/reports')
       .then((res) => (res.ok ? res.json() : null))
       .then((d) => {
         if (!d) return;

@@ -136,7 +136,7 @@ export default function AutomationsWorkspace({
   const [catalogProductsList, setCatalogProductsList] = useState<CatalogProduct[]>(defaultCatalogProducts);
 
   useEffect(() => {
-    fetch('/api/v1/automations')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/automations')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -162,7 +162,7 @@ export default function AutomationsWorkspace({
       })
       .catch(err => console.error('Failed to fetch automations:', err));
 
-    fetch('/api/v1/products')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/products')
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data) ? data : (data.items || []);

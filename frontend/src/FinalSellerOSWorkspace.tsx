@@ -5,7 +5,7 @@ export default function FinalSellerOSWorkspace({ sellerAccountId }: { sellerAcco
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`/api/v1/seller-os/overview?seller_account_id=${sellerAccountId}`)
+    fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/seller-os/overview?seller_account_id=${sellerAccountId}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Unable to load Seller OS'))))
       .then(setData)
       .catch((e) => setError(e.message));

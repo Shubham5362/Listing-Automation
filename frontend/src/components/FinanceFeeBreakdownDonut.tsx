@@ -13,7 +13,7 @@ export default function FinanceFeeBreakdownDonut() {
   const [feeSegments, setFeeSegments] = useState<FeeSegment[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/finance/reports/summary')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/finance/reports/summary')
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (!data) return;

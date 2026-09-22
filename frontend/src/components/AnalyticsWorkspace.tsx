@@ -99,7 +99,7 @@ export default function AnalyticsWorkspace({
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch('/api/v1/advanced-analytics');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/advanced-analytics');
         if (res.ok) {
           const data = await res.json();
           if (data.kpis) {

@@ -80,7 +80,7 @@ export default function ProductsWorkspace({
   useEffect(() => {
     const fetchBackendCatalog = async () => {
       try {
-        const res = await fetch('/api/v1/catalog');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/catalog');
         if (res.ok) {
           const json = await res.json();
           if (json.items && json.items.length > 0) {
@@ -240,7 +240,7 @@ export default function ProductsWorkspace({
       prev.map((p) => (p.id === targetProduct.id ? { ...p, price: newPrice } : p))
     );
     try {
-      await fetch(`/api/v1/catalog/${targetProduct.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mrp: newPrice })
@@ -266,7 +266,7 @@ export default function ProductsWorkspace({
       )
     );
     try {
-      await fetch(`/api/v1/inventory/${targetProduct.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/inventory/${targetProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newStock })
@@ -282,7 +282,7 @@ export default function ProductsWorkspace({
       prev.map((p) => (p.id === targetProduct.id ? { ...p, listingStatus: 'Archived' } : p))
     );
     try {
-      await fetch(`/api/v1/catalog/${targetProduct.id}`, { method: 'DELETE' });
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/catalog/${targetProduct.id}`, { method: 'DELETE' });
     } catch (err) {
       console.warn(err);
     }
@@ -293,7 +293,7 @@ export default function ProductsWorkspace({
     const newSku = `${targetProduct.sku}-CPY`;
     const newTitle = `${targetProduct.name} (Copy)`;
     try {
-      const res = await fetch('/api/v1/catalog', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -334,7 +334,7 @@ export default function ProductsWorkspace({
 
     let createdId = Date.now();
     try {
-      const res = await fetch('/api/v1/catalog', {
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

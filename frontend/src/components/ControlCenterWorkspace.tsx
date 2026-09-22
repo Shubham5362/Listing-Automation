@@ -103,7 +103,7 @@ export default function ControlCenterWorkspace({
   const fetchOperationsOverview = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/v1/operations/overview');
+      const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/operations/overview');
       if (res.ok) {
         const json = await res.json();
         if (json.alerts && Array.isArray(json.alerts)) {
@@ -120,7 +120,7 @@ export default function ControlCenterWorkspace({
         }
       }
 
-      fetch('/api/v1/automations')
+      fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/automations')
         .then(r => r.json())
         .then(autoData => {
           if (Array.isArray(autoData)) {

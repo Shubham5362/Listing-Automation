@@ -39,7 +39,7 @@ export default function TopHeader({
   const [profile, setProfile] = useState<{name?: string; role?: string}>({});
 
   useEffect(() => {
-    fetch('/api/v1/auth/me').then((res) => res.ok ? res.json() : null).then((data) => data && setProfile(data)).catch(() => undefined);
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/auth/me').then((res) => res.ok ? res.json() : null).then((data) => data && setProfile(data)).catch(() => undefined);
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

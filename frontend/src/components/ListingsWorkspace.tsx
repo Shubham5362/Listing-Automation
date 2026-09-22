@@ -63,7 +63,7 @@ export default function ListingsWorkspace({
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
-        const res = await fetch('/api/v1/listings');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/listings');
         if (res.ok) {
           const json = await res.json();
           if (json.items && json.items.length > 0) {
@@ -200,7 +200,7 @@ export default function ListingsWorkspace({
       prev.map((l) => (l.id === target.id ? { ...l, price: newPrice } : l))
     );
     try {
-      await fetch(`/api/v1/listings/${target.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price: newPrice })
@@ -226,7 +226,7 @@ export default function ListingsWorkspace({
       )
     );
     try {
-      await fetch(`/api/v1/listings/${target.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inventory_quantity: newStock })
@@ -239,7 +239,7 @@ export default function ListingsWorkspace({
 
   const handleFixIssues = async (target: ListingItem) => {
     try {
-      await fetch('/api/v1/actions/fix-listings', {
+      await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/fix-listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'fix_all' }),
@@ -268,7 +268,7 @@ export default function ListingsWorkspace({
       prev.map((l) => (l.id === target.id ? { ...l, status: 'Inactive' } : l))
     );
     try {
-      await fetch(`/api/v1/listings/${target.id}`, {
+      await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'inactive' })
@@ -282,7 +282,7 @@ export default function ListingsWorkspace({
   const handleOptimizeAi = async (target: ListingItem) => {
     showToast(`Optimizing listing with AI for ${target.name}...`);
     try {
-      const res = await fetch(`/api/v1/listings/${target.id}/optimize`, { method: 'POST' });
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}/optimize`, { method: 'POST' });
       const data = await res.json();
       setListings((prev) =>
         prev.map((l) =>

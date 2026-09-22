@@ -75,7 +75,7 @@ export default function NotificationsWorkspace({
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/notifications')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/notifications')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

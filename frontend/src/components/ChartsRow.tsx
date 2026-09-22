@@ -27,7 +27,7 @@ export default function ChartsRow({
   const [inventoryData, setInventoryData] = useState<{ name: string; value: number; percentage: number; color: string }[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/dashboard')
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/dashboard')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
