@@ -482,7 +482,7 @@ export default function ProductDetailsDrawer({
                 <span>AI Catalog Recommendation</span>
               </div>
               <p className="text-xs text-violet-700 leading-relaxed">
-                Listing title quality is 94/100. Adding keywords &quot;Leakproof Stainless Steel Insulated Flask&quot; can increase organic search impressions by 14%.
+                No AI catalog recommendation is available for this product yet.
               </p>
             </div>
           </div>
