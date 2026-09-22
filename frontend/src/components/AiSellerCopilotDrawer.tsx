@@ -270,7 +270,7 @@ export default function AiSellerCopilotDrawer({
               <button
                 onClick={() => {
                   setActiveTab('Ask');
-                  handleSendMessage('Analyze ₹8,400 wasted ad spend and suggest campaign optimizations');
+                  handleSendMessage('Analyze current advertising spend and suggest campaign optimizations');
                 }}
                 className="w-full p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 flex items-center justify-between transition-all text-left shadow-2xs group"
               >
@@ -283,7 +283,7 @@ export default function AiSellerCopilotDrawer({
                       Ad Optimization
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      ₹8,400 potential wasted spend
+                      Review current advertising spend and conversion data
                     </div>
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export default function AiSellerCopilotDrawer({
                 1-Click Inventory Reorder
               </div>
               <p className="text-slate-600 text-[11px]">
-                Create a PO for 75 units of SKU ABC123 directly with your verified supplier.
+                Create a purchase order from the stockout recommendation and current inventory data.
               </p>
               <button
                 onClick={onCreatePurchasePlan}
