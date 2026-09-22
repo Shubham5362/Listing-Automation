@@ -1097,7 +1097,7 @@ export default function ControlCenterWorkspace({
                 <label className="block text-slate-700 font-semibold mb-1">Issue Subject</label>
                 <input
                   type="text"
-                  defaultValue="Amazon SP-API Order Sync Discrepancy"
+                  defaultValue=""
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
                 />
               </div>
