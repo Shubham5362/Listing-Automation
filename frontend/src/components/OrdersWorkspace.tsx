@@ -296,11 +296,12 @@ export default function OrdersWorkspace({
       URL.revokeObjectURL(url);
     } else if (action === 'shipped') {
       try {
-        await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/unified-orders/bulk-action', {
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/unified-orders/bulk-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'shipped', order_ids: selectedOrderIds })
+          body: JSON.stringify({ action: 'shipped', order_ids: selectedOrderIds.map(id => Number(id.replace(/^ord-/, ''))).filter(Number.isFinite) })
         });
+        if (!res.ok) throw new Error('Bulk ship failed (' + res.status + ')');
       } catch (err) {
         console.warn('Backend bulk ship notice:', err);
       }
@@ -311,11 +312,12 @@ export default function OrdersWorkspace({
       setSelectedOrderIds([]);
     } else if (action === 'cancel') {
       try {
-        await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/unified-orders/bulk-action', {
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/unified-orders/bulk-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'cancel', order_ids: selectedOrderIds })
+          body: JSON.stringify({ action: 'cancel', order_ids: selectedOrderIds.map(id => Number(id.replace(/^ord-/, ''))).filter(Number.isFinite) })
         });
+        if (!res.ok) throw new Error('Bulk cancel failed (' + res.status + ')');
       } catch (err) {
         console.warn('Backend bulk cancel notice:', err);
       }
