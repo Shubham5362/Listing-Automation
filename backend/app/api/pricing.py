@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -15,6 +16,10 @@ from app.schemas.pricing import (
 from app.services.advanced_pricing import AdvancedPricingService
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
+
+
+class WorkspacePricePatch(BaseModel):
+    price: float = Field(gt=0)
 
 
 def _owned_listing(db: Session, user: User, listing_id: int) -> Listing:
@@ -69,14 +74,14 @@ def pricing_workspace(user: User = Depends(get_current_user), db: Session = Depe
 
 
 @router.patch("/{listing_id}", response_model=dict)
-def update_workspace_price(listing_id: int, payload: PriceUpdateRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+def update_workspace_price(listing_id: int, payload: WorkspacePricePatch, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
     listing = _owned_listing(db, user, listing_id)
     old = float(listing.price) if listing.price is not None else None
     rule = db.scalar(select(PricingRule).where(PricingRule.listing_id == listing.id, PricingRule.enabled.is_(True)))
     if rule and ((rule.min_price is not None and payload.price < float(rule.min_price)) or (rule.max_price is not None and payload.price > float(rule.max_price))):
         raise HTTPException(status_code=409, detail="Price violates active pricing rule")
     listing.price = payload.price
-    db.add(PriceHistory(listing_id=listing.id, old_price=old, new_price=payload.price, source=payload.source.value, reason=payload.reason))
+    db.add(PriceHistory(listing_id=listing.id, old_price=old, new_price=payload.price, source="manual", reason="Pricing workspace update"))
     db.commit(); db.refresh(listing)
     return {"id": listing.id, "currentPrice": float(listing.price), "priceStatus": "Optimal", "buyBoxWon": False, "buyBox": "Unknown"}
 
