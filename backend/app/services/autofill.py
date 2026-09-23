@@ -11,6 +11,7 @@ from app.models.autofill import AutofillAction, AutofillError, AutofillSession
 from app.models.catalog import Product
 from app.models.core import SellerAccount, User
 from app.models.product_knowledge import ProductKnowledge
+from app.services.form_discovery import discover_fields
 
 MODES = {"draft", "review", "auto", "strict"}
 HIGH_RISK = {"publish", "submit", "delete", "change_price", "change_inventory"}
@@ -56,7 +57,7 @@ def plan_autofill(db: Session, product: Product, marketplace: str, *, mode: str 
     knowledge = db.scalar(select(ProductKnowledge).where(ProductKnowledge.product_id == product.id, ProductKnowledge.seller_account_id == product.seller_account_id))
     facts = _product_facts(product, knowledge)
     schema = adapter.schema_for(product.category)
-    discovered = page_fields or [{"name": f.name, "canonical": f.canonical, "field_type": f.field_type, "required": f.required, "enum": list(f.enum), "unit": f.unit} for f in schema.fields]
+    discovered = discover_fields(adapter, page_fields, product.category)
     strict = mode == "strict"
     decisions: list[dict[str, Any]] = []
     missing: list[str] = []
@@ -73,14 +74,14 @@ def plan_autofill(db: Session, product: Product, marketplace: str, *, mode: str 
         if strict and confidence < 95:
             decisions.append({"field": field.get("name", canonical), "canonical": canonical, "action": "skip", "value": None, "confidence": confidence, "status": "review_required", "reason": "Strict mode requires a verified fact"})
             continue
-        mapped = adapter.map_attributes({canonical: fact}, product.category).get(field.get("name"))
+        mapped = adapter.map_attributes({canonical: fact}, product.category).get(field.get("adapter_field") or field.get("name"))
         if mapped is None:
             decisions.append({"field": field.get("name", canonical), "canonical": canonical, "action": "skip", "value": None, "confidence": confidence, "status": "review_required", "reason": "Marketplace value could not be safely normalized"})
             continue
         status = "planned" if mode in {"draft", "review"} else ("approved" if confidence >= 95 else "review_required")
         decisions.append({"field": field.get("name", canonical), "canonical": canonical, "action": "fill", "value": mapped, "confidence": confidence, "status": status, "reason": "Canonical Product Brain fact mapped to marketplace field"})
     ready = not missing and not any(d["status"] == "review_required" for d in decisions)
-    return {"marketplace": marketplace, "adapter_version": adapter.version, "schema_version": schema.version, "mode": mode, "ready": ready, "missing_required": missing, "decisions": decisions, "high_risk_actions_blocked": sorted(HIGH_RISK)}
+    return {"marketplace": marketplace, "adapter_version": adapter.version, "schema_version": schema.version, "mode": mode, "ready": ready, "missing_required": missing, "decisions": decisions, "high_risk_actions_blocked": sorted(HIGH_RISK), "discovery": [{"field": d.get("name"), "canonical": d.get("canonical"), "method": d.get("discovery"), "confidence": d.get("discovery_confidence", 0)} for d in discovered]}
 
 
 def create_session(db: Session, product: Product, marketplace: str, *, mode: str = "review") -> AutofillSession:
