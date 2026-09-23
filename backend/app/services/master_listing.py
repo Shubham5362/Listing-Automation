@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -95,7 +96,7 @@ def complete_teach_session(db: Session, session: ListingTeachSession, *, name: s
         knowledge.fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
         knowledge.status = "learned"
         knowledge.source = "manual_teach"
-        knowledge.updated_at = __import__("datetime").datetime.utcnow()
+        knowledge.updated_at = datetime.utcnow()
 
     session.state = "completed"
     db.commit()
