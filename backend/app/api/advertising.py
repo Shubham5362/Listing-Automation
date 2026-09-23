@@ -10,6 +10,7 @@ from app.models.advertising import AdvertisingCampaign, AdvertisingInsight, Adve
 from app.models.core import MarketplaceAccount, SellerAccount, User
 from app.schemas.advertising import (
     AdvertisingCampaignCreate,
+    AdvertisingCampaignUpdate,
     AdvertisingCampaignRead,
     AdvertisingInsightRead,
     AdvertisingMetricsRead,
@@ -65,6 +66,18 @@ def list_campaigns(status_filter: CampaignStatus | None = Query(default=None, al
     if marketplace_account_id:
         query = query.where(AdvertisingCampaign.marketplace_account_id == marketplace_account_id)
     return list(db.scalars(query.order_by(AdvertisingCampaign.id.desc())))
+
+
+@router.patch("/campaigns/{campaign_id}", response_model=AdvertisingCampaignRead)
+def update_campaign(campaign_id: int, payload: AdvertisingCampaignUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> AdvertisingCampaign:
+    campaign = _campaign(db, current_user, campaign_id)
+    if payload.status is not None:
+        campaign.status = payload.status.value
+    if payload.daily_budget is not None:
+        campaign.daily_budget = payload.daily_budget
+    campaign.updated_at = datetime.utcnow()
+    db.commit(); db.refresh(campaign)
+    return campaign
 
 
 @router.post("/campaigns/{campaign_id}/performance", response_model=AdvertisingPerformanceRead, status_code=status.HTTP_201_CREATED)
