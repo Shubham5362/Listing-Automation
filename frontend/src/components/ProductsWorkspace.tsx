@@ -59,6 +59,24 @@ export default function ProductsWorkspace({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Attach backend inventory ids so stock edits mutate the correct inventory record.
+  useEffect(() => {
+    const syncInventoryIds = async () => {
+      try {
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\\/$/, '') + '/api/v1/inventory');
+        if (!res.ok) return;
+        const rows = await res.json();
+        const inventory = Array.isArray(rows) ? rows : (rows.items || []);
+        const byProduct = new Map<number, any>(inventory.map((item: any) => [item.product_id, item]));
+        setProducts((prev) => prev.map((product) => {
+          const inv = byProduct.get(Number(product.id));
+          return inv ? { ...product, inventoryId: inv.id, stock: inv.quantity, availableStock: inv.available_quantity, reservedStock: inv.reserved_quantity } as any : product;
+        }));
+      } catch (err) { console.warn('Inventory id sync notice:', err); }
+    };
+    syncInventoryIds();
+  }, []);
+
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
