@@ -156,6 +156,11 @@ export default function ReportsWorkspace({
         if (d.topSellingProducts && d.topSellingProducts.length > 0) setTopSellingProducts(d.topSellingProducts);
       })
       .catch((err) => console.error('Failed to load reports from backend:', err));
+
+    fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/reports/schedules')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((items) => { if (Array.isArray(items)) setScheduledReports(items); })
+      .catch((err) => console.error('Failed to load report schedules:', err));
   }, []);
 
   // Detailed Reports Grid matching reference screenshot
@@ -333,37 +338,43 @@ export default function ReportsWorkspace({
   };
 
   // Add new schedule
-  const handleSaveSchedule = () => {
+  const handleSaveSchedule = async () => {
     if (!newScheduleName.trim()) return;
-    const newReport: ScheduledReport = {
-      id: `sch-${Date.now()}`,
-      name: newScheduleName,
-      schedule: newScheduleFrequency,
-      format: newScheduleFormat,
-      recipients: newScheduleEmail,
-      status: 'Active',
-      lastRun: 'Scheduled'
-    };
-    setScheduledReports((prev) => [...prev, newReport]);
-    setIsScheduleModalOpen(false);
-    showToast(`New automated schedule "${newScheduleName}" created.`);
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/reports/schedules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newScheduleName, schedule: newScheduleFrequency, format: newScheduleFormat, recipients: newScheduleEmail }) });
+      if (!res.ok) throw new Error('Schedule creation failed (' + res.status + ')');
+      const created = await res.json();
+      setScheduledReports(prev => [...prev, created]);
+      setIsScheduleModalOpen(false);
+      showToast('New automated schedule "' + newScheduleName + '" created.');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Schedule creation failed'); }
   };
 
   // Toggle or delete scheduled report
-  const handleToggleSchedule = (id: string) => {
-    setScheduledReports((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: r.status === 'Active' ? 'Paused' : 'Active' } : r
-      )
-    );
-    setSelectedScheduledItem(null);
-    showToast('Scheduled report status updated.');
+  const handleToggleSchedule = async (id: string) => {
+    const current = scheduledReports.find(r => r.id === id);
+    if (!current) return;
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/reports/schedules/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: current.status !== 'Active' }) });
+      if (!res.ok) throw new Error('Schedule update failed (' + res.status + ')');
+      const updated = await res.json();
+      setScheduledReports(prev => prev.map(r => r.id === id ? updated : r));
+      setSelectedScheduledItem(null);
+      showToast('Scheduled report status updated.');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Schedule update failed'); }
   };
 
-  const handleDeleteSchedule = (id: string) => {
-    setScheduledReports((prev) => prev.filter((r) => r.id !== id));
-    setSelectedScheduledItem(null);
-    showToast('Scheduled report deleted.');
+  const handleDeleteSchedule = async (id: string) => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/reports/schedules/' + id, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Schedule delete failed (' + res.status + ')');
+      setScheduledReports(prev => prev.filter(r => r.id !== id));
+      setSelectedScheduledItem(null);
+      showToast('Scheduled report deleted.');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Schedule delete failed'); }
   };
 
   // Render Product Thumbnail helper matching screenshot
