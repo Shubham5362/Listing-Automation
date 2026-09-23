@@ -148,17 +148,48 @@ def list_orders(
 
 class BulkOrderAction(BaseModel):
     action: str
-    orderIds: list[str] = []
+    orderIds: list[int] = []
 
 
 @router.post("/bulk-action")
-def bulk_order_action(payload: BulkOrderAction, db: Session = Depends(get_db)) -> dict[str, Any]:
-    count = len(payload.orderIds)
+def bulk_order_action(
+    payload: BulkOrderAction,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    if not payload.orderIds:
+        raise HTTPException(status_code=400, detail="At least one order is required")
+    if payload.action not in {"shipped", "cancel"}:
+        raise HTTPException(status_code=400, detail="Unsupported bulk order action")
+    rows = db.scalars(
+        select(Order).join(SellerAccount).where(
+            Order.id.in_(payload.orderIds),
+            SellerAccount.user_id == user.id,
+        )
+    ).all()
+    if len(rows) != len(set(payload.orderIds)):
+        raise HTTPException(status_code=404, detail="One or more orders were not found")
+    now = datetime.utcnow()
+    target = OrderStatus.SHIPPED if payload.action == "shipped" else OrderStatus.CANCELLED
+    for order in rows:
+        current = OrderStatus(order.status)
+        if target not in ALLOWED_TRANSITIONS[current] and target != current:
+            raise HTTPException(status_code=409, detail=f"Invalid status transition for order {order.id}: {current.value} -> {target.value}")
+    for order in rows:
+        if OrderStatus(order.status) == target:
+            continue
+        order.status = target.value
+        if target == OrderStatus.SHIPPED:
+            order.shipped_at = now
+        else:
+            order.cancelled_at = now
+    db.commit()
     return {
         "success": True,
         "action": payload.action,
-        "count": count,
-        "message": f"Successfully applied '{payload.action}' to {count} order(s).",
+        "count": len(rows),
+        "order_ids": [row.id for row in rows],
+        "message": f"Successfully applied '{payload.action}' to {len(rows)} order(s).",
     }
 
 

@@ -1,12 +1,15 @@
+from datetime import datetime
+from pydantic import BaseModel
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.db.session import get_db
-from app.models.core import User
+from app.models.core import MarketplaceAccount, SellerAccount, User
 from app.models.order_events import OrderEvent
-from app.models.orders import OrderStatus
+from app.models.orders import Order, OrderStatus
 from app.services.unified_orders import order_timeline, unified_order_by_id, unified_orders
 
 router = APIRouter(prefix="/unified-orders", tags=["unified-orders"])
@@ -43,6 +46,34 @@ def unified_order_summary(user: User = Depends(get_current_user), db: Session = 
         .order_by(MarketplaceAccount.marketplace)
     ).all()
     return {"total": sum(status_counts.values()), "by_status": status_counts, "by_marketplace": {name: count for name, count in marketplaces}}
+
+
+class UnifiedBulkAction(BaseModel):
+    action: str
+    order_ids: list[int] = []
+
+
+@router.post("/bulk-action")
+def unified_bulk_action(payload: UnifiedBulkAction, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if payload.action not in {"shipped", "cancel"} or not payload.order_ids:
+        raise HTTPException(status_code=400, detail="Unsupported bulk action or empty order list")
+    rows = db.scalars(select(Order).join(SellerAccount).where(Order.id.in_(payload.order_ids), SellerAccount.user_id == user.id)).all()
+    if len(rows) != len(set(payload.order_ids)):
+        raise HTTPException(status_code=404, detail="One or more orders were not found")
+    target = OrderStatus.SHIPPED if payload.action == "shipped" else OrderStatus.CANCELLED
+    now = datetime.utcnow()
+    for row in rows:
+        current = OrderStatus(row.status)
+        if target not in {current} and target not in {OrderStatus.SHIPPED: {OrderStatus.PACKED}, OrderStatus.CANCELLED: {OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PACKED}}[target]:
+            raise HTTPException(status_code=409, detail=f"Invalid transition for order {row.id}")
+    for row in rows:
+        if OrderStatus(row.status) == target:
+            continue
+        row.status = target.value
+        if target == OrderStatus.SHIPPED: row.shipped_at = now
+        else: row.cancelled_at = now
+    db.commit()
+    return {"success": True, "action": payload.action, "count": len(rows), "order_ids": [row.id for row in rows]}
 
 
 @router.get("/{order_id}/timeline")
