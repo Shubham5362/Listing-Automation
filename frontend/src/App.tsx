@@ -42,6 +42,7 @@ import AutomationsWorkspace from './components/AutomationsWorkspace';
 import AiListingStudioWorkspace from './components/AiListingStudioWorkspace';
 import AiSellerCopilotWorkspace from './components/AiSellerCopilotWorkspace';
 import MarketplacesWorkspace from './components/MarketplacesWorkspace';
+import MarketplaceFormKnowledgeCenter from './MarketplaceFormKnowledgeCenter';
 import NotificationsWorkspace from './components/NotificationsWorkspace';
 import ControlCenterWorkspace from './components/ControlCenterWorkspace';
 import DiagnosticsWorkspace from './components/DiagnosticsWorkspace';
@@ -379,11 +380,14 @@ export default function App() {
           </div>
         ) : activeTab === 'Marketplaces' ? (
           <div className="flex-1 min-w-0">
+            <>
             <MarketplacesWorkspace
               onNavigateTab={(tab) => setActiveTab(tab)}
               selectedMarketplaceFilter={selectedMarketplace}
               onSelectMarketplaceFilter={(m) => setSelectedMarketplace(m)}
             />
+            <MarketplaceFormKnowledgeCenter />
+          </>
           </div>
         ) : activeTab === 'Notifications' ? (
           <div className="flex-1 min-w-0">
