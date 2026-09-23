@@ -46,4 +46,17 @@ def test_advertising_seller_isolation() -> None:
         campaign = client.post("/api/v1/advertising/campaigns", headers=owner_a, json={"marketplace_account_id": account["id"], "external_campaign_id": "isolated", "name": "Private"}).json()
         assert client.get("/api/v1/advertising/campaigns", headers=owner_b).json() == []
         assert client.get(f"/api/v1/advertising/campaigns/{campaign['id']}/metrics", headers=owner_b).status_code == 404
-\n\ndef test_advertising_campaign_workspace_mutations() -> None:\n    with TestClient(app) as client:\n        headers = _auth(client, "ads-mutate")\n        seller = client.post("/api/v1/accounts/sellers", headers=headers, json={"name": "Ads Seller"}).json()\n        account = client.post("/api/v1/accounts/marketplaces", headers=headers, json={"seller_account_id": seller["id"], "marketplace": "amazon", "display_name": "Amazon"}).json()\n        campaign = client.post("/api/v1/advertising/campaigns", headers=headers, json={"marketplace_account_id": account["id"], "external_campaign_id": "mutate-1", "name": "Mutable", "daily_budget": 100}).json()\n        listing = client.get("/api/v1/advertising/campaigns", headers=headers)\n        assert listing.status_code == 200 and listing.json()[0]["id"] == campaign["id"]\n        updated = client.patch(f"/api/v1/advertising/campaigns/{campaign['id']}", headers=headers, json={"status": "paused", "daily_budget": 250})\n        assert updated.status_code == 200\n        assert updated.json()["status"] == "paused"\n        assert updated.json()["daily_budget"] == 250\n
+
+
+def test_advertising_campaign_workspace_mutations() -> None:
+    with TestClient(app) as client:
+        headers = _auth(client, "ads-mutate")
+        seller = client.post("/api/v1/accounts/sellers", headers=headers, json={"name": "Ads Seller"}).json()
+        account = client.post("/api/v1/accounts/marketplaces", headers=headers, json={"seller_account_id": seller["id"], "marketplace": "amazon", "display_name": "Amazon"}).json()
+        campaign = client.post("/api/v1/advertising/campaigns", headers=headers, json={"marketplace_account_id": account["id"], "external_campaign_id": "mutate-1", "name": "Mutable", "daily_budget": 100}).json()
+        listing = client.get("/api/v1/advertising/campaigns", headers=headers)
+        assert listing.status_code == 200 and listing.json()[0]["id"] == campaign["id"]
+        updated = client.patch(f"/api/v1/advertising/campaigns/{campaign['id']}", headers=headers, json={"status": "paused", "daily_budget": 250})
+        assert updated.status_code == 200
+        assert updated.json()["status"] == "paused"
+        assert updated.json()["daily_budget"] == 250
