@@ -14,11 +14,11 @@ export function selectorIsSafe(selector: string): boolean {
   if (/[;{}<>]/.test(selector)) return false;
   return /^(\[(name|id|autocomplete)="[^"]+"\]|label="[^"]+"|[A-Za-z0-9_.:-]+)$/.test(selector);
 }
-export function pageFingerprint(fields: BridgeField[]): string {
+export async function pageFingerprint(fields: BridgeField[]): Promise<string> {
   const normalized = fields.map(f => ({name:String(f.name||""),id:String(f.id||""),autocomplete:String(f.autocomplete||""),label:String(f.label||""),canonical:String(f.canonical||""),field:String(f.field||"")})).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
-  let hash = 2166136261;
-  for (const c of JSON.stringify(normalized)) { hash ^= c.charCodeAt(0); hash = Math.imul(hash,16777619); }
-  return (hash >>> 0).toString(16).padStart(8,"0");
+  const bytes = new TextEncoder().encode(JSON.stringify(normalized));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 function locate(root: Document, command: BridgeCommand): HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement|null {
   if (!selectorIsSafe(command.selector)) return null;
@@ -30,7 +30,7 @@ function locate(root: Document, command: BridgeCommand): HTMLInputElement|HTMLTe
 }
 export async function executeFillCommands(commands: BridgeCommand[], expectedFingerprint: string, marketplace: BridgeMarketplace, pageFields: BridgeField[], root: Document=document): Promise<Array<{sequence:number,state:"filled"|"failed"|"skipped",error?:string}>> {
   if(!allowedMarketplaceHost(marketplace,root.location.hostname)) throw new Error("Marketplace domain is not allowlisted");
-  if(pageFingerprint(pageFields)!==expectedFingerprint) throw new Error("Page fingerprint mismatch; refresh/re-plan before execution");
+  if(await pageFingerprint(pageFields)!==expectedFingerprint) throw new Error("Page fingerprint mismatch; refresh/re-plan before execution");
   const results=[] as Array<{sequence:number,state:"filled"|"failed"|"skipped",error?:string}>;
   for(const command of [...commands].sort((a,b)=>a.sequence-b.sequence)){
     if(!selectorIsSafe(command.selector)){results.push({sequence:command.sequence,state:"skipped",error:"Unsafe selector"});continue;}

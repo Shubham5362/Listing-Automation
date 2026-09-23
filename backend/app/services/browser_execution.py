@@ -40,11 +40,27 @@ def arm_execution(db,ex):
     if ex.state!="planned": raise ValueError("Only a planned execution can be armed")
     ex.mode="armed"; ex.state="armed"; db.commit(); db.refresh(ex); return ex
 def record_result(db,ex,sequence,state,error=None):
+    if ex.mode != "armed" or ex.state not in {"armed","running"}:
+        raise ValueError("Execution is not armed")
     if state not in {"filled","failed","skipped"}: raise ValueError("Invalid step result")
     step=db.scalar(select(BrowserExecutionStep).where(BrowserExecutionStep.execution_id==ex.id,BrowserExecutionStep.sequence==sequence))
     if not step: raise ValueError("Execution step not found")
+    if step.state in {"filled","failed","skipped"}:
+        if step.state != state or step.error != error:
+            raise ValueError("Execution step already recorded")
+        return ex
     step.state=state; step.error=error
     steps=db.scalars(select(BrowserExecutionStep).where(BrowserExecutionStep.execution_id==ex.id).order_by(BrowserExecutionStep.sequence)).all()
     ex.results_json=_dump([{"sequence":s.sequence,"field":s.field_name,"state":s.state,"error":s.error} for s in steps])
     ex.state="failed" if any(s.state=="failed" for s in steps) else ("completed" if steps and all(s.state in {"filled","skipped"} for s in steps) else "running")
+    db.commit(); db.refresh(ex); return ex
+
+def resume_execution(db, ex):
+    if ex.state not in {"armed","running","failed"}:
+        raise ValueError("Only armed, running or failed executions can be resumed")
+    steps=db.scalars(select(BrowserExecutionStep).where(BrowserExecutionStep.execution_id==ex.id).order_by(BrowserExecutionStep.sequence)).all()
+    for s in steps:
+        if s.state=="failed":
+            s.state="planned"; s.error=None
+    ex.mode="armed"; ex.state="armed"
     db.commit(); db.refresh(ex); return ex

@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.models.autofill import AutofillSession
 from app.models.browser_execution import BrowserExecution
 from app.models.core import SellerAccount,User
-from app.services.browser_execution import arm_execution,build_execution_plan,execution_view,record_result
+from app.services.browser_execution import arm_execution,build_execution_plan,execution_view,record_result,resume_execution
 router=APIRouter(prefix="/browser-execution",tags=["browser-execution"])
 class PlanRequest(BaseModel):
     session_id:int
@@ -49,7 +49,10 @@ def validate(execution_id:int,payload:ValidateRequest,db:Session=Depends(get_db)
     from app.services.browser_execution import _fingerprint
     from urllib.parse import urlparse
     host=urlparse(payload.page_url).hostname or ""
-    allowed=(host=="sellercentral.amazon.in" or host=="sellercentral.amazon.com" or host=="seller.flipkart.com" or host.endswith(".sellercentral.amazon.in") or host.endswith(".sellercentral.amazon.com") or host.endswith(".seller.flipkart.com"))
+    marketplace=(own_session(db,ex.session_id,user).marketplace or "").lower()
+    amazon=host=="sellercentral.amazon.in" or host=="sellercentral.amazon.com" or host.endswith(".sellercentral.amazon.in") or host.endswith(".sellercentral.amazon.com")
+    flipkart=host=="seller.flipkart.com" or host.endswith(".seller.flipkart.com")
+    allowed=(marketplace=="amazon" and amazon) or (marketplace=="flipkart" and flipkart)
     if not allowed: raise HTTPException(403,"Marketplace domain is not allowlisted")
     fingerprint=_fingerprint(payload.page_fields)
     if fingerprint!=ex.page_fingerprint: raise HTTPException(409,"Page fingerprint mismatch; refresh and create a new plan")
@@ -67,3 +70,11 @@ def get_execution(execution_id:int,db:Session=Depends(get_db),user:User=Depends(
     ex=db.get(BrowserExecution,execution_id)
     if not ex: raise HTTPException(404,"Execution not found")
     own_session(db,ex.session_id,user); return execution_view(db,execution_id)
+
+@router.post("/{execution_id}/resume")
+def resume(execution_id:int,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
+    ex=db.get(BrowserExecution,execution_id)
+    if not ex: raise HTTPException(404,"Execution not found")
+    own_session(db,ex.session_id,user)
+    try:return execution_view(db,resume_execution(db,ex).id)
+    except ValueError as e:raise HTTPException(409,str(e))
