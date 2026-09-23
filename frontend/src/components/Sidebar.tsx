@@ -20,7 +20,8 @@ import {
   FileText,
   Settings,
   X,
-  Clock
+  Clock,
+  Truck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -77,6 +78,7 @@ export default function Sidebar({
       group: 'SELL',
       items: [
         { id: 'Orders', label: 'Orders', icon: ShoppingBag, badge: ordersBadge },
+        { id: 'Shipping', label: 'Shipping & Fulfillment', icon: Truck },
         { id: 'Products', label: 'Products', icon: Package },
         { id: 'Listings', label: 'Listings', icon: List },
         { id: 'Inventory', label: 'Inventory', icon: Boxes },

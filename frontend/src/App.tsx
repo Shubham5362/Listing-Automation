@@ -30,6 +30,7 @@ import ProfitTrendCard from './components/ProfitTrendCard';
 import InventoryHealthCard from './components/InventoryHealthCard';
 import AiSellerCopilotDrawer from './components/AiSellerCopilotDrawer';
 import OrdersWorkspace from './components/OrdersWorkspace';
+import ShippingFulfillmentWorkspace from './components/ShippingFulfillmentWorkspace';
 import ProductsWorkspace from './components/ProductsWorkspace';
 import ListingsWorkspace from './components/ListingsWorkspace';
 import InventoryWorkspace from './components/InventoryWorkspace';
@@ -280,7 +281,11 @@ export default function App() {
         />
 
         {/* Workspace Body */}
-        {activeTab === 'Orders' ? (
+        {activeTab === 'Shipping' ? (
+          <div className="flex-1 min-w-0">
+            <ShippingFulfillmentWorkspace />
+          </div>
+        ) : activeTab === 'Orders' ? (
           <div className="flex-1 min-w-0">
             <OrdersWorkspace
               orderStatusSummary={data.order_status}
