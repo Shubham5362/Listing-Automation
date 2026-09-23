@@ -43,6 +43,7 @@ import AiListingStudioWorkspace from './components/AiListingStudioWorkspace';
 import AiSellerCopilotWorkspace from './components/AiSellerCopilotWorkspace';
 import MarketplacesWorkspace from './components/MarketplacesWorkspace';
 import MarketplaceFormKnowledgeCenter from './MarketplaceFormKnowledgeCenter';
+import MasterListingCenter from './MasterListingCenter';
 import NotificationsWorkspace from './components/NotificationsWorkspace';
 import ControlCenterWorkspace from './components/ControlCenterWorkspace';
 import DiagnosticsWorkspace from './components/DiagnosticsWorkspace';
@@ -296,11 +297,14 @@ export default function App() {
           </div>
         ) : activeTab === 'Listings' ? (
           <div className="flex-1 min-w-0">
+            <>
             <ListingsWorkspace
               onOpenAiCopilot={() => setIsAiDrawerOpen(true)}
               selectedMarketplaceFilter={selectedMarketplace}
               onSelectMarketplaceFilter={(m) => setSelectedMarketplace(m)}
             />
+            <MasterListingCenter />
+          </>
           </div>
         ) : activeTab === 'Inventory' ? (
           <div className="flex-1 min-w-0">
