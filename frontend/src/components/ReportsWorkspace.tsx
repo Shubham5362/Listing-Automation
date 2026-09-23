@@ -141,6 +141,7 @@ export default function ReportsWorkspace({
   const [salesTimeline, setSalesTimeline] = useState<any[]>([]);
 
   const totalMarketplaceOrders = marketplaceOrders.reduce((sum, mp) => sum + Number(mp.count || mp.orders || 0), 0);
+  const totalOrderStatusCount = orderStatusSegments.reduce((sum, segment) => sum + Number(segment.count || 0), 0);
 
   useEffect(() => {
     fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/reports')
@@ -1112,68 +1113,29 @@ export default function ReportsWorkspace({
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="38" stroke="#F1F5F9" strokeWidth="12" fill="transparent" />
 
-                  {/* Delivered: 71.5% (170.7) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#10B981"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="170.7 238.8"
-                    strokeDashoffset="0"
-                  />
-
-                  {/* Shipped: 16.8% (40.1) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#3B82F6"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="40.1 238.8"
-                    strokeDashoffset="-170.7"
-                  />
-
-                  {/* Processing: 6.9% (16.5) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#8B5CF6"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="16.5 238.8"
-                    strokeDashoffset="-210.8"
-                  />
-
-                  {/* Cancelled: 3.4% (8.1) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#EF4444"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="8.1 238.8"
-                    strokeDashoffset="-227.3"
-                  />
-
-                  {/* Returned: 1.4% (3.3) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#0EA5E9"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="3.4 238.8"
-                    strokeDashoffset="-235.4"
-                  />
+                  {orderStatusSegments.map((segment, index) => {
+                    const circumference = 2 * Math.PI * 38;
+                    const segmentLength = circumference * (Number(segment.percent || 0) / 100);
+                    const offset = orderStatusSegments
+                      .slice(0, index)
+                      .reduce((sum, previous) => sum + circumference * (Number(previous.percent || 0) / 100), 0);
+                    return (
+                      <circle
+                        key={segment.label || index}
+                        cx="50"
+                        cy="50"
+                        r="38"
+                        stroke={segment.color || '#94A3B8'}
+                        strokeWidth="12"
+                        fill="transparent"
+                        strokeDasharray={`${segmentLength} ${circumference}`}
+                        strokeDashoffset={-offset}
+                      />
+                    );
+                  })}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-                  <span className="text-xl font-bold text-slate-900">1,248</span>
+                  <span className="text-xl font-bold text-slate-900">{totalOrderStatusCount.toLocaleString('en-IN')}</span>
                   <span className="text-[10px] text-slate-400 font-medium mt-1">Total Orders</span>
                 </div>
               </div>
