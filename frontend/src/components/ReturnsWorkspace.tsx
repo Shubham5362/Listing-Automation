@@ -195,6 +195,7 @@ export default function ReturnsWorkspace({
 
   // Status updates
   const handleUpdateStatus = async (id: string | number, newStatus: ReturnRecord['status']) => {
+    const previous = returnsList.find((r) => r.id === id);
     setReturnsList((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
     );
@@ -202,12 +203,16 @@ export default function ReturnsWorkspace({
       setSelectedReturn((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
     try {
-      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
+      const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       }); if (!res.ok) throw new Error(`Return update failed (${res.status})`); showNotification(`Return updated to "${newStatus}".`);
     } catch (e) {
+      if (previous) {
+        setReturnsList((prev) => prev.map((r) => (r.id === id ? previous : r)));
+        setSelectedReturn((prev) => (prev && prev.id === id ? previous : prev));
+      }
       showNotification(e instanceof Error ? e.message : 'Return update failed');
     }
   };
@@ -217,7 +222,7 @@ export default function ReturnsWorkspace({
     if (selectedRowIds.size === 0) return;
     const idsToUpdate = Array.from(selectedRowIds);
     try {
-      const responses = await Promise.all(idsToUpdate.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}`, {
+      const responses = await Promise.all(idsToUpdate.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/returns/${id}/status`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus })
       })));
       const failed = responses.find((res) => !res.ok);
