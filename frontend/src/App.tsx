@@ -34,6 +34,7 @@ import ShippingFulfillmentWorkspace from './components/ShippingFulfillmentWorksp
 import ProductsWorkspace from './components/ProductsWorkspace';
 import ListingsWorkspace from './components/ListingsWorkspace';
 import InventoryWorkspace from './components/InventoryWorkspace';
+import InventoryPriceAutomationWorkspace from './components/InventoryPriceAutomationWorkspace';
 import ReturnsWorkspace from './components/ReturnsWorkspace';
 import PricingWorkspace from './components/PricingWorkspace';
 import AdvertisingWorkspace from './components/AdvertisingWorkspace';
@@ -322,6 +323,7 @@ export default function App() {
               selectedMarketplaceFilter={selectedMarketplace}
               onSelectMarketplaceFilter={(m) => setSelectedMarketplace(m)}
             />
+            <InventoryPriceAutomationWorkspace />
           </div>
         ) : activeTab === 'Returns' ? (
           <div className="flex-1 min-w-0">
