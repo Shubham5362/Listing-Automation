@@ -101,6 +101,7 @@ export default function Sidebar({
         { id: 'AI Listing Studio', label: 'AI Listing Studio', icon: Sparkles },
         { id: 'AI Seller Copilot', label: 'AI Seller Copilot', icon: Bot },
         { id: 'AI Seller OS', label: 'AI Seller OS', icon: Sparkles },
+        { id: 'AI Seller Intelligence', label: 'AI Seller Intelligence', icon: BarChart2 },
       ],
     },
     {
