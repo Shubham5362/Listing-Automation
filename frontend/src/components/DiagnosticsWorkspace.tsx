@@ -133,9 +133,7 @@ export default function DiagnosticsWorkspace({
       const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
       setHealthChecks(prev =>
         prev.map(hc => {
-          // Slight jitter around real ms
-          const variance = Math.floor(Math.random() * 20) - 10;
-          const newMs = Math.max(25, hc.responseTimeMs + variance);
+          const newMs = hc.responseTimeMs;
           return {
             ...hc,
             lastChecked: nowTime,
@@ -145,7 +143,7 @@ export default function DiagnosticsWorkspace({
         })
       );
       setIsRunningHealthCheck(false);
-      showToast('All 10 services checked. Health status updated.');
+      showToast(`${healthChecks.length} services checked. Health status updated.`);
     }, 1200);
   };
 
@@ -707,7 +705,7 @@ export default function DiagnosticsWorkspace({
                 <h4 className="font-bold text-slate-900 text-xs">Recent Resolved Issues</h4>
                 <button
                   type="button"
-                  onClick={() => showToast('Full history of 24 resolved issues displayed.')}
+                  onClick={() => showToast(`${resolvedIssues.length} resolved issues currently loaded.`)}
                   className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold cursor-pointer"
                 >
                   View All

@@ -196,40 +196,31 @@ export default function ListingsWorkspace({
 
   // Actions
   const handleUpdatePrice = async (target: ListingItem, newPrice: number) => {
-    setListings((prev) =>
-      prev.map((l) => (l.id === target.id ? { ...l, price: newPrice } : l))
-    );
     try {
       const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price: newPrice })
-      }); if (!res.ok) throw new Error(`Listing price update failed (${res.status})`); setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, price: newPrice } : l)); showToast(`Updated price to ₹${newPrice} for ${target.name}`);
+      });
+      if (!res.ok) throw new Error(`Listing price update failed (${res.status})`);
+      setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, price: newPrice } : l));
+      showToast(`Updated price to ₹${newPrice} for ${target.name}`);
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Listing price update failed');
     }
   };
 
   const handleUpdateStock = async (target: ListingItem, newStock: number) => {
-    const newStatus =
-      newStock === 0 ? 'Out of Stock' : newStock <= 15 ? 'Low Stock' : 'In Stock';
-    setListings((prev) =>
-      prev.map((l) =>
-        l.id === target.id
-          ? {
-              ...l,
-              stock: newStock,
-              stockStatus: newStatus,
-            }
-          : l
-      )
-    );
+    const newStatus = newStock === 0 ? 'Out of Stock' : newStock <= 15 ? 'Low Stock' : 'In Stock';
     try {
       const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inventory_quantity: newStock })
-      }); if (!res.ok) throw new Error(`Listing stock update failed (${res.status})`); setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, stock: newStock, stockStatus: newStatus } : l)); showToast(`Updated stock to ${newStock} units for ${target.name}`);
+      });
+      if (!res.ok) throw new Error(`Listing stock update failed (${res.status})`);
+      setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, stock: newStock, stockStatus: newStatus } : l));
+      showToast(`Updated stock to ${newStock} units for ${target.name}`);
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Listing stock update failed');
     }
@@ -240,74 +231,53 @@ export default function ListingsWorkspace({
       const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/actions/fix-listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'fix_all' }),
+        body: JSON.stringify({ action: 'fix_all', listing_id: target.id }),
       });
+      if (!res.ok) throw new Error(`Listing fix request failed (${res.status})`);
+      const data = await res.json().catch(() => ({}));
+      setListings((prev) => prev.map((l) => l.id === target.id ? {
+        ...l,
+        ...(data.status ? { status: data.status } : {}),
+        ...(data.issues_count !== undefined ? { issuesCount: data.issues_count } : {}),
+        ...(data.listing_quality !== undefined ? { listingQuality: data.listing_quality } : {}),
+      } : l));
+      showToast(data.message || `Listing fix request accepted for ${target.name}`);
     } catch (e) {
-      console.warn('Action API notice:', e);
+      showToast(e instanceof Error ? e.message : 'Listing fix request failed');
     }
-
-    setListings((prev) =>
-      prev.map((l) =>
-        l.id === target.id
-          ? {
-              ...l,
-              status: 'Active',
-              issuesCount: 0,
-              listingQuality: Math.min(100, l.listingQuality + 15),
-            }
-          : l
-      )
-    );
-    showToast(`Issues resolved! ${target.name} quality upgraded to Active.`);
   };
 
   const handleArchiveListing = async (target: ListingItem) => {
-    setListings((prev) =>
-      prev.map((l) => (l.id === target.id ? { ...l, status: 'Inactive' } : l))
-    );
     try {
       const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'inactive' })
       });
+      if (!res.ok) throw new Error(`Listing archive failed (${res.status})`);
+      setListings((prev) => prev.map((l) => l.id === target.id ? { ...l, status: 'Inactive' } : l));
+      showToast(`Archived listing: ${target.name}`);
     } catch (e) {
-      console.warn(e);
+      showToast(e instanceof Error ? e.message : 'Listing archive failed');
     }
-    showToast(`Archived listing: ${target.name}`);
   };
 
   const handleOptimizeAi = async (target: ListingItem) => {
     showToast(`Optimizing listing with AI for ${target.name}...`);
     try {
       const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/listings/${target.id}/optimize`, { method: 'POST' });
-      const data = await res.json();
-      setListings((prev) =>
-        prev.map((l) =>
-          l.id === target.id
-            ? {
-                ...l,
-                listingQuality: data.qualityScore || 98,
-                issuesCount: 0,
-                status: 'Active'
-              }
-            : l
-        )
-      );
-      showToast(`AI Listing Optimizer: ${data.message || 'Optimized title, bullet points, and search terms'}`);
+      if (!res.ok) throw new Error(`AI listing optimization failed (${res.status})`);
+      const data = await res.json().catch(() => ({}));
+      setListings((prev) => prev.map((l) => l.id === target.id ? {
+        ...l,
+        ...(data.qualityScore !== undefined ? { listingQuality: data.qualityScore } : {}),
+        ...(data.issuesCount !== undefined ? { issuesCount: data.issuesCount } : {}),
+        ...(data.issues_count !== undefined ? { issuesCount: data.issues_count } : {}),
+        ...(data.status ? { status: data.status } : {}),
+      } : l));
+      showToast(data.message || `AI optimization request completed for ${target.name}`);
     } catch (e) {
-      setListings((prev) =>
-        prev.map((l) =>
-          l.id === target.id
-            ? {
-                ...l,
-                listingQuality: 96,
-                issuesCount: 0,
-              }
-            : l
-        )
-      );
-      showToast(`AI Listing Optimizer enhanced bullet points & title for ${target.name}`);
+      showToast(e instanceof Error ? e.message : 'AI listing optimization failed');
     }
   };
 
