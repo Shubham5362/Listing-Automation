@@ -87,8 +87,6 @@ def complete(session_id: int, payload: TeachCompleteRequest, db: Session = Depen
 
 @router.get("/templates/{template_id}")
 def template(template_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> dict[str, Any]:
-    seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == user.id, SellerAccount.is_active.is_(True), SellerAccount.id == select(ListingTeachSession.seller_account_id).where(ListingTeachSession.id == -1).scalar_subquery()))
-    # Ownership is checked through the template's seller id below.
     from app.models.master_listing import MasterListingTemplate
     row = db.get(MasterListingTemplate, template_id)
     if not row or not db.scalar(select(SellerAccount).where(SellerAccount.id == row.seller_account_id, SellerAccount.user_id == user.id)):
