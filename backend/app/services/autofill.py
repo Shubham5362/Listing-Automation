@@ -84,8 +84,8 @@ def plan_autofill(db: Session, product: Product, marketplace: str, *, mode: str 
     return {"marketplace": marketplace, "adapter_version": adapter.version, "schema_version": schema.version, "mode": mode, "ready": ready, "missing_required": missing, "decisions": decisions, "high_risk_actions_blocked": sorted(HIGH_RISK), "discovery": [{"field": d.get("name"), "canonical": d.get("canonical"), "method": d.get("discovery"), "confidence": d.get("discovery_confidence", 0)} for d in discovered]}
 
 
-def create_session(db: Session, product: Product, marketplace: str, *, mode: str = "review") -> AutofillSession:
-    result = plan_autofill(db, product, marketplace, mode=mode)
+def create_session(db: Session, product: Product, marketplace: str, *, mode: str = "review", page_fields: list[dict[str, Any]] | None = None) -> AutofillSession:
+    result = plan_autofill(db, product, marketplace, mode=mode, page_fields=page_fields)
     session = AutofillSession(seller_account_id=product.seller_account_id, product_id=product.id, marketplace=marketplace, mode=mode, state="planned", summary_json=json.dumps(result, ensure_ascii=False, separators=(",", ":")))
     db.add(session)
     db.flush()
@@ -94,6 +94,9 @@ def create_session(db: Session, product: Product, marketplace: str, *, mode: str
     if result["missing_required"]:
         for field in result["missing_required"]:
             db.add(AutofillError(session_id=session.id, code="REQUIRED_FIELD_MISSING", field_name=field, severity="blocker", message="Required marketplace field has no verified product value.", recoverable=False))
+    db.flush()
+    from app.services.autofill_clarification import create_clarifications
+    create_clarifications(db, session, product, result)
     db.commit()
     db.refresh(session)
     return session
@@ -105,4 +108,6 @@ def session_view(db: Session, session_id: int) -> dict[str, Any]:
         raise ValueError("Autofill session not found")
     actions = db.scalars(select(AutofillAction).where(AutofillAction.session_id == session_id).order_by(AutofillAction.id)).all()
     errors = db.scalars(select(AutofillError).where(AutofillError.session_id == session_id).order_by(AutofillError.id)).all()
-    return {"id": session.id, "product_id": session.product_id, "marketplace": session.marketplace, "mode": session.mode, "state": session.state, "summary": json.loads(session.summary_json or "{}"), "actions": [{"id": a.id, "field": a.field_name, "canonical": a.canonical, "action": a.action, "value": json.loads(a.proposed_value) if a.proposed_value else None, "confidence": a.confidence, "status": a.status, "verification_status": a.verification_status, "reason": a.reason} for a in actions], "errors": [{"id": e.id, "code": e.code, "field": e.field_name, "severity": e.severity, "message": e.message, "recoverable": e.recoverable} for e in errors]}
+    from app.services.autofill_clarification import list_clarifications
+    questions = list_clarifications(db, session_id)
+    return {"id": session.id, "product_id": session.product_id, "marketplace": session.marketplace, "mode": session.mode, "state": session.state, "summary": json.loads(session.summary_json or "{}"), "actions": [{"id": a.id, "field": a.field_name, "canonical": a.canonical, "action": a.action, "value": json.loads(a.proposed_value) if a.proposed_value else None, "confidence": a.confidence, "status": a.status, "verification_status": a.verification_status, "reason": a.reason} for a in actions], "errors": [{"id": e.id, "code": e.code, "field": e.field_name, "severity": e.severity, "message": e.message, "recoverable": e.recoverable} for e in errors], "questions": [{"id": q.id, "field": q.field_label, "marketplace_field": q.marketplace_field, "canonical": q.canonical, "reason": q.reason_code, "prompt": q.prompt, "expected_input_type": q.expected_input_type, "unit": q.unit, "options": json.loads(q.options_json or "[]"), "required": q.required, "confidence_before": q.confidence_before, "status": q.status} for q in questions]}
