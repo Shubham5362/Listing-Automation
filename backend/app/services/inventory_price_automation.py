@@ -118,6 +118,21 @@ def apply_plan(db: Session, user: User, plan_id: int, approved: bool) -> Invento
         raise
 
 
+def list_targets(db: Session, user: User) -> dict:
+    sellers = db.scalars(select(SellerAccount).where(SellerAccount.user_id == user.id, SellerAccount.is_active.is_(True))).all()
+    seller_ids = [s.id for s in sellers]
+    accounts = db.scalars(select(MarketplaceAccount).where(MarketplaceAccount.seller_account_id.in_(seller_ids), MarketplaceAccount.is_connected.is_(True)).order_by(MarketplaceAccount.id)).all() if seller_ids else []
+    inventory_rows = db.execute(
+        select(InventoryItem, Product).join(Product, Product.id == InventoryItem.product_id).where(InventoryItem.seller_account_id.in_(seller_ids), Product.is_active.is_(True)).order_by(Product.sku)
+    ).all() if seller_ids else []
+    listings = db.scalars(select(Listing).join(Product, Product.id == Listing.product_id).where(Product.seller_account_id.in_(seller_ids), Listing.price.is_not(None)).order_by(Listing.sku)).all() if seller_ids else []
+    return {
+        "marketplace_accounts": [{"id": a.id, "seller_account_id": a.seller_account_id, "marketplace": a.marketplace, "display_name": a.display_name} for a in accounts],
+        "inventory": [{"seller_account_id": i.seller_account_id, "product_id": i.product_id, "sku": p.sku, "title": p.title, "quantity": i.quantity, "reserved_quantity": i.reserved_quantity, "available_quantity": max(i.quantity - i.reserved_quantity, 0)} for i, p in inventory_rows],
+        "listings": [{"id": l.id, "marketplace_account_id": l.marketplace_account_id, "sku": l.sku, "title": l.title, "price": float(l.price) if l.price is not None else None} for l in listings],
+    }
+
+
 def list_plans(db: Session, user: User, limit: int = 50) -> list[dict]:
     rows = db.scalars(select(InventoryPricePlan).join(SellerAccount).where(SellerAccount.user_id == user.id).order_by(InventoryPricePlan.id.desc()).limit(max(1, min(limit, 100)))).all()
     return [_plan_view(row) for row in rows]
