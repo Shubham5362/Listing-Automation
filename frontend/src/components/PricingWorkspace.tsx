@@ -248,10 +248,36 @@ export default function PricingWorkspace({
     }
   };
 
-  const handleExport = (format: 'CSV' | 'Excel') => {
-    setIsExportOpen(false);
-    showToast(`Exported ${pricingItems.length} pricing records to ${format}`);
+  const handleReevaluateRules = async () => {
+    try {
+      const res = await fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/pricing/rules`);
+      if (!res.ok) throw new Error(`Pricing rules load failed (${res.status})`);
+      const rules = await res.json();
+      let applied = 0;
+      for (const rule of rules) {
+        if (!rule.listing_id || rule.enabled === false) continue;
+        const rec = await fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/pricing/advanced-recommendation/${rule.listing_id}`);
+        if (!rec.ok) continue;
+        const data = await rec.json();
+        if (data.recommended_price != null && Number(data.recommended_price) > 0) {
+          const patch = await fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/pricing/${rule.listing_id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: Number(data.recommended_price) }) });
+          if (patch.ok) applied++;
+        }
+      }
+      showToast(`Re-evaluated pricing rules: ${applied} price(s) updated`);
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Rule evaluation failed'); }
   };
+
+  const handlePricingExport = (format: 'CSV' | 'Excel') => {
+    const headers = ['ID','Name','SKU','Current Price','Suggested Price','Status'];
+    const rows = pricingItems.map(i => [i.id, i.name, i.sku, i.currentPrice, i.suggestedPrice, i.priceStatus]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `pricing_export_${Date.now()}.${format === 'CSV' ? 'csv' : 'csv'}`; a.click(); URL.revokeObjectURL(a.href);
+    showToast(`Exported ${rows.length} pricing records to ${format}`);
+  };
+
+  const handleExport = (format: 'CSV' | 'Excel') => { setIsExportOpen(false); handlePricingExport(format); };
 
   const showToast = (msg: string) => {
     setNotificationMsg(msg);
@@ -324,10 +350,7 @@ export default function PricingWorkspace({
                       <span>Re-evaluate All Rules</span>
                     </button>
                     <button
-                      onClick={() => {
-                        showToast('Syncing prices to Amazon & Flipkart...');
-                        setIsBulkOpen(false);
-                      }}
+                      onClick={() => { showToast('Channel sync requires connected marketplace sync credentials'); setIsBulkOpen(false); }}
                       className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2 font-medium"
                     >
                       <History className="w-3.5 h-3.5 text-slate-500" />
