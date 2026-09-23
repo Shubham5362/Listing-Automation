@@ -83,8 +83,9 @@ export default function ProductsWorkspace({
         const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/catalog');
         if (res.ok) {
           const json = await res.json();
-          if (json.items && json.items.length > 0) {
-            const mapped: ProductCatalogItem[] = json.items.map((item: any) => {
+          const rows = Array.isArray(json) ? json : (json.items || []);
+          if (rows.length > 0) {
+            const mapped: ProductCatalogItem[] = rows.map((item: any) => {
               const stock = item.stock !== undefined ? item.stock : (item.stock_qty !== undefined ? item.stock_qty : 0);
               const price = item.price ?? item.mrp ?? 0;
               const cost = item.cost_price ?? 0;
