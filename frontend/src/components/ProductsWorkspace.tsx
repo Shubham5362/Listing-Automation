@@ -63,7 +63,7 @@ export default function ProductsWorkspace({
   useEffect(() => {
     const syncInventoryIds = async () => {
       try {
-        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\\/$/, '') + '/api/v1/inventory');
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/inventory');
         if (!res.ok) return;
         const rows = await res.json();
         const inventory = Array.isArray(rows) ? rows : (rows.items || []);
