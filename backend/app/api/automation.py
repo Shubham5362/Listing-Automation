@@ -32,7 +32,11 @@ def _rule(db: Session, seller_account_id: int, automation_id: int) -> Automation
 
 
 @router.post("", response_model=AutomationRead, status_code=201)
-def create_automation(payload: AutomationCreate, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_automation(payload: AutomationCreate, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     _seller(db, user, seller_account_id)
     if payload.trigger_type not in {"schedule", "event", "manual", "ai"}:
         raise HTTPException(status_code=422, detail="Unsupported trigger type")
@@ -70,7 +74,11 @@ def list_automations(seller_account_id: int | None = Query(default=None), enable
 
 
 @router.patch("/{automation_id}/enabled", response_model=AutomationRead)
-def set_enabled(automation_id: int, enabled: bool, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def set_enabled(automation_id: int, enabled: bool, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     _seller(db, user, seller_account_id)
     rule = _rule(db, seller_account_id, automation_id)
     rule.enabled = enabled
@@ -81,7 +89,11 @@ def set_enabled(automation_id: int, enabled: bool, seller_account_id: int, db: S
 
 
 @router.post("/{automation_id}/run", response_model=AutomationRunRead, status_code=201)
-def run_automation(automation_id: int, payload: AutomationExecute, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def run_automation(automation_id: int, payload: AutomationExecute, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     _seller(db, user, seller_account_id)
     rule = _rule(db, seller_account_id, automation_id)
     context = {**payload.trigger_context, "user_id": user.id, "idempotency_key": payload.idempotency_key or str(uuid4())}
@@ -136,6 +148,17 @@ def run_due_scheduled(seller_account_id: int, db: Session = Depends(get_db), use
     jobs = run_due_scheduled_automations(db, seller_account_id, user.id, service)
     return [{"id": job.id, "status": job.status, "name": job.name, "seller_account_id": job.seller_account_id} for job in jobs]
 
+
+@router.delete("/{automation_id}", status_code=204)
+def delete_automation(automation_id: int, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
+    _seller(db, user, seller_account_id)
+    rule = _rule(db, seller_account_id, automation_id)
+    db.delete(rule)
+    db.commit()
 
 @router.get("/{automation_id}/runs", response_model=list[AutomationRunRead])
 def list_runs(automation_id: int, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
