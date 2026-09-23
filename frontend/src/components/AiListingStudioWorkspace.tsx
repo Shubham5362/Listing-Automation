@@ -160,13 +160,15 @@ export default function AiListingStudioWorkspace({
   };
 
   // Generate unique SKU
-  const handleGenerateSku = () => {
-    const brandPrefix = (brand.substring(0, 2) || 'HM').toUpperCase();
-    const namePart = productName.split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase();
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const newSku = `${brandPrefix}-${namePart || 'SSB'}-${randomNum}`;
-    setSku(newSku);
-    showToast(`Generated new SKU: ${newSku}`);
+  const handleGenerateSku = async () => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/catalog/products/next-sku?brand=' + encodeURIComponent(brand) + '&product_name=' + encodeURIComponent(productName));
+      if (!res.ok) throw new Error('SKU generation failed (' + res.status + ')');
+      const data = await res.json();
+      setSku(data.sku);
+      showToast('Generated backend SKU: ' + data.sku);
+    } catch (e) { showToast(e instanceof Error ? e.message : 'SKU generation failed'); }
   };
 
   // Import from catalog

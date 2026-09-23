@@ -281,6 +281,39 @@ export default function ListingsWorkspace({
     }
   };
 
+  const handleBulkListingAction = async (action: 'price' | 'stock' | 'optimize' | 'fix') => {
+    const ids = Array.from(selectedListingIds);
+    if (!ids.length) { showToast('Select at least one listing first'); return; }
+    try {
+      if (action === 'price') {
+        const raw = window.prompt('Set price for selected listings (INR)');
+        if (raw === null) return;
+        const price = Number(raw);
+        if (!Number.isFinite(price) || price <= 0) throw new Error('Enter a valid price');
+        await Promise.all(ids.map(id => fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/listings/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price }) }).then(r => { if (!r.ok) throw new Error(`Price update failed (${r.status})`); })));
+        setListings(prev => prev.map(l => ids.includes(l.id) ? { ...l, price } : l));
+        showToast(`Updated price for ${ids.length} listing(s)`);
+      } else if (action === 'stock') {
+        const raw = window.prompt('Set stock quantity for selected listings');
+        if (raw === null) return;
+        const inventory_quantity = Number(raw);
+        if (!Number.isInteger(inventory_quantity) || inventory_quantity < 0) throw new Error('Enter a valid whole-number stock quantity');
+        await Promise.all(ids.map(id => fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/listings/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inventory_quantity }) }).then(r => { if (!r.ok) throw new Error(`Stock update failed (${r.status})`); })));
+        setListings(prev => prev.map(l => ids.includes(l.id) ? { ...l, stock: inventory_quantity, stockStatus: inventory_quantity === 0 ? 'Out of Stock' : inventory_quantity <= 15 ? 'Low Stock' : 'In Stock' } : l));
+        showToast(`Updated stock for ${ids.length} listing(s)`);
+      } else if (action === 'optimize') {
+        await Promise.all(ids.map(id => fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/listings/${id}/optimize`, { method: 'POST' }).then(r => { if (!r.ok) throw new Error(`AI optimization failed (${r.status})`); })));
+        showToast(`AI optimization completed for ${ids.length} listing(s)`);
+      } else {
+        const res = await fetch(`(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')/api/v1/actions/fix-listings`, { method: 'POST' });
+        if (!res.ok) throw new Error(`Listing fix request failed (${res.status})`);
+        const data = await res.json();
+        showToast(data.message || 'Listing issue resolution queued');
+      }
+      setSelectedListingIds(new Set());
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Bulk listing action failed'); }
+  };
+
   // Export
   const handleExport = (type: 'csv' | 'json') => {
     if (type === 'csv') {
@@ -334,7 +367,7 @@ export default function ListingsWorkspace({
             <div className="flex items-center flex-wrap gap-2">
               {/* Bulk Edit Button */}
               <button
-                onClick={() => showToast('Bulk listing editor active')}
+                onClick={() => handleBulkListingAction('price')}
                 className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <Edit className="w-3.5 h-3.5 text-slate-500" />
@@ -343,9 +376,7 @@ export default function ListingsWorkspace({
 
               {/* AI Optimize Button */}
               <button
-                onClick={() => {
-                  showToast('AI Listing Intelligence running on all listings.');
-                }}
+                onClick={() => handleBulkListingAction('optimize')}
                 className="px-3 py-1.5 bg-white hover:bg-violet-50/50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <Sparkles className="w-3.5 h-3.5 text-violet-600" />
@@ -718,7 +749,7 @@ export default function ListingsWorkspace({
 
               {/* Update Price */}
               <button
-                onClick={() => showToast('Bulk Price Adjuster opened')}
+                onClick={() => handleBulkListingAction('price')}
                 className="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <Tag className="w-3.5 h-3.5 text-slate-500" />
@@ -727,7 +758,7 @@ export default function ListingsWorkspace({
 
               {/* Update Stock */}
               <button
-                onClick={() => showToast('Bulk Stock Updater opened')}
+                onClick={() => handleBulkListingAction('stock')}
                 className="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <Boxes className="w-3.5 h-3.5 text-slate-500" />
@@ -736,9 +767,7 @@ export default function ListingsWorkspace({
 
               {/* Optimize with AI */}
               <button
-                onClick={() => {
-                  showToast('AI Listing Intelligence optimizing selected listings...');
-                }}
+                onClick={() => handleBulkListingAction('optimize')}
                 className="px-2.5 py-1.5 bg-violet-50/50 hover:bg-violet-100/60 border border-violet-200 text-violet-700 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <Sparkles className="w-3.5 h-3.5 text-violet-600" />
@@ -747,9 +776,7 @@ export default function ListingsWorkspace({
 
               {/* Fix Issues */}
               <button
-                onClick={() => {
-                  showToast('Resolving catalog suppressed & missing attribute errors...');
-                }}
+                onClick={() => handleBulkListingAction('fix')}
                 className="px-2.5 py-1.5 bg-amber-50/50 hover:bg-amber-100/60 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />

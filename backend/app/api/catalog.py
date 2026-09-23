@@ -47,6 +47,23 @@ def _listing_read(listing: Listing) -> ListingRead:
     return ListingRead(id=listing.id, product_id=listing.product_id, marketplace_account_id=listing.marketplace_account_id, sku=listing.sku, external_listing_id=listing.external_listing_id, status=listing.status, title=listing.title, price=listing.price, inventory_quantity=listing.inventory_quantity, attributes=json.loads(listing.attributes_json or "{}"), marketplace_data=json.loads(listing.marketplace_data_json or "{}"), validation_errors=json.loads(listing.validation_errors_json or "[]"))
 
 
+@router.get("/products/next-sku")
+def next_product_sku(brand: str = "", product_name: str = "", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict[str, str]:
+    seller = db.scalar(select(SellerAccount).where(SellerAccount.user_id == current_user.id, SellerAccount.is_active.is_(True)).order_by(SellerAccount.id.asc()))
+    if not seller:
+        raise HTTPException(404, "Seller account not found")
+    brand_prefix = ''.join(ch for ch in brand.upper() if ch.isalnum())[:2] or "HM"
+    name_prefix = ''.join(word[0] for word in product_name.split() if word)[:3].upper() or "SSB"
+    prefix = f"{brand_prefix}-{name_prefix}-"
+    existing = list(db.scalars(select(Product.sku).where(Product.seller_account_id == seller.id, Product.sku.like(prefix + "%"))).all())
+    nums = []
+    for sku in existing:
+        suffix = sku[len(prefix):]
+        if suffix.isdigit(): nums.append(int(suffix))
+    next_num = max(nums, default=999) + 1
+    return {"sku": f"{prefix}{next_num:04d}"}
+
+
 @router.post("/products", response_model=ProductRead, status_code=201)
 def create_product(payload: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProductRead:
     _seller(db, current_user, payload.seller_account_id)
