@@ -9,7 +9,7 @@ from app.models.catalog import Product
 from app.models.core import MarketplaceAccount, SellerAccount, User
 from app.models.diagnostic import Diagnostic, DiagnosticStatus
 from app.schemas.diagnostic import DiagnosticRead, DiagnosticScanRequest
-from app.services.diagnostics import persist_findings, scan_product
+from app.services.diagnostics import execute_fix, persist_findings, scan_product
 
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
@@ -52,6 +52,16 @@ def summary(user: User = Depends(get_current_user), db: Session = Depends(get_db
 @router.get("/{diagnostic_id}", response_model=DiagnosticRead)
 def get_diagnostic(diagnostic_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return _read(_owned(db, user, diagnostic_id))
+
+@router.post("/{diagnostic_id}/fix", response_model=DiagnosticRead)
+def fix(diagnostic_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    row = _owned(db, user, diagnostic_id)
+    try:
+        execute_fix(db, row, user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    db.refresh(row)
+    return _read(row)
 
 @router.post("/{diagnostic_id}/ignore", response_model=DiagnosticRead)
 def ignore(diagnostic_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
