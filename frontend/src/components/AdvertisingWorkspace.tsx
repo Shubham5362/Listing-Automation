@@ -118,7 +118,17 @@ export default function AdvertisingWorkspace({
                 topKeywords: Array.isArray(c.top_keywords) ? c.top_keywords : [],
               };
             });
-            setCampaigns(mapped);
+            try {
+              const metricsRes = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/advertising/metrics');
+              if (metricsRes.ok) {
+                const metricsRows = await metricsRes.json();
+                const metricsByCampaign = new Map<number, any>((Array.isArray(metricsRows) ? metricsRows : []).map((m: any) => [m.campaign_id, m]));
+                setCampaigns(mapped.map((campaign) => {
+                  const m = metricsByCampaign.get(campaign.id);
+                  return m ? { ...campaign, adSpend: m.spend ?? 0, salesAd: m.sales ?? 0, clicks: m.clicks ?? 0, impressions: m.impressions ?? 0, ctr: m.ctr ?? 0, cpc: m.cpc ?? 0, acos: m.acos ?? 0, roas: m.roas ?? 0, ordersAd: m.orders ?? 0 } : campaign;
+                }));
+              } else setCampaigns(mapped);
+            } catch { setCampaigns(mapped); }
           }
         }
       } catch (err) {
