@@ -862,7 +862,7 @@ def create_report_schedule(payload: dict, user: User = Depends(get_current_user)
     name = str(payload.get("name") or "").strip()
     if not name:
         raise HTTPException(status_code=422, detail="Schedule name is required")
-    row = AutomationRule(seller_account_id=sellers[0], name=f"[REPORT_SCHEDULE] {name}", description="Scheduled report delivery", trigger_type="schedule", trigger_config={"report_schedule": True, "schedule": str(payload.get("schedule") or ""), "format": str(payload.get("format") or "PDF"), "recipients": str(payload.get("recipients") or "")}, conditions=[], actions=[{"type": "notification", "message": f"Report: {name}"}], enabled=True, status="active")
+    row = AutomationRule(seller_account_id=sellers[0], name=f"[REPORT_SCHEDULE] {name}", description="Scheduled report delivery", trigger_type="schedule", trigger_config={"report_schedule": True, "interval_minutes": 10080, "schedule": str(payload.get("schedule") or ""), "format": str(payload.get("format") or "PDF"), "recipients": str(payload.get("recipients") or "")}, conditions=[], actions=[{"type": "notification", "message": f"Report: {name}"}], enabled=True, status="active")
     db.add(row)
     db.commit()
     db.refresh(row)
