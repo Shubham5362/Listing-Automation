@@ -84,8 +84,8 @@ def create_clarifications(db: Session, session: AutofillSession, product: Produc
             "enum": list(getattr(schema_field, "enum", ()) or ()) if schema_field else [],
         }
         # A low-confidence/unknown canonical identity is a field-interpretation question.
-        if not canonical or canonical == field_name.upper().replace(" ", "_"):
-            reason = "FIELD_UNCLEAR" if reason != "FORMAT_INVALID" else reason
+        if not schema_field and reason != "FORMAT_INVALID":
+            reason = "FIELD_UNCLEAR"
             canonical = None
         options = meta["enum"]
         clarification = AutofillClarification(
