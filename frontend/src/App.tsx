@@ -44,6 +44,7 @@ import AiSellerCopilotWorkspace from './components/AiSellerCopilotWorkspace';
 import MarketplacesWorkspace from './components/MarketplacesWorkspace';
 import MarketplaceFormKnowledgeCenter from './MarketplaceFormKnowledgeCenter';
 import MasterListingCenter from './MasterListingCenter';
+import AutofillClarificationCenter from './AutofillClarificationCenter';
 import NotificationsWorkspace from './components/NotificationsWorkspace';
 import ControlCenterWorkspace from './components/ControlCenterWorkspace';
 import DiagnosticsWorkspace from './components/DiagnosticsWorkspace';
@@ -304,6 +305,7 @@ export default function App() {
               onSelectMarketplaceFilter={(m) => setSelectedMarketplace(m)}
             />
             <MasterListingCenter />
+            <AutofillClarificationCenter />
           </>
           </div>
         ) : activeTab === 'Inventory' ? (
