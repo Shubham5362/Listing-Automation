@@ -32,6 +32,7 @@ class ShipmentEventRead(BaseModel):
 
 
 class ShipmentRead(BaseModel):
+    model_config = {"from_attributes": True}
     id: int
     order_id: int
     marketplace_account_id: int
@@ -45,4 +46,4 @@ class ShipmentRead(BaseModel):
     shipped_at: datetime | None
     delivered_at: datetime | None
     last_synced_at: datetime | None
-    events: list[ShipmentEventRead] = []
+    events: list[ShipmentEventRead] = Field(default_factory=list)
