@@ -29,7 +29,7 @@ export default function AutofillClarificationCenter() {
     const value = answers[q.id];
     if (!value?.trim()) { setMessage('Answer enter karo.'); return; }
     const res = await request(`/autofill/sessions/${sessionId}/questions/${q.id}/answer`, {
-      method:'POST', body:JSON.stringify({value}),
+      method:'POST', body:JSON.stringify({value, canonical: q.reason === 'FIELD_UNCLEAR' ? answers[`canonical-${q.id}`] : undefined}),
     });
     const body = await res.json();
     if (!res.ok) { setMessage(body.detail || 'Answer validation failed'); return; }
@@ -66,6 +66,7 @@ export default function AutofillClarificationCenter() {
           <b>{q.field}{q.required ? ' · Required' : ' · Optional'}<small> · {q.marketplace_field}</small></b>
           <strong>{q.reason}</strong>
           <p style={{margin:'8px 0',fontSize:13}}>{q.prompt}</p>
+          {q.reason === 'FIELD_UNCLEAR' && <input placeholder="Canonical Product Brain field (e.g. COLOR)" value={answers[`canonical-${q.id}`] || ''} onChange={e=>setAnswers(prev=>({...prev,[`canonical-${q.id}`]:e.target.value}))} />}
           {q.options?.length > 0 && <select value={answers[q.id] || ''} onChange={e=>setAnswers(prev=>({...prev,[q.id]:e.target.value}))}>
             <option value="">Select...</option>{q.options.map((o:any)=><option key={String(o)} value={String(o)}>{String(o)}</option>)}
           </select>}
