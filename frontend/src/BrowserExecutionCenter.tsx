@@ -1,0 +1,14 @@
+import React from 'react';
+
+const API=(import.meta.env.VITE_API_BASE_URL||'').replace(/\/$/,'');
+export default function BrowserExecutionCenter(){
+ const [sessionId,setSessionId]=React.useState(''); const [fields,setFields]=React.useState('[]'); const [execution,setExecution]=React.useState<any>(null); const [msg,setMsg]=React.useState('');
+ const plan=async(mode='dry_run')=>{
+  try{const r=await fetch(`${API}/api/v1/browser-execution/plan`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:Number(sessionId),page_fields:JSON.parse(fields),mode})}); const b=await r.json(); if(!r.ok)throw Error(b.detail||'Execution plan failed'); setExecution(b);setMsg(mode==='dry_run'?'Dry-run plan created.':'Execution armed; browser bridge may now execute individual fill steps.');}catch(e:any){setMsg(e.message)}
+ };
+ const arm=async()=>{if(!execution)return;const r=await fetch(`${API}/api/v1/browser-execution/${execution.id}/arm`,{method:'POST'});const b=await r.json();if(!r.ok){setMsg(b.detail||'Arm failed');return}setExecution(b);setMsg('Execution armed.');};
+ return <section className="module-page" style={{marginTop:18}}><div className="module-hero violet"><div className="module-mark">▶</div><div><p className="eyebrow">PHASE 4 · BROWSER EXECUTION</p><h2>Form Execution</h2><p>Approved autofill actions ko deterministic browser commands me convert karo. Clarification pending ho to execution automatically pause rahega.</p></div></div>
+ <article className="panel" style={{marginTop:18}}><div className="panelhead"><div><h2>Execution planner</h2><p>Browser bridge se mila structured field snapshot paste karo.</p></div></div><div style={{padding:16,display:'grid',gap:10}}><input placeholder="Autofill Session ID" value={sessionId} onChange={e=>setSessionId(e.target.value)}/><textarea rows={7} value={fields} onChange={e=>setFields(e.target.value)} /><div style={{display:'flex',gap:8}}><button onClick={()=>plan('dry_run')} disabled={!sessionId}>Create Dry Run</button><button onClick={arm} disabled={!execution||execution.state!=='planned'}>Arm Execution</button></div></div></article>
+ {msg&&<div className="errorbar" role="status">{msg}</div>}
+ {execution&&<article className="panel" style={{marginTop:18}}><div className="panelhead"><div><h2>Execution #{execution.id}</h2><p>State: {execution.state} · Mode: {execution.mode}</p></div></div><div className="rows">{execution.commands?.map((c:any)=><div key={c.sequence}><b>#{c.sequence} · {c.field}</b><small>{c.selector_strategy}: {c.selector}</small><em>{JSON.stringify(c.value)}</em></div>)}</div></article>}</section>
+}

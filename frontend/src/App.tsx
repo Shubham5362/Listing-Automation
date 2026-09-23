@@ -44,6 +44,7 @@ import AiSellerCopilotWorkspace from './components/AiSellerCopilotWorkspace';
 import MarketplacesWorkspace from './components/MarketplacesWorkspace';
 import MarketplaceFormKnowledgeCenter from './MarketplaceFormKnowledgeCenter';
 import MasterListingCenter from './MasterListingCenter';
+import BrowserExecutionCenter from './BrowserExecutionCenter';
 import AutofillClarificationCenter from './AutofillClarificationCenter';
 import NotificationsWorkspace from './components/NotificationsWorkspace';
 import ControlCenterWorkspace from './components/ControlCenterWorkspace';
@@ -305,6 +306,7 @@ export default function App() {
               onSelectMarketplaceFilter={(m) => setSelectedMarketplace(m)}
             />
             <MasterListingCenter />
+            <BrowserExecutionCenter />
             <AutofillClarificationCenter />
           </>
           </div>
