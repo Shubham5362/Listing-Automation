@@ -13,7 +13,7 @@ type Question = {
 export default function AutofillClarificationCenter() {
   const [sessionId, setSessionId] = React.useState('');
   const [questions, setQuestions] = React.useState<Question[]>([]);
-  const [answers, setAnswers] = React.useState<Record<number,string>>({});
+  const [answers, setAnswers] = React.useState<Record<string,string>>({});
   const [message, setMessage] = React.useState('');
 
   const load = async () => {
