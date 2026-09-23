@@ -15,6 +15,10 @@ class PlanRequest(BaseModel):
     page_fields:list[dict[str,Any]]=Field(default_factory=list)
     page_url:str|None=None
     mode:str=Field(default="dry_run",pattern="^(dry_run|armed)$")
+class ValidateRequest(BaseModel):
+    page_url:str
+    page_fields:list[dict[str,Any]]=Field(default_factory=list)
+
 class ResultRequest(BaseModel):
     sequence:int
     state:str=Field(pattern="^(filled|failed|skipped)$")
@@ -37,6 +41,20 @@ def arm(execution_id:int,db:Session=Depends(get_db),user:User=Depends(get_curren
     own_session(db,ex.session_id,user)
     try:return execution_view(db,arm_execution(db,ex).id)
     except ValueError as e:raise HTTPException(409,str(e))
+@router.post("/{execution_id}/validate")
+def validate(execution_id:int,payload:ValidateRequest,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
+    ex=db.get(BrowserExecution,execution_id)
+    if not ex: raise HTTPException(404,"Execution not found")
+    own_session(db,ex.session_id,user)
+    from app.services.browser_execution import _fingerprint
+    from urllib.parse import urlparse
+    host=urlparse(payload.page_url).hostname or ""
+    allowed=(host=="sellercentral.amazon.in" or host=="sellercentral.amazon.com" or host=="seller.flipkart.com" or host.endswith(".sellercentral.amazon.in") or host.endswith(".sellercentral.amazon.com") or host.endswith(".seller.flipkart.com"))
+    if not allowed: raise HTTPException(403,"Marketplace domain is not allowlisted")
+    fingerprint=_fingerprint(payload.page_fields)
+    if fingerprint!=ex.page_fingerprint: raise HTTPException(409,"Page fingerprint mismatch; refresh and create a new plan")
+    return {"valid":True,"execution_id":ex.id,"page_fingerprint":fingerprint}
+
 @router.post("/{execution_id}/result")
 def result(execution_id:int,payload:ResultRequest,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
     ex=db.get(BrowserExecution,execution_id)
