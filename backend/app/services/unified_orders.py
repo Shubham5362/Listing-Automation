@@ -86,3 +86,15 @@ def record_order_event(db: Session, *, order: Order, event_type: str, source: st
     event = OrderEvent(seller_account_id=order.seller_account_id, order_id=order.id, marketplace_account_id=order.marketplace_account_id, event_type=event_type, status=status, source=source, external_event_id=external_event_id, payload_json=payload_json, occurred_at=occurred_at or datetime.utcnow())
     db.add(event)
     return event
+
+
+def unified_order_by_id(db: Session, user_id: int, order_id: int) -> dict[str, Any] | None:
+    stmt = (
+        select(Order, MarketplaceAccount.marketplace, MarketplaceAccount.display_name)
+        .join(SellerAccount, SellerAccount.id == Order.seller_account_id)
+        .join(MarketplaceAccount, MarketplaceAccount.id == Order.marketplace_account_id)
+        .options(selectinload(Order.items))
+        .where(SellerAccount.user_id == user_id, Order.id == order_id)
+    )
+    row = db.execute(stmt).first()
+    return _view(row[0], row[1], row[2]) if row else None
