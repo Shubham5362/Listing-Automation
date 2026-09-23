@@ -36,6 +36,7 @@ from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunSt
 from app.models.media import MediaRole, MediaStatus, MediaType, ProductMedia
 from app.models.notifications import Notification, NotificationCategory, NotificationChannel, NotificationDelivery, NotificationDeliveryStatus, NotificationPreference
 from app.models.orders import Order, OrderItem, OrderStatus, PaymentStatus
+from app.models.order_events import OrderEvent
 from app.models.shipments import FulfillmentMode, Shipment, ShipmentEvent, ShipmentStatus
 from app.models.pricing import BuyBoxSnapshot, CompetitorPrice, PriceHistory, PricingRule, PricingSource
 from app.models.returns import CustomerIssue, CustomerIssuePriority, CustomerIssueStatus, ReturnRequest, ReturnResolution, ReturnStatus

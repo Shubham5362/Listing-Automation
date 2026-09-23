@@ -17,6 +17,7 @@ from app.models.inventory import InventoryItem as CentralInventoryItem
 from app.models.inventory import InventoryMovement, InventoryMovementType
 from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunStatus
 from app.models.orders import Order, OrderItem, OrderStatus
+from app.services.unified_orders import record_order_event
 from app.marketplaces.catalog import get_channel_catalog_item
 
 
@@ -124,13 +125,17 @@ def _sync_orders(db: Session, account: MarketplaceAccount, seller_id: int, clien
             order = Order(seller_account_id=seller_id, marketplace_account_id=account.id, external_order_id=item.external_order_id, status=status, currency=item.currency, total_amount=float(item.total), subtotal=float(item.total), ordered_at=item.ordered_at, marketplace_data_json=json.dumps({"items": item.items or [], "status": item.status}, default=str, separators=(",", ":")))
             db.add(order)
             db.flush()
+            record_order_event(db, order=order, event_type="order_created", source=account.marketplace, status=status, external_event_id=f"order:{item.external_order_id}:created", payload_json=json.dumps({"raw_status": item.status}, separators=(",", ":")), occurred_at=item.ordered_at)
         else:
+            previous_status = order.status
             order.status = status
             order.total_amount = float(item.total)
             order.subtotal = float(item.total)
             order.currency = item.currency
             order.ordered_at = item.ordered_at
             order.marketplace_data_json = json.dumps({"items": item.items or [], "status": item.status}, default=str, separators=(",", ":"))
+            if previous_status != status:
+                record_order_event(db, order=order, event_type="status_changed", source=account.marketplace, status=status, external_event_id=f"order:{item.external_order_id}:status:{status}", payload_json=json.dumps({"from": previous_status, "raw_status": item.status}, separators=(",", ":")))
             db.query(OrderItem).filter(OrderItem.order_id == order.id).delete(synchronize_session=False)
         for raw in item.items or []:
             sku = str(raw.get("sku") or raw.get("seller_sku") or "unknown")
