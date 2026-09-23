@@ -157,6 +157,7 @@ def delete_automation(automation_id: int, seller_account_id: int | None = Query(
         raise HTTPException(status_code=404, detail="Seller account not found")
     _seller(db, user, seller_account_id)
     rule = _rule(db, seller_account_id, automation_id)
+    db.query(AutomationRun).filter(AutomationRun.automation_rule_id == rule.id, AutomationRun.seller_account_id == seller_account_id).delete(synchronize_session=False)
     db.delete(rule)
     db.commit()
 
