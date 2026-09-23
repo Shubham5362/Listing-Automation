@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.db.session import get_db
-from app.models.core import MarketplaceAccount, SellerAccount, User
+from app.models.core import User
 from app.models.order_events import OrderEvent
-from app.models.orders import Order, OrderStatus
-from app.services.unified_orders import order_timeline, unified_orders
+from app.models.orders import OrderStatus
+from app.services.unified_orders import order_timeline, unified_order_by_id, unified_orders
 
 router = APIRouter(prefix="/unified-orders", tags=["unified-orders"])
 
@@ -55,12 +55,7 @@ def get_order_timeline(order_id: int, user: User = Depends(get_current_user), db
 
 @router.get("/{order_id}")
 def get_unified_order(order_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    seller_ids = _owned_sellers(db, user)
-    row = db.execute(
-        select(Order, MarketplaceAccount.marketplace, MarketplaceAccount.display_name)
-        .join(MarketplaceAccount, MarketplaceAccount.id == Order.marketplace_account_id)
-        .where(Order.id == order_id, Order.seller_account_id.in_(seller_ids))
-    ).first()
-    if not row:
+    result = unified_order_by_id(db, user.id, order_id)
+    if not result:
         raise HTTPException(status_code=404, detail="Order not found")
-    return unified_orders(db, user.id, query=row[0].external_order_id, limit=1)[0]
+    return result
