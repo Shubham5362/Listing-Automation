@@ -10,6 +10,7 @@ from app.models.core import MarketplaceAccount, SellerAccount
 from app.models.inventory import InventoryItem as CentralInventoryItem
 from app.models.marketplace_sync import MarketplaceSyncRun, MarketplaceSyncRunStatus
 from app.models.orders import Order
+from app.models.order_events import OrderEvent
 from app.services.marketplace_sync import MarketplaceSyncError, sync_marketplace_account
 
 
@@ -51,6 +52,7 @@ def test_sync_is_idempotent_and_updates_central_records(db_session, monkeypatch)
     assert db_session.query(Listing).filter_by(marketplace_account_id=account.id, sku="SKU-1").count() == 1
     assert db_session.query(CentralInventoryItem).filter_by(seller_account_id=seller.id).count() == 1
     assert db_session.query(Order).filter_by(marketplace_account_id=account.id, external_order_id="ORD-1").count() == 1
+    assert db_session.query(OrderEvent).filter_by(order_id=db_session.query(Order).filter_by(marketplace_account_id=account.id, external_order_id="ORD-1").one().id).count() == 1
     assert db_session.query(MarketplaceSyncRun).filter_by(marketplace_account_id=account.id, status=MarketplaceSyncRunStatus.COMPLETED.value).count() == 2
     assert account.is_connected is True
 
