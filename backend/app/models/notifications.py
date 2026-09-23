@@ -15,6 +15,7 @@ class NotificationCategory(str, Enum):
     finance = "finance"
     ai = "ai"
     report = "report"
+    marketing = "marketing"
 
 
 class NotificationChannel(str, Enum):

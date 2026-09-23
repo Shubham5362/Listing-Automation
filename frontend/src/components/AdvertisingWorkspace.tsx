@@ -174,7 +174,7 @@ export default function AdvertisingWorkspace({
     try {
       await Promise.all(
         ids.map((id) =>
-          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
+          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'paused' })
@@ -200,7 +200,7 @@ export default function AdvertisingWorkspace({
     try {
       await Promise.all(
         ids.map((id) =>
-          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
+          fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'enabled' })
@@ -212,8 +212,25 @@ export default function AdvertisingWorkspace({
     }
   };
 
-  const handleBulkAiOptimize = () => {
-    showAlert('AI Optimizer analyzed selected campaigns: Recommended budget reallocations applied to maximize ROAS');
+  const handleBulkAiOptimize = async () => {
+    if (selectedIds.length === 0) { showAlert('Select at least one campaign to optimize'); return; }
+    const ids = [...selectedIds];
+    try {
+      for (const id of ids) {
+        const opt = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}/optimization`);
+        if (!opt.ok) throw new Error(`Optimization failed for campaign ${id}`);
+        const recommendation = await opt.json();
+        if (recommendation.action !== 'hold_budget') {
+          const update = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ daily_budget: recommendation.recommended_daily_budget }) });
+          if (!update.ok) throw new Error(`Budget update failed for campaign ${id}`);
+        }
+        const analyze = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}/analyze`, { method: 'POST' });
+        if (!analyze.ok) throw new Error(`Analysis failed for campaign ${id}`);
+      }
+      showAlert(`AI optimization applied to ${ids.length} campaign(s)`);
+      setSelectedIds([]);
+      setCampaigns(prev => prev.map(camp => ids.includes(camp.id) ? { ...camp } : camp));
+    } catch (e) { showAlert(e instanceof Error ? e.message : 'AI optimization failed'); }
   };
 
   const handleBulkArchive = async () => {
@@ -299,7 +316,23 @@ export default function AdvertisingWorkspace({
 
               {/* Create Campaign ▾ button */}
               <button
-                onClick={() => showAlert('Opening Campaign Creation Wizard...')}
+                onClick={async () => {
+                  const name = window.prompt('Campaign name', 'New Sponsored Products Campaign');
+                  if (!name) return;
+                  const budget = Number(window.prompt('Daily budget (INR)', '500') || 0);
+                  if (!Number.isFinite(budget) || budget < 0) { showAlert('Enter a valid daily budget'); return; }
+                  try {
+                    const source = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns`);
+                    if (!source.ok) throw new Error('Unable to load advertising campaigns');
+                    const existing = await source.json();
+                    const first = Array.isArray(existing) ? existing[0] : null;
+                    if (!first?.marketplace_account_id) { showAlert('No marketplace advertising account is available'); return; }
+                    const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ marketplace_account_id: first.marketplace_account_id, external_campaign_id: `ui-${Date.now()}`, name: name.trim(), campaign_type: 'sponsored_products', status: 'enabled', daily_budget: budget }) });
+                    if (!res.ok) throw new Error(`Campaign creation failed (${res.status})`);
+                    showAlert(`Campaign "${name}" created`);
+                    window.location.reload();
+                  } catch (e) { showAlert(e instanceof Error ? e.message : 'Campaign creation failed'); }
+                }}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg text-xs font-bold shadow-2xs transition-colors"
               >
                 <span>Create Campaign</span>
@@ -317,7 +350,6 @@ export default function AdvertisingWorkspace({
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                 <span>AI Optimize</span>
               </button>
-
               {/* Overflow button */}
               <button
                 onClick={() => showAlert('Showing advertising export, bulk logs, and audit options')}
@@ -861,7 +893,7 @@ export default function AdvertisingWorkspace({
             );
             showAlert(`Campaign ${newStatus.toLowerCase()} successfully.`);
             try {
-              await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
+              await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus === 'Active' ? 'enabled' : 'paused' })
@@ -879,7 +911,7 @@ export default function AdvertisingWorkspace({
             );
             showAlert(`Daily budget updated to ₹${newBudget}`);
             try {
-              await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
+              await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ daily_budget: newBudget })

@@ -124,60 +124,33 @@ export default function DiagnosticsWorkspace({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Real Health Check Simulation
-  const handleRunHealthCheck = () => {
+  const handleRunHealthCheck = async () => {
     setIsRunningHealthCheck(true);
-    showToast('Executing real-time ping and health check across all services...');
-
-    setTimeout(() => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/diagnostics/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!res.ok) throw new Error('Health check failed (' + res.status + ')');
+      const findings = await res.json();
       const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      setHealthChecks(prev =>
-        prev.map(hc => {
-          const newMs = hc.responseTimeMs;
-          return {
-            ...hc,
-            lastChecked: nowTime,
-            responseTime: `${newMs.toLocaleString()}ms`,
-            responseTimeMs: newMs
-          };
-        })
-      );
-      setIsRunningHealthCheck(false);
-      showToast(`${healthChecks.length} services checked. Health status updated.`);
-    }, 1200);
+      setHealthChecks(prev => prev.map(hc => ({ ...hc, lastChecked: nowTime })));
+      showToast('Health check completed. ' + findings.length + ' diagnostic finding(s) returned.');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Health check failed'); }
+    finally { setIsRunningHealthCheck(false); }
   };
 
-  // Run Full Diagnostics
-  const handleRunFullDiagnostics = () => {
+  const handleRunFullDiagnostics = async () => {
     setIsRunningFullDiagnostics(true);
-    showToast('Starting comprehensive system diagnostics and deep telemetry scan...');
-
-    setTimeout(() => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/diagnostics/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!res.ok) throw new Error('Full diagnostic scan failed (' + res.status + ')');
+      const findings = await res.json();
       const now = new Date();
-      const formattedDate = now.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-      const formattedTime = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      const newTimestamp = `${formattedDate}, ${formattedTime}`;
-      setLastScanTimestamp(newTimestamp);
-
-      // Append new diagnostic activity
-      const newAct: DiagnosticActivity = {
-        id: `act-${Date.now()}`,
-        time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-        type: 'System',
-        details: 'Full system diagnostic scan completed',
-        status: 'Success'
-      };
-      setDiagnosticActivity(prev => [newAct, ...prev.slice(0, 4)]);
-      setIsRunningFullDiagnostics(false);
-      showToast('Full diagnostic scan finished: 0 critical infrastructure blockages.');
-    }, 1500);
+      setLastScanTimestamp(now.toLocaleString('en-IN'));
+      setDiagnosticActivity(prev => [{ id: 'act-' + Date.now(), time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }), type: 'System', details: 'Full diagnostic scan completed with ' + findings.length + ' finding(s)', status: findings.length ? 'Issues Found' : 'Success' }, ...prev.slice(0, 4)]);
+      showToast('Full diagnostic scan completed: ' + findings.length + ' finding(s).');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Full diagnostic scan failed'); }
+    finally { setIsRunningFullDiagnostics(false); }
   };
 
   // Fix Critical Issue Action
@@ -317,7 +290,6 @@ export default function DiagnosticsWorkspace({
             </button>
           </div>
         </div>
-
         {/* =========================================================================
             2. TOP METRIC CARDS (6 Cards in a row, exact match)
         ========================================================================= */}
@@ -957,7 +929,6 @@ export default function DiagnosticsWorkspace({
                 Our support team is here to help you with any technical issues.
               </p>
             </div>
-
             {/* Buttons matching image */}
             <div className="space-y-2 pt-1">
               <button

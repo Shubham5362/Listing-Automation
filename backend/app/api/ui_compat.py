@@ -841,6 +841,64 @@ async def save_settings(request: Request, user: User = Depends(get_current_user)
     return {"success": True, "message": "Settings persisted successfully to database"}
 
 
+@router.get("/reports/schedules")
+def report_schedules(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[dict[str, object]]:
+    sellers = _seller_ids(db, user)
+    if not sellers:
+        return []
+    rows = list(db.scalars(select(AutomationRule).where(AutomationRule.seller_account_id.in_(sellers), AutomationRule.trigger_type == "schedule")).all())
+    result = []
+    for row in rows:
+        cfg = row.trigger_config or {}
+        if cfg.get("report_schedule") is True:
+            result.append({"id": f"sch-{row.id}", "name": row.name.removeprefix("[REPORT_SCHEDULE] "), "schedule": cfg.get("schedule", ""), "format": cfg.get("format", "PDF"), "recipients": cfg.get("recipients", ""), "status": "Active" if row.enabled else "Paused", "lastRun": "Scheduled"})
+    return result
+
+@router.post("/reports/schedules", status_code=201)
+def create_report_schedule(payload: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    sellers = _seller_ids(db, user)
+    if not sellers:
+        raise HTTPException(status_code=404, detail="Seller account not found")
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Schedule name is required")
+    row = AutomationRule(seller_account_id=sellers[0], name=f"[REPORT_SCHEDULE] {name}", description="Scheduled report delivery", trigger_type="schedule", trigger_config={"report_schedule": True, "interval_minutes": 10080, "schedule": str(payload.get("schedule") or ""), "format": str(payload.get("format") or "PDF"), "recipients": str(payload.get("recipients") or "")}, conditions=[], actions=[{"type": "notification", "message": f"Report: {name}"}], enabled=True, status="active")
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"id": f"sch-{row.id}", "name": name, "schedule": row.trigger_config["schedule"], "format": row.trigger_config["format"], "recipients": row.trigger_config["recipients"], "status": "Active", "lastRun": "Scheduled"}
+
+@router.patch("/reports/schedules/{schedule_id}")
+def update_report_schedule(schedule_id: str, payload: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    try:
+        automation_id = int(schedule_id.removeprefix("sch-"))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid schedule id")
+    sellers = _seller_ids(db, user)
+    row = db.scalar(select(AutomationRule).where(AutomationRule.id == automation_id, AutomationRule.seller_account_id.in_(sellers), AutomationRule.trigger_type == "schedule"))
+    if not row or not (row.trigger_config or {}).get("report_schedule"):
+        raise HTTPException(status_code=404, detail="Report schedule not found")
+    if "enabled" in payload:
+        row.enabled = bool(payload["enabled"])
+        row.status = "active" if row.enabled else "paused"
+    db.commit()
+    db.refresh(row)
+    cfg = row.trigger_config or {}
+    return {"id": schedule_id, "name": row.name.removeprefix("[REPORT_SCHEDULE] "), "schedule": cfg.get("schedule", ""), "format": cfg.get("format", "PDF"), "recipients": cfg.get("recipients", ""), "status": "Active" if row.enabled else "Paused", "lastRun": "Scheduled"}
+
+@router.delete("/reports/schedules/{schedule_id}", status_code=204)
+def delete_report_schedule(schedule_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        automation_id = int(schedule_id.removeprefix("sch-"))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid schedule id")
+    sellers = _seller_ids(db, user)
+    row = db.scalar(select(AutomationRule).where(AutomationRule.id == automation_id, AutomationRule.seller_account_id.in_(sellers), AutomationRule.trigger_type == "schedule"))
+    if not row or not (row.trigger_config or {}).get("report_schedule"):
+        raise HTTPException(status_code=404, detail="Report schedule not found")
+    db.delete(row)
+    db.commit()
+
 @router.get("/reports")
 def get_reports_data(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     sellers = _seller_ids(db, user)
@@ -939,5 +997,4 @@ def get_reports_data(user: User = Depends(get_current_user), db: Session = Depen
         "salesTimeline": sales_timeline,
         "topSellingProducts": top_products
     }
-
 

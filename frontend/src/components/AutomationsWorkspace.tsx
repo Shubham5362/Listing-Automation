@@ -258,23 +258,18 @@ export default function AutomationsWorkspace({
   const totalPages = Math.ceil(filteredAutomations.length / itemsPerPage) || 1;
 
   // Toggle status (Pause / Resume)
-  const handleToggleStatus = (id: string, e?: React.MouseEvent) => {
+  const handleToggleStatus = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setAutomations(prev =>
-      prev.map(item => {
-        if (item.id === id) {
-          const newEnabled = !item.enabled;
-          const newStatus = newEnabled ? 'Running' : 'Paused';
-          showToast(`Automation "${item.name}" is now ${newStatus.toLowerCase()}.`);
-          return {
-            ...item,
-            enabled: newEnabled,
-            status: newStatus
-          };
-        }
-        return item;
-      })
-    );
+    const current = automations.find(item => item.id === id);
+    if (!current) return;
+    const enabled = !current.enabled;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/automations/${id}/enabled?enabled=${enabled}`, { method: 'PATCH' });
+      if (!res.ok) throw new Error(`Automation update failed (${res.status})`);
+      const data = await res.json();
+      setAutomations(prev => prev.map(item => item.id === id ? { ...item, enabled: Boolean(data.enabled), status: data.enabled ? 'Running' : 'Paused' } : item));
+      showToast(`Automation "${current.name}" is now ${enabled ? 'running' : 'paused'}.`);
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Automation update failed'); }
   };
 
   // Bulk Actions
@@ -317,7 +312,6 @@ export default function AutomationsWorkspace({
     showToast(`Paused ${selectedRows.length} automations.`);
     setSelectedRows([]);
   };
-
   const handleBulkDelete = () => {
     if (selectedRows.length === 0) return;
     setAutomations(prev => prev.filter(item => !selectedRows.includes(item.id)));
@@ -1000,30 +994,14 @@ export default function AutomationsWorkspace({
           automation={selectedAutomationDetails}
           onClose={() => setSelectedAutomationDetails(null)}
           onToggleStatus={(id) => handleToggleStatus(id)}
-          onRunNow={(id) => {
-            setAutomations(prev =>
-              prev.map(item => {
-                if (item.id === id && item.progress) {
-                  const updatedCurrent = Math.min(item.progress.current + 5, item.progress.total);
-                  const updatedPercent = Math.round((updatedCurrent / item.progress.total) * 100);
-                  const updatedLogs = [
-                    { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), message: 'Manual batch requested; awaiting backend execution result.', type: 'info' as const },
-                    ...(item.recentLogs || [])
-                  ];
-                  return {
-                    ...item,
-                    progress: {
-                      ...item.progress,
-                      current: updatedCurrent,
-                      percent: updatedPercent
-                    },
-                    recentLogs: updatedLogs
-                  };
-                }
-                return item;
-              })
-            );
-            showToast(`Batch execution dispatched for "${selectedAutomationDetails.name}".`);
+          onRunNow={async (id) => {
+            try {
+              const res = await fetch(`${API_BASE}/api/v1/automations/${id}/run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trigger_context: { source: 'ui_manual_run' } }) });
+              if (!res.ok) throw new Error(`Automation run failed (${res.status})`);
+              const run = await res.json();
+              setAutomations(prev => prev.map(item => item.id === id ? { ...item, lastRunDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), lastRunTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), recentLogs: [{ time: 'Just now', message: `Manual run ${run.status}`, type: run.status === 'failed' ? 'error' : 'success' }, ...(item.recentLogs || [])] } : item));
+              showToast(`Automation run ${run.status}.`);
+            } catch (e) { showToast(e instanceof Error ? e.message : 'Automation run failed'); }
           }}
         />
       )}
@@ -1242,41 +1220,39 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
   };
 
   // Submit
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!isMandatoryConfirmed) return;
 
-    const newAutomation: AutomationItem = {
-      id: `auto-${Date.now()}`,
-      name,
-      description,
-      type: 'Product Listing',
-      marketplaces: targetMarketplaces,
-      scheduleType: scheduleFrequency,
-      scheduleText: scheduleFrequency === 'Daily' ? 'Daily' : 'Scheduled',
-      scheduleSubText: timeSlots[0] || '10:00 AM',
-      progress: {
-        current: 0,
-        total: selectedProductIds.length,
-        percent: 0
-      },
-      status: 'Running',
-      lastRunDate: 'Today',
-      lastRunTime: 'Just now',
-      nextRunDate: 'Today',
-      nextRunTime: timeSlots[0] || '10:00 AM',
-      createdBy: '',
-      enabled: true,
-      dailyLimit,
-      batchSize,
-      selectedProductsCount: selectedProductIds.length,
-      aiPrompt: aiInstructions,
-      recentLogs: [
-        { time: 'Just now', message: `Automation created with daily limit of ${dailyLimit} listings.`, type: 'info' },
-        { time: 'Just now', message: `Target marketplaces: ${targetMarketplaces.join(', ')}.`, type: 'info' }
-      ]
-    };
-
-    onCreated(newAutomation);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/automations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description,
+          trigger_type: 'schedule',
+          trigger_config: { interval_minutes: 1440, time_slots: timeSlots },
+          conditions: [{ type: productSelectionMode, product_ids: selectedProductIds, marketplaces: targetMarketplaces, min_stock_threshold: minStockThreshold }],
+          actions: [{ type: 'agent', agent: 'listing', task: 'automated_listing_workflow', input: { quality_score: 0, prompt: aiInstructions, daily_limit: dailyLimit, batch_size: batchSize } }],
+          enabled: true
+        })
+      });
+      if (!res.ok) throw new Error(`Automation creation failed (${res.status})`);
+      const created = await res.json();
+      const newAutomation: AutomationItem = {
+        id: String(created.id), name: created.name || name, description: created.description || description,
+        type: 'Product Listing', marketplaces: targetMarketplaces, scheduleType: scheduleFrequency,
+        scheduleText: scheduleFrequency === 'Daily' ? 'Daily' : 'Scheduled', scheduleSubText: timeSlots[0] || '10:00 AM',
+        progress: { current: 0, total: selectedProductIds.length, percent: 0 },
+        status: created.enabled ? 'Running' : 'Paused', lastRunDate: '-', lastRunTime: '',
+        nextRunDate: 'Scheduled', nextRunTime: timeSlots[0] || '10:00 AM', createdBy: '', enabled: Boolean(created.enabled),
+        dailyLimit, batchSize, selectedProductsCount: selectedProductIds.length, aiPrompt: aiInstructions,
+        recentLogs: [{ time: 'Just now', message: 'Automation created in backend.', type: 'success' }]
+      };
+      onCreated(newAutomation);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (

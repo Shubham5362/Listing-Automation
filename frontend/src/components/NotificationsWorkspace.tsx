@@ -162,6 +162,18 @@ export default function NotificationsWorkspace({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const updatePreference = async (category: string, enabled: boolean, key: keyof typeof preferences) => {
+    setPreferences(prev => ({ ...prev, [key]: enabled }));
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/notifications/preferences', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category, in_app_enabled: enabled }) });
+      if (!res.ok) throw new Error('Preference update failed (' + res.status + ')');
+    } catch (e) {
+      setPreferences(prev => ({ ...prev, [key]: !enabled }));
+      showToast(e instanceof Error ? e.message : 'Preference update failed');
+    }
+  };
+
   // Close menus on outside click
   React.useEffect(() => {
     const handleOutsideClick = () => setActiveMenuId(null);
@@ -268,24 +280,41 @@ export default function NotificationsWorkspace({
   };
 
   // Mark all as read
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, status: 'Read' })));
-    if (onUpdateUnreadCount) onUpdateUnreadCount(0);
-    showToast('All notifications marked as read.');
+  const handleMarkAllAsRead = async () => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/notifications/read-all', { method: 'POST' });
+      if (!res.ok) throw new Error('Mark-all-read failed (' + res.status + ')');
+      setNotifications(prev => prev.map(n => ({ ...n, status: 'Read' })));
+      if (onUpdateUnreadCount) onUpdateUnreadCount(0);
+      showToast('All notifications marked as read.');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Mark-all-read failed'); }
   };
 
   // Mark single as read/unread
-  const handleToggleReadStatus = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, status: n.status === 'Unread' ? 'Read' : 'Unread' } : n))
-    );
+  const handleToggleReadStatus = async (id: string) => {
+    const current = notifications.find(n => n.id === id);
+    if (!current) return;
+    if (current.status === 'Read') { showToast('Unread state is not supported by the current notification API.'); return; }
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/notifications/' + id + '/read', { method: 'PATCH' });
+      if (!res.ok) throw new Error('Notification update failed (' + res.status + ')');
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'Read' } : n));
+      if (onUpdateUnreadCount) onUpdateUnreadCount(Math.max(0, notifications.filter(n => n.status === 'Unread' && n.id !== id).length));
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Notification update failed'); }
   };
 
   // Delete notification
-  const handleDelete = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    setSelectedIds(prev => prev.filter(i => i !== id));
-    showToast('Notification removed.');
+  const handleDelete = async (id: string) => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const res = await fetch(base + '/api/v1/notifications/' + id, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Notification delete failed (' + res.status + ')');
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      setSelectedIds(prev => prev.filter(i => i !== id));
+      showToast('Notification removed.');
+    } catch (e) { showToast(e instanceof Error ? e.message : 'Notification delete failed'); }
   };
 
   // Render Row Icon matching screenshot
@@ -1011,7 +1040,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, orderUpdates: !preferences.orderUpdates })}
+                    onClick={() => updatePreference('order', !preferences.orderUpdates, 'orderUpdates')}
                     aria-label="Toggle Order Updates"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.orderUpdates ? 'bg-indigo-600' : 'bg-slate-200'
@@ -1038,7 +1067,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, listingUpdates: !preferences.listingUpdates })}
+                    onClick={() => updatePreference('listing', !preferences.listingUpdates, 'listingUpdates')}
                     aria-label="Toggle Listing Updates"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.listingUpdates ? 'bg-indigo-600' : 'bg-slate-200'
@@ -1065,7 +1094,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, inventoryAlerts: !preferences.inventoryAlerts })}
+                    onClick={() => updatePreference('inventory', !preferences.inventoryAlerts, 'inventoryAlerts')}
                     aria-label="Toggle Inventory Alerts"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.inventoryAlerts ? 'bg-indigo-600' : 'bg-slate-200'
@@ -1092,7 +1121,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, priceAlerts: !preferences.priceAlerts })}
+                    onClick={() => updatePreference('listing', !preferences.priceAlerts, 'priceAlerts')}
                     aria-label="Toggle Price Alerts"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.priceAlerts ? 'bg-indigo-600' : 'bg-slate-200'
@@ -1119,7 +1148,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, financeUpdates: !preferences.financeUpdates })}
+                    onClick={() => updatePreference('finance', !preferences.financeUpdates, 'financeUpdates')}
                     aria-label="Toggle Finance Updates"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.financeUpdates ? 'bg-indigo-600' : 'bg-slate-200'
@@ -1146,7 +1175,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, systemNotifications: !preferences.systemNotifications })}
+                    onClick={() => updatePreference('critical', !preferences.systemNotifications, 'systemNotifications')}
                     aria-label="Toggle System Notifications"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.systemNotifications ? 'bg-indigo-600' : 'bg-slate-200'
@@ -1173,7 +1202,7 @@ export default function NotificationsWorkspace({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPreferences({ ...preferences, marketingPromotions: !preferences.marketingPromotions })}
+                    onClick={() => updatePreference('marketing', !preferences.marketingPromotions, 'marketingPromotions')}
                     aria-label="Toggle Marketing and Promotions"
                     className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
                       preferences.marketingPromotions ? 'bg-indigo-600' : 'bg-slate-200'
