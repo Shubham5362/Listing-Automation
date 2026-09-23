@@ -5,9 +5,14 @@ from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.core import User
 from app.schemas.inventory_price_automation import InventoryPlanRequest, InventoryPricePlanRead, PlanApplyRequest, PricePlanRequest
-from app.services.inventory_price_automation import apply_plan, create_inventory_plan, create_price_plan, list_plans
+from app.services.inventory_price_automation import apply_plan, create_inventory_plan, create_price_plan, list_plans, list_targets
 
 router = APIRouter(prefix="/inventory-price-automation", tags=["inventory-price-automation"])
+
+
+@router.get("/targets")
+def targets(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return list_targets(db, user)
 
 
 @router.post("/plans/inventory", response_model=InventoryPricePlanRead, status_code=201)
