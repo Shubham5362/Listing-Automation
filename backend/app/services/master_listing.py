@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime
 from typing import Any
@@ -92,8 +93,28 @@ def complete_teach_session(db: Session, session: ListingTeachSession, *, name: s
         MarketplaceFormKnowledge.marketplace == session.marketplace,
         MarketplaceFormKnowledge.category == session.category,
     ))
-    if knowledge is not None:
-        knowledge.fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
+    adapter = get_adapter(session.marketplace)
+    schema = adapter.schema_for(session.category)
+    fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
+    fingerprint = hashlib.sha256(fields_json.encode("utf-8")).hexdigest()
+    if knowledge is None:
+        knowledge = MarketplaceFormKnowledge(
+            seller_account_id=session.seller_account_id,
+            marketplace=session.marketplace,
+            category=session.category,
+            adapter_version=adapter.version,
+            schema_version=schema.version,
+            schema_fingerprint=fingerprint,
+            fields_json=fields_json,
+            status="learned",
+            source="manual_teach",
+        )
+        db.add(knowledge)
+    else:
+        knowledge.adapter_version = adapter.version
+        knowledge.schema_version = schema.version
+        knowledge.schema_fingerprint = fingerprint
+        knowledge.fields_json = fields_json
         knowledge.status = "learned"
         knowledge.source = "manual_teach"
         knowledge.updated_at = datetime.utcnow()
