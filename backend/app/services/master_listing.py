@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.marketplaces.registry import get_adapter
 from app.models.master_listing import ListingTeachSession, MasterListingTemplate
+from app.models.marketplace_form_knowledge import MarketplaceFormKnowledge
 from app.services.form_discovery import discover_fields
 
 
@@ -84,6 +85,17 @@ def complete_teach_session(db: Session, session: ListingTeachSession, *, name: s
         template.status = "active"
         if name:
             template.name = name
+
+    knowledge = db.scalar(select(MarketplaceFormKnowledge).where(
+        MarketplaceFormKnowledge.seller_account_id == session.seller_account_id,
+        MarketplaceFormKnowledge.marketplace == session.marketplace,
+        MarketplaceFormKnowledge.category == session.category,
+    ))
+    if knowledge is not None:
+        knowledge.fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
+        knowledge.status = "learned"
+        knowledge.source = "manual_teach"
+        knowledge.updated_at = __import__("datetime").datetime.utcnow()
 
     session.state = "completed"
     db.commit()
