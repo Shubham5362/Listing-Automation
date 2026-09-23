@@ -65,8 +65,11 @@ def create_clarifications(db: Session, session: AutofillSession, product: Produc
         field_name = str(decision.get("field") or "")
         marketplace_field = field_name
         schema_field = fields.get(field_name)
-        reason = "VALUE_MISSING" if "No verified product value" in str(decision.get("reason")) else (
-            "FORMAT_INVALID" if "normalized" in str(decision.get("reason")) else "FIELD_UNCLEAR"
+        decision_reason = str(decision.get("reason") or "")
+        reason = "VALUE_MISSING" if "No verified product value" in decision_reason else (
+            "FORMAT_INVALID" if "normalized" in decision_reason else (
+                "VALUE_AMBIGUOUS" if int(decision.get("confidence") or 0) > 0 else "FIELD_UNCLEAR"
+            )
         )
         canonical = decision.get("canonical") or None
         if canonical == field_name.upper().replace(" ", "_") and not result.get("discovery"):
