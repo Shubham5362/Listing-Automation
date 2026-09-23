@@ -15,6 +15,11 @@ class AdvertisingCampaignCreate(BaseModel):
     daily_budget: float = Field(default=0, ge=0)
 
 
+class AdvertisingCampaignUpdate(BaseModel):
+    status: CampaignStatus | None = None
+    daily_budget: float | None = Field(default=None, ge=0)
+
+
 class AdvertisingCampaignRead(AdvertisingCampaignCreate):
     id: int
     seller_account_id: int
