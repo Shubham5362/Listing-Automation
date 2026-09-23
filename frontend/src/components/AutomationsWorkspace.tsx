@@ -1233,7 +1233,7 @@ function CreateAutomationModal({ onClose, onCreated, catalogProductsList = [] }:
           trigger_type: 'schedule',
           trigger_config: { interval_minutes: 1440, time_slots: timeSlots },
           conditions: [{ type: productSelectionMode, product_ids: selectedProductIds, marketplaces: targetMarketplaces, min_stock_threshold: minStockThreshold }],
-          actions: [{ type: 'agent', agent: 'listing_automation', prompt: aiInstructions, daily_limit: dailyLimit, batch_size: batchSize }],
+          actions: [{ type: 'agent', agent: 'listing', task: 'automated_listing_workflow', input: { quality_score: 0, prompt: aiInstructions, daily_limit: dailyLimit, batch_size: batchSize } }],
           enabled: true
         })
       });
