@@ -140,6 +140,8 @@ export default function ReportsWorkspace({
   // Timeline points for Sales Trend
   const [salesTimeline, setSalesTimeline] = useState<any[]>([]);
 
+  const totalMarketplaceOrders = marketplaceOrders.reduce((sum, mp) => sum + Number(mp.count || mp.orders || 0), 0);
+
   useEffect(() => {
     fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/reports')
       .then((res) => (res.ok ? res.json() : null))
@@ -906,56 +908,29 @@ export default function ReportsWorkspace({
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="38" stroke="#F1F5F9" strokeWidth="12" fill="transparent" />
 
-                  {/* Amazon: 41.7% (~99.5 on 238.76 perimeter) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#F59E0B"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="99.5 238.8"
-                    strokeDashoffset="0"
-                  />
-
-                  {/* Flipkart: 29.5% (~70.4 on 238.76) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#3B82F6"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="70.4 238.8"
-                    strokeDashoffset="-99.5"
-                  />
-
-                  {/* Meesho: 17.6% (~42.0 on 238.76) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#EC4899"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="42 238.8"
-                    strokeDashoffset="-169.9"
-                  />
-
-                  {/* Myntra: 11.2% (~26.7 on 238.76) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#A855F7"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray="26.8 238.8"
-                    strokeDashoffset="-211.9"
-                  />
+                  {marketplaceOrders.map((mp, index) => {
+                    const circumference = 2 * Math.PI * 38;
+                    const segment = circumference * (Number(mp.percent || 0) / 100);
+                    const offset = marketplaceOrders
+                      .slice(0, index)
+                      .reduce((sum, previous) => sum + circumference * (Number(previous.percent || 0) / 100), 0);
+                    return (
+                      <circle
+                        key={mp.name || index}
+                        cx="50"
+                        cy="50"
+                        r="38"
+                        stroke={mp.color || '#94A3B8'}
+                        strokeWidth="12"
+                        fill="transparent"
+                        strokeDasharray={`${segment} ${circumference}`}
+                        strokeDashoffset={-offset}
+                      />
+                    );
+                  })}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-                  <span className="text-xl font-bold text-slate-900">1,248</span>
+                  <span className="text-xl font-bold text-slate-900">{totalMarketplaceOrders.toLocaleString('en-IN')}</span>
                   <span className="text-[10px] text-slate-400 font-medium mt-1">Total Orders</span>
                 </div>
               </div>

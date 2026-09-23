@@ -65,6 +65,9 @@ export default function ChartsRow({
       .catch((err) => console.error('Failed to load charts row data:', err));
   }, []);
 
+  const totalOrders = ordersData.reduce((sum, item) => sum + item.value, 0);
+  const totalSkus = inventoryData.reduce((sum, item) => sum + item.value, 0);
+
   const formatYAxis = (tickItem: number) => {
     if (tickItem === 0) return '₹0';
     return `₹${tickItem / 1000}K`;
@@ -189,7 +192,7 @@ export default function ChartsRow({
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-bold text-slate-900 leading-tight">342</span>
+              <span className="text-xl font-bold text-slate-900 leading-tight">{totalOrders.toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-400 font-medium">Orders</span>
             </div>
           </div>
@@ -245,7 +248,7 @@ export default function ChartsRow({
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-bold text-slate-900 leading-tight">248</span>
+              <span className="text-xl font-bold text-slate-900 leading-tight">{totalSkus.toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-400 font-medium">Total SKUs</span>
             </div>
           </div>

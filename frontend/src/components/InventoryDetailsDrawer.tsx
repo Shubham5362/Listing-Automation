@@ -438,16 +438,16 @@ export default function InventoryDetailsDrawer({
               </div>
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
                 <div>
-                  <span className="text-slate-500">Lead Time:</span> <span className="font-bold text-slate-800">4-5 Days</span>
+                  <span className="text-slate-500">Reorder Point:</span> <span className="font-bold text-slate-800">{item.reorderPoint} units</span>
                 </div>
                 <div>
-                  <span className="text-slate-500">MOQ:</span> <span className="font-bold text-slate-800">100 units</span>
+                  <span className="text-slate-500">Max Stock:</span> <span className="font-bold text-slate-800">{item.maxStockLevel} units</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Unit Cost:</span> <span className="font-bold text-slate-800">₹{item.costPrice}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500">Payment:</span> <span className="font-bold text-slate-800">Net 30</span>
+                  <span className="text-slate-500">Supplier Terms:</span> <span className="font-bold text-slate-500">Not available</span>
                 </div>
               </div>
             </div>

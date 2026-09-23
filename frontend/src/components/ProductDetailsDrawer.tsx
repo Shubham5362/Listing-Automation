@@ -430,20 +430,20 @@ export default function ProductDetailsDrawer({
               <div className="font-bold text-slate-900 text-xs">Warehouse Stock Distribution</div>
               <div className="space-y-1.5 text-xs text-slate-600 divide-y divide-slate-100">
                 <div className="flex justify-between py-1">
-                  <span>Central Fulfillment Hub</span>
-                  <span className="font-bold text-slate-900">134 units</span>
+                  <span>Available Stock</span>
+                  <span className="font-bold text-slate-900">{product.availableStock ?? 'Not available'}</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span>Regional Hub (Bhiwandi)</span>
-                  <span className="font-bold text-slate-900">50 units (inbound)</span>
+                  <span>Reserved Stock</span>
+                  <span className="font-bold text-slate-900">{product.reservedStock ?? 'Not available'}</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span>Reorder Threshold</span>
-                  <span className="font-bold text-amber-600">25 units</span>
+                  <span>Inbound Stock</span>
+                  <span className="font-bold text-slate-900">{product.inboundStock ?? 'Not available'}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Supplier Lead Time</span>
-                  <span className="font-bold text-slate-800">4 days</span>
+                  <span className="font-bold text-slate-500">Not available</span>
                 </div>
               </div>
             </div>
