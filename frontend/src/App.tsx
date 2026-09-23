@@ -43,6 +43,7 @@ import FinanceWorkspace from './components/FinanceWorkspace';
 import AutomationsWorkspace from './components/AutomationsWorkspace';
 import AiListingStudioWorkspace from './components/AiListingStudioWorkspace';
 import AiSellerCopilotWorkspace from './components/AiSellerCopilotWorkspace';
+import SellerIntelligenceWorkspace from './components/SellerIntelligenceWorkspace';
 import MarketplacesWorkspace from './components/MarketplacesWorkspace';
 import MarketplaceFormKnowledgeCenter from './MarketplaceFormKnowledgeCenter';
 import MasterListingCenter from './MasterListingCenter';
@@ -385,6 +386,8 @@ export default function App() {
           <div className="flex-1 min-w-0">
             <FinalSellerOSWorkspace />
           </div>
+        ) : activeTab === 'AI Seller Intelligence' ? (
+          <div className="flex-1 min-w-0"><SellerIntelligenceWorkspace /></div>
         ) : activeTab === 'AI Seller Copilot' ? (
           <div className="flex-1 min-w-0">
             <AiSellerCopilotWorkspace
