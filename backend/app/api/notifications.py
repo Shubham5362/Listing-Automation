@@ -63,7 +63,11 @@ def list_deliveries(notification_id: int, seller_account_id: int, db: Session = 
 
 
 @router.patch("/{notification_id}/read", response_model=NotificationRead)
-def mark_read(notification_id: int, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def mark_read(notification_id: int, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     notification = _notification(db, user, seller_account_id, notification_id)
     from datetime import datetime, timezone
     notification.read_at = datetime.now(timezone.utc)
@@ -73,7 +77,11 @@ def mark_read(notification_id: int, seller_account_id: int, db: Session = Depend
 
 
 @router.post("/read-all", status_code=204)
-def mark_all_read(seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def mark_all_read(seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     _seller(db, user, seller_account_id)
     from datetime import datetime, timezone
     db.execute(update(Notification).where(Notification.seller_account_id == seller_account_id, Notification.user_id == user.id, Notification.read_at.is_(None)).values(read_at=datetime.now(timezone.utc)))
@@ -87,7 +95,11 @@ def list_preferences(seller_account_id: int, db: Session = Depends(get_db), user
 
 
 @router.put("/preferences", response_model=NotificationPreferenceRead)
-def upsert_preference(payload: NotificationPreferenceUpsert, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def upsert_preference(payload: NotificationPreferenceUpsert, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
     _seller(db, user, seller_account_id)
     if payload.category not in service.VALID_CATEGORIES:
         raise HTTPException(status_code=422, detail="Unsupported notification category")
@@ -106,6 +118,16 @@ def upsert_preference(payload: NotificationPreferenceUpsert, seller_account_id: 
     db.refresh(preference)
     return preference
 
+
+@router.delete("/{notification_id}", status_code=204)
+def delete_notification(notification_id: int, seller_account_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if seller_account_id is None:
+        seller_account_id = db.scalar(select(SellerAccount.id).where(SellerAccount.user_id == user.id))
+    if not seller_account_id:
+        raise HTTPException(status_code=404, detail="Seller account not found")
+    notification = _notification(db, user, seller_account_id, notification_id)
+    db.delete(notification)
+    db.commit()
 
 @router.get("/reports/{period}", response_model=NotificationSummaryRead)
 def notification_report(period: str, seller_account_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
