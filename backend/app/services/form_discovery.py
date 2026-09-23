@@ -59,5 +59,5 @@ def discover_fields(adapter: MarketplaceAdapter, page_fields: Iterable[dict[str,
         if field is None or score < 50:
             discovered.append({**candidate, "canonical": explicit or None, "discovery": "unmapped", "discovery_confidence": score})
             continue
-        discovered.append({**candidate, "name": candidate.get("name") or field.name, "canonical": field.canonical, "field_type": candidate.get("field_type") or field.field_type, "required": bool(candidate.get("required", field.required)), "enum": candidate.get("enum") or list(field.enum), "unit": candidate.get("unit") or field.unit, "discovery": "semantic_match", "discovery_confidence": score})
+        discovered.append({**candidate, "name": candidate.get("name") or field.name, "canonical": field.canonical, "field_type": candidate.get("field_type") or field.field_type, "required": bool(candidate.get("required", field.required)), "enum": candidate.get("enum") or list(field.enum), "unit": candidate.get("unit") or field.unit, "adapter_field": field.name, "discovery": "semantic_match", "discovery_confidence": score})
     return discovered
