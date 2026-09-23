@@ -75,8 +75,9 @@ export default function InventoryWorkspace({
         const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/inventory');
         if (res.ok) {
           const json = await res.json();
-          if (json.items && json.items.length > 0) {
-            const mapped: InventoryItem[] = json.items.map((i: any, idx: number) => {
+          const rows = Array.isArray(json) ? json : (json.items || []);
+          if (rows.length > 0) {
+            const mapped: InventoryItem[] = rows.map((i: any, idx: number) => {
               const stock = i.quantity ?? 0;
               const reserved = i.reserved_quantity || 0;
               const reorder = i.reorder_level ?? 0;
@@ -232,16 +233,10 @@ export default function InventoryWorkspace({
     if (newStock === 0) newStatus = 'Out of Stock';
     else if (newStock <= targetItem.reorderPoint) newStatus = 'Low Stock';
 
+    const previousItems = items;
     const updated = items.map((i) =>
       i.id === targetItem.id
-        ? {
-            ...i,
-            currentStock: newStock,
-            availableStock: Math.max(0, newStock - i.reservedStock),
-            status: newStatus,
-            totalStockValue: newStock * i.price,
-            lastUpdated: 'Just now',
-          }
+        ? { ...i, currentStock: newStock, availableStock: Math.max(0, newStock - i.reservedStock), status: newStatus, totalStockValue: newStock * i.price, lastUpdated: 'Just now' }
         : i
     );
     setItems(updated);
@@ -262,6 +257,8 @@ export default function InventoryWorkspace({
         body: JSON.stringify({ quantity: newStock })
       }); if (!res.ok) throw new Error(`Inventory update failed (${res.status})`); showToast(`Stock for ${targetItem.sku} updated to ${newStock} units`);
     } catch (e) {
+      setItems(previousItems);
+      setSelectedItem(previousItems.find((i) => i.id === targetItem.id) || null);
       showToast(e instanceof Error ? e.message : 'Inventory update failed');
     }
   };
@@ -272,9 +269,8 @@ export default function InventoryWorkspace({
     else if (targetItem.currentStock <= newPoint) newStatus = 'Low Stock';
     else newStatus = 'In Stock';
 
-    const updated = items.map((i) =>
-      i.id === targetItem.id ? { ...i, reorderPoint: newPoint, status: newStatus } : i
-    );
+    const previousItems = items;
+    const updated = items.map((i) => i.id === targetItem.id ? { ...i, reorderPoint: newPoint, status: newStatus } : i);
     setItems(updated);
     if (selectedItem?.id === targetItem.id) {
       setSelectedItem({ ...targetItem, reorderPoint: newPoint, status: newStatus });
@@ -286,6 +282,8 @@ export default function InventoryWorkspace({
         body: JSON.stringify({ reorder_level: newPoint })
       }); if (!res.ok) throw new Error(`Reorder point update failed (${res.status})`); showToast(`Reorder point for ${targetItem.sku} set to ${newPoint} units`);
     } catch (e) {
+      setItems(previousItems);
+      setSelectedItem(previousItems.find((i) => i.id === targetItem.id) || null);
       showToast(e instanceof Error ? e.message : 'Reorder point update failed');
     }
   };

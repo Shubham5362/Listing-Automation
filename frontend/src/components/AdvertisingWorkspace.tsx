@@ -81,8 +81,9 @@ export default function AdvertisingWorkspace({
         const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/advertising');
         if (res.ok) {
           const json = await res.json();
-          if (json.items && json.items.length > 0) {
-            const mapped: CampaignRecord[] = json.items.map((c: any, idx: number) => {
+          const rows = Array.isArray(json) ? json : (json.items || []);
+          if (rows.length > 0) {
+            const mapped: CampaignRecord[] = rows.map((c: any, idx: number) => {
               const spend = c.spend ?? c.ad_spend ?? 0;
               const sales = c.sales ?? c.sales_ad ?? 0;
               const acos = c.acos ?? 0;
@@ -94,7 +95,7 @@ export default function AdvertisingWorkspace({
                 productName: c.product_name || '',
                 type: (c.campaign_type || c.type || '') as any,
                 marketplace: c.marketplace || '',
-                status: (c.status || '') as any,
+                status: c.status === 'enabled' ? 'Active' : c.status === 'paused' ? 'Paused' : c.status === 'archived' ? 'Ended' : (c.status || '') as any,
                 dailyBudget: c.daily_budget ?? c.dailyBudget ?? 0,
                 adSpend: spend,
                 salesAd: sales,
@@ -117,7 +118,17 @@ export default function AdvertisingWorkspace({
                 topKeywords: Array.isArray(c.top_keywords) ? c.top_keywords : [],
               };
             });
-            setCampaigns(mapped);
+            try {
+              const metricsRes = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/advertising/metrics');
+              if (metricsRes.ok) {
+                const metricsRows = await metricsRes.json();
+                const metricsByCampaign = new Map<number, any>((Array.isArray(metricsRows) ? metricsRows : []).map((m: any) => [m.campaign_id, m]));
+                setCampaigns(mapped.map((campaign) => {
+                  const m = metricsByCampaign.get(campaign.id);
+                  return m ? { ...campaign, adSpend: m.spend ?? 0, salesAd: m.sales ?? 0, clicks: m.clicks ?? 0, impressions: m.impressions ?? 0, ctr: m.ctr ?? 0, cpc: m.cpc ?? 0, acos: m.acos ?? 0, roas: m.roas ?? 0, ordersAd: m.orders ?? 0 } : campaign;
+                }));
+              } else setCampaigns(mapped);
+            } catch { setCampaigns(mapped); }
           }
         }
       } catch (err) {
@@ -166,7 +177,7 @@ export default function AdvertisingWorkspace({
           fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'Paused' })
+            body: JSON.stringify({ status: 'paused' })
           })
         )
       );
@@ -192,7 +203,7 @@ export default function AdvertisingWorkspace({
           fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'Active' })
+            body: JSON.stringify({ status: 'enabled' })
           })
         )
       );
@@ -205,14 +216,18 @@ export default function AdvertisingWorkspace({
     showAlert('AI Optimizer analyzed selected campaigns: Recommended budget reallocations applied to maximize ROAS');
   };
 
-  const handleBulkArchive = () => {
+  const handleBulkArchive = async () => {
     if (selectedIds.length === 0) {
       showAlert('Select at least one campaign to archive');
       return;
     }
-    setCampaigns((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
-    showAlert(`Archived ${selectedIds.length} campaign(s)`);
-    setSelectedIds([]);
+    const ids = [...selectedIds];
+    try {
+      const responses = await Promise.all(ids.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) })));
+      if (responses.some((r) => !r.ok)) throw new Error('One or more campaigns failed to archive');
+      setCampaigns((prev) => prev.map((c) => ids.includes(c.id) ? { ...c, status: 'Ended' } : c));
+      showAlert(`Archived ${ids.length} campaign(s)`); setSelectedIds([]);
+    } catch (e) { showAlert(e instanceof Error ? e.message : 'Campaign archive failed'); }
   };
 
   // Filtered campaigns
@@ -849,7 +864,7 @@ export default function AdvertisingWorkspace({
               await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: newStatus === 'Active' ? 'enabled' : 'paused' })
               });
             } catch (e) {
               console.warn(e);
@@ -873,9 +888,13 @@ export default function AdvertisingWorkspace({
               console.warn(e);
             }
           }}
-          onArchive={(id) => {
-            setCampaigns((prev) => prev.filter((c) => c.id !== id));
-            setSelectedCampaign(null);
+          onArchive={async (id) => {
+            try {
+              const res = await fetch(`${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}/api/v1/advertising/campaigns/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) });
+              if (!res.ok) throw new Error(`Campaign archive failed (${res.status})`);
+              setCampaigns((prev) => prev.map((c) => c.id === id ? { ...c, status: 'Ended' } : c));
+              setSelectedCampaign(null);
+            } catch (e) { showAlert(e instanceof Error ? e.message : 'Campaign archive failed'); }
           }}
         />
       )}

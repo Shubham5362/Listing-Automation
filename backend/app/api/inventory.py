@@ -10,7 +10,7 @@ from app.db.session import get_db
 from app.models.core import SellerAccount, User
 from app.models.catalog import Product
 from app.models.inventory import InventoryItem, InventoryMovement, InventoryMovementType
-from app.schemas.inventory import InventoryAdjustmentRequest, InventoryMovementRead, InventoryRead, InventoryUpsertRequest
+from app.schemas.inventory import InventoryAdjustmentRequest, InventoryMovementRead, InventoryRead, InventoryUpdateRequest, InventoryUpsertRequest
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -99,6 +99,27 @@ def sync_inventory(user: User = Depends(get_current_user), db: Session = Depends
     seller_ids = select(SellerAccount.id).where(SellerAccount.user_id == user.id)
     synced_skus = db.scalar(select(func.count(InventoryItem.id)).where(InventoryItem.seller_account_id.in_(seller_ids))) or 0
     return {"success": True, "message": "Inventory sync scope verified from seller inventory records.", "synced_at": datetime.utcnow().isoformat(), "synced_skus": int(synced_skus)}
+
+
+@router.patch("/{inventory_id}", response_model=InventoryRead)
+def update_inventory(inventory_id: int, payload: InventoryUpdateRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> InventoryRead:
+    item = db.scalar(select(InventoryItem).join(SellerAccount, SellerAccount.id == InventoryItem.seller_account_id).where(InventoryItem.id == inventory_id, SellerAccount.user_id == user.id))
+    if not item:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+    if payload.reserved_quantity is not None and payload.reserved_quantity > (payload.quantity if payload.quantity is not None else item.quantity):
+        raise HTTPException(status_code=400, detail="Reserved quantity cannot exceed quantity")
+    old_quantity = item.quantity
+    if payload.quantity is not None:
+        item.quantity = payload.quantity
+    if payload.reserved_quantity is not None:
+        item.reserved_quantity = payload.reserved_quantity
+    if payload.reorder_level is not None:
+        item.reorder_level = payload.reorder_level
+    if item.quantity != old_quantity:
+        db.add(InventoryMovement(inventory_item_id=item.id, movement_type=InventoryMovementType.ADJUSTMENT.value, quantity_delta=item.quantity - old_quantity, quantity_after=item.quantity, reason="Frontend inventory update"))
+    db.commit(); db.refresh(item)
+    product = db.get(Product, item.product_id)
+    return _read(item, product)
 
 
 @router.post("/{inventory_id}/adjust", response_model=InventoryRead)

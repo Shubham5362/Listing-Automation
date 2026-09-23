@@ -70,3 +70,14 @@ def test_pricing_isolation_and_rule_validation() -> None:
         other_headers = {"Authorization": f"Bearer {other.json()['token']}"}
         assert client.get(f"/api/v1/pricing/history/{listing_id}", headers=other_headers).status_code == 404
         assert client.post("/api/v1/pricing/rules", headers=owner_headers, json={"listing_id": listing_id, "min_price": 700, "max_price": 600}).status_code == 422
+
+
+def test_pricing_workspace_list_and_patch() -> None:
+    with TestClient(app) as client:
+        headers, listing_id = _setup(client)
+        rows = client.get("/api/v1/pricing", headers=headers)
+        assert rows.status_code == 200
+        assert any(row["id"] == listing_id for row in rows.json())
+        updated = client.patch(f"/api/v1/pricing/{listing_id}", headers=headers, json={"price": 610})
+        assert updated.status_code == 200
+        assert updated.json()["currentPrice"] == 610

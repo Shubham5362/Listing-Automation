@@ -66,3 +66,13 @@ def test_inventory_filters_low_stock() -> None:
         low = client.get("/api/v1/inventory", headers=headers, params={"low_stock": "true"})
         assert low.status_code == 200
         assert any(row["product_id"] == product_id for row in low.json())
+
+
+def test_inventory_patch_matches_workspace_mutation() -> None:
+    with TestClient(app) as client:
+        headers, seller_id, product_id = _setup(client)
+        created = client.post("/api/v1/inventory", headers=headers, json={"seller_account_id": seller_id, "product_id": product_id, "quantity": 20, "reorder_level": 5}).json()
+        updated = client.patch(f"/api/v1/inventory/{created['id']}", headers=headers, json={"quantity": 7, "reorder_level": 8})
+        assert updated.status_code == 200
+        assert updated.json()["quantity"] == 7
+        assert updated.json()["reorder_level"] == 8

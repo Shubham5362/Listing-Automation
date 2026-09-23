@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -17,6 +18,10 @@ from app.services.advanced_pricing import AdvancedPricingService
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 
 
+class WorkspacePricePatch(BaseModel):
+    price: float = Field(gt=0)
+
+
 def _owned_listing(db: Session, user: User, listing_id: int) -> Listing:
     listing = db.get(Listing, listing_id)
     if not listing:
@@ -28,6 +33,57 @@ def _owned_listing(db: Session, user: User, listing_id: int) -> Listing:
     if not seller or seller.user_id != user.id:
         raise HTTPException(status_code=404, detail="Listing not found")
     return listing
+
+
+@router.get("", response_model=list[dict])
+def pricing_workspace(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[dict]:
+    listings = list(db.scalars(
+        select(Listing)
+        .join(Product, Product.id == Listing.product_id)
+        .join(MarketplaceAccount, MarketplaceAccount.id == Listing.marketplace_account_id)
+        .join(SellerAccount, SellerAccount.id == MarketplaceAccount.seller_account_id)
+        .where(SellerAccount.user_id == user.id)
+        .order_by(Listing.id.desc())
+    ))
+    return [{
+        "id": item.id,
+        "name": item.title or item.sku,
+        "title": item.title,
+        "sku": item.sku,
+        "currentPrice": float(item.price) if item.price is not None else 0,
+        "suggestedPrice": float(item.price) if item.price is not None else 0,
+        "priceStatus": "Optimal",
+        "buyBoxWon": False,
+        "buyBox": "Unknown",
+        "minPrice": 0,
+        "maxPrice": 0,
+        "costPrice": 0,
+        "marginPercent": 0,
+        "marginAmount": 0,
+        "marketplaces": [],
+        "category": "",
+        "asin": item.external_listing_id or "",
+        "hasAiSuggested": False,
+        "estProfitLift": 0,
+        "marketPriceAvg": 0,
+        "priceRank": "",
+        "lowestCompetitorPrice": 0,
+        "totalCompetitors": 0,
+        "aiInsightText": "",
+    } for item in listings]
+
+
+@router.patch("/{listing_id}", response_model=dict)
+def update_workspace_price(listing_id: int, payload: WorkspacePricePatch, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    listing = _owned_listing(db, user, listing_id)
+    old = float(listing.price) if listing.price is not None else None
+    rule = db.scalar(select(PricingRule).where(PricingRule.listing_id == listing.id, PricingRule.enabled.is_(True)))
+    if rule and ((rule.min_price is not None and payload.price < float(rule.min_price)) or (rule.max_price is not None and payload.price > float(rule.max_price))):
+        raise HTTPException(status_code=409, detail="Price violates active pricing rule")
+    listing.price = payload.price
+    db.add(PriceHistory(listing_id=listing.id, old_price=old, new_price=payload.price, source="manual", reason="Pricing workspace update"))
+    db.commit(); db.refresh(listing)
+    return {"id": listing.id, "currentPrice": float(listing.price), "priceStatus": "Optimal", "buyBoxWon": False, "buyBox": "Unknown"}
 
 
 @router.post("/price", response_model=PriceHistoryRead, status_code=201)

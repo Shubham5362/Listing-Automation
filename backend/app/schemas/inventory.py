@@ -19,6 +19,12 @@ class InventoryAdjustmentRequest(BaseModel):
     reason: str | None = Field(default=None, max_length=300)
 
 
+class InventoryUpdateRequest(BaseModel):
+    quantity: int | None = Field(default=None, ge=0)
+    reorder_level: int | None = Field(default=None, ge=0)
+    reserved_quantity: int | None = Field(default=None, ge=0)
+
+
 class InventoryRead(BaseModel):
     id: int
     seller_account_id: int

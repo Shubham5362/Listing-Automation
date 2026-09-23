@@ -59,6 +59,24 @@ export default function ProductsWorkspace({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Attach backend inventory ids so stock edits mutate the correct inventory record.
+  useEffect(() => {
+    const syncInventoryIds = async () => {
+      try {
+        const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/inventory');
+        if (!res.ok) return;
+        const rows = await res.json();
+        const inventory = Array.isArray(rows) ? rows : (rows.items || []);
+        const byProduct = new Map<number, any>(inventory.map((item: any) => [item.product_id, item]));
+        setProducts((prev) => prev.map((product) => {
+          const inv = byProduct.get(Number(product.id));
+          return inv ? { ...product, inventoryId: inv.id, stock: inv.quantity, availableStock: inv.available_quantity, reservedStock: inv.reserved_quantity } as any : product;
+        }));
+      } catch (err) { console.warn('Inventory id sync notice:', err); }
+    };
+    syncInventoryIds();
+  }, []);
+
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -83,8 +101,9 @@ export default function ProductsWorkspace({
         const res = await fetch((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api/v1/catalog');
         if (res.ok) {
           const json = await res.json();
-          if (json.items && json.items.length > 0) {
-            const mapped: ProductCatalogItem[] = json.items.map((item: any) => {
+          const rows = Array.isArray(json) ? json : (json.items || []);
+          if (rows.length > 0) {
+            const mapped: ProductCatalogItem[] = rows.map((item: any) => {
               const stock = item.stock !== undefined ? item.stock : (item.stock_qty !== undefined ? item.stock_qty : 0);
               const price = item.price ?? item.mrp ?? 0;
               const cost = item.cost_price ?? 0;
